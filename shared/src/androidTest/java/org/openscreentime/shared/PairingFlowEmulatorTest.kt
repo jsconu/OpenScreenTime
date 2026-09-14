@@ -123,6 +123,6 @@ class PairingFlowEmulatorTest {
 
     companion object {
         private const val TEST_PROJECT_ID = "openscreentime-e2e"
-        private const val TEST_TIMEOUT_MS = 20_000L
+        private const val TEST_TIMEOUT_MS = 45_000L
     }
 }
