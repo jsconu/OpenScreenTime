@@ -1,0 +1,55 @@
+rules_version = '2';
+
+// Data model:
+//   parents/{parentUid}                                  - one doc per parent account
+//   parents/{parentUid}/children/{childId}                - a child profile + limits
+//   parents/{parentUid}/children/{childId}/dailyStats/{d} - per-day usage, d = yyyy-MM-dd
+//   pairingCodes/{code}                                    - short-lived pairing handshake
+//
+// The kid app never has a normal account: it signs in anonymously and "claims"
+// a pairing code, which atomically stamps its anonymous uid onto the child
+// document as deviceUid. After that, these rules let that specific uid read
+// the child's limits and write that child's dailyStats, and nothing else.
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    match /pairingCodes/{code} {
+      allow get: if request.auth != null;
+      allow list: if false;
+      allow create: if request.auth != null
+        && request.auth.uid == request.resource.data.parentUid;
+      allow update: if request.auth != null
+        && resource.data.used == false
+        && request.resource.data.used == true
+        && request.resource.data.parentUid == resource.data.parentUid
+        && request.resource.data.childId == resource.data.childId
+        && request.resource.data.claimedByUid == request.auth.uid;
+      allow delete: if false;
+    }
+
+    match /parents/{parentUid} {
+      allow read, write: if request.auth != null && request.auth.uid == parentUid;
+
+      match /children/{childId} {
+        allow read, write: if request.auth != null && request.auth.uid == parentUid;
+
+        // The paired kid device may read its own child doc (to pick up limit changes).
+        allow get: if request.auth != null && resource.data.deviceUid == request.auth.uid;
+
+        // One-time claim: only allowed while deviceUid is still unset, and only
+        // deviceUid/paired may change.
+        allow update: if request.auth != null
+          && resource.data.deviceUid == null
+          && request.resource.data.deviceUid == request.auth.uid
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['deviceUid', 'paired']);
+
+        match /dailyStats/{date} {
+          allow read, write: if request.auth != null && request.auth.uid == parentUid;
+          allow read, write: if request.auth != null &&
+            get(/databases/$(database)/documents/parents/$(parentUid)/children/$(childId)).data.deviceUid == request.auth.uid;
+        }
+      }
+    }
+  }
+}

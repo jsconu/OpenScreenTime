@@ -1,0 +1,15 @@
+*.iml
+.gradle/
+.idea/
+local.properties
+.DS_Store
+build/
+captures/
+.externalNativeBuild/
+.cxx/
+*.apk
+*.aab
+
+# Firebase config is per-developer/per-fork; never commit real credentials.
+kid/google-services.json
+parent/google-services.json

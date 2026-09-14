@@ -1,0 +1,4 @@
+<resources>
+    <style name="Theme.OpenScreenTime" parent="android:Theme.Material.Light.NoActionBar" />
+    <style name="Theme.OpenScreenTime.Overlay" parent="android:Theme.Material.Light.NoActionBar" />
+</resources>

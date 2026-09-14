@@ -1,0 +1,118 @@
+# OpenScreenTime
+
+A free, open-source, no-nonsense screen time app for parents. Two small Android
+apps — one for the kid's phone, one for the parent's — showing exactly what
+existing apps bury behind subscriptions and clutter: **total screen time,
+total unlocks, an overall daily limit, and per-app limits.** Nothing else.
+
+No account fees, no ads, no dark patterns. MIT licensed — fork it, self-host
+your own backend, send patches back.
+
+## How it works
+
+- **`kid`** — installed on the child's phone. Runs quietly in the background,
+  measures screen time and unlocks, enforces the limits a parent has set, and
+  syncs a daily summary to the cloud.
+- **`parent`** — installed on the parent's phone. Shows live stats for each
+  paired child and lets the parent change the daily limit or a per-app limit
+  at any time.
+- **`shared`** — the data models and Firestore access code both apps use.
+
+Sync between the two apps runs on [Firebase](https://firebase.google.com)
+(Firestore + Authentication). There is no custom server to host — each
+person running their own copy of this app points it at their own free
+Firebase project.
+
+```
+parent app  <---sync--->  Firebase (Firestore + Auth)  <---sync--->  kid app
+```
+
+### Pairing
+
+1. In the parent app, tap "+" and name the child. This shows a 6-digit
+   pairing code and creates a child profile in Firestore.
+2. In the kid app, enter that code. The kid app signs in anonymously to
+   Firebase and atomically claims the code, linking that device to the child
+   profile. No child email or personal info is ever collected.
+
+### What "screen time" means here
+
+- **Screen time** = time spent unlocked and interactive, measured from
+  `ACTION_USER_PRESENT` (unlock) to the next `ACTION_SCREEN_OFF`. Time spent
+  sitting on the lock screen doesn't count.
+- **Unlocks** = number of `ACTION_USER_PRESENT` broadcasts per day.
+- **Per-app time** = attributed via an `AccessibilityService` watching
+  foreground window changes — this is also how app and daily limits are
+  enforced (a full-screen block is shown once a limit is hit).
+
+Everything resets at local midnight on the kid's device.
+
+## Project status
+
+This is an early, functional scaffold: the pairing flow, background
+tracking, limit enforcement, and the parent dashboard are all implemented,
+but it hasn't been through a real build/device test pass yet (see
+[Building](#building) below) or a security audit. Treat it as a solid
+starting point to build on, not a finished product — contributions very
+welcome, especially around real-device testing, notification nudges before a
+limit hits, and weekly/historical stats.
+
+## Building
+
+You'll need [Android Studio](https://developer.android.com/studio)
+(Ladybug or newer) with a JDK 17 and Android SDK 35.
+
+1. **Create a Firebase project** at [console.firebase.google.com](https://console.firebase.google.com)
+   (the free Spark plan is enough — no credit card required).
+2. In the Firebase console, register **two** Android apps in that one
+   project:
+   - Package name `org.openscreentime.kid`
+   - Package name `org.openscreentime.parent`
+3. Download `google-services.json` (it will contain both apps) and copy the
+   **same file** into both `kid/google-services.json` and
+   `parent/google-services.json`. These are gitignored — never commit them.
+4. In the Firebase console, enable **Authentication** providers:
+   Email/Password (for parents) and Anonymous (for kid devices).
+5. Enable **Firestore Database** (production mode), then publish the rules
+   in [`firebase/firestore.rules`](firebase/firestore.rules) — either paste
+   them into the console's Rules tab, or install the
+   [Firebase CLI](https://firebase.google.com/docs/cli) and run
+   `firebase deploy --only firestore:rules` from a directory containing a
+   `firebase.json` pointing at that file.
+6. Open the project root in Android Studio and let it sync. Run the `kid`
+   configuration on one device/emulator and `parent` on another (or the
+   same emulator with two profiles) to test pairing end-to-end.
+
+> **Note on the Gradle wrapper:** this repo doesn't check in the
+> `gradle-wrapper.jar` binary. Android Studio doesn't need it to sync or
+> run the project. If you want to build from the command line, generate it
+> once with `gradle wrapper --gradle-version 8.9` (requires a local Gradle
+> install), after which `./gradlew` will work normally.
+
+On the kid's device, after installing, the app will ask you to grant three
+things from its status screen: **Accessibility service**, **display over
+other apps**, and **notifications**. All three are required for tracking
+and limit enforcement to work.
+
+## Security & privacy notes for anyone deploying this
+
+- The kid app never reads screen *content* — the accessibility service only
+  observes which app's window is in front, nothing more
+  (`canRetrieveWindowContent="false"`).
+- Firestore security rules (`firebase/firestore.rules`) are written so a kid
+  device can only ever read/write the one child record it claimed via
+  pairing — never another family's data. Please review them yourself before
+  relying on this for anything sensitive; this is a community project, not
+  an audited product.
+- This kind of app is inherently powerful (it can see app usage and block
+  apps). Use it thoughtfully and talk to your kid about it — it's meant to
+  support a conversation about healthy screen time, not to be sprung on
+  someone unannounced.
+
+## Contributing
+
+See [CONTRIBUTING.md](CONTRIBUTING.md). Issues and PRs welcome.
+
+## License
+
+MIT — see [LICENSE](LICENSE). Free forever, use it however you like.

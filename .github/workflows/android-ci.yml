@@ -1,0 +1,60 @@
+name: Android CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      # CI has no real Firebase project, so each app gets a minimal stub
+      # google-services.json just so the Google Services Gradle plugin
+      # doesn't fail the build. This is NOT a real config — do not reuse it.
+      - name: Write stub google-services.json
+        run: |
+          for app in kid parent; do
+            cat > "$app/google-services.json" <<'EOF'
+          {
+            "project_info": {
+              "project_number": "000000000000",
+              "project_id": "openscreentime-ci",
+              "storage_bucket": "openscreentime-ci.appspot.com"
+            },
+            "client": [
+              {
+                "client_info": {
+                  "mobilesdk_app_id": "1:000000000000:android:0000000000000000",
+                  "android_client_info": { "package_name": "org.openscreentime.APP" }
+                },
+                "oauth_client": [],
+                "api_key": [{ "current_key": "stub" }],
+                "services": { "appinvite_service": { "other_platform_oauth_client": [] } }
+              }
+            ],
+            "configuration_version": "1"
+          }
+          EOF
+            sed -i "s/org.openscreentime.APP/org.openscreentime.$app/" "$app/google-services.json"
+          done
+
+      # The repo doesn't check in a gradle-wrapper.jar binary, so CI installs
+      # Gradle directly rather than relying on ./gradlew. If you've generated
+      # a wrapper locally (see README), ./gradlew works fine for local builds.
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: "8.9"
+
+      - name: Build debug APKs and run unit tests
+        run: gradle assembleDebug testDebugUnitTest --stacktrace
