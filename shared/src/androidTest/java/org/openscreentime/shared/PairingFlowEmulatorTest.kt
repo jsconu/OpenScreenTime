@@ -90,6 +90,15 @@ class PairingFlowEmulatorTest {
 
     @Test(timeout = TEST_TIMEOUT_MS)
     fun claimingDeviceCanEditItsOwnLimitsButNotAnotherFamilys() = runBlocking {
+        // Set up an unrelated family first, while it's convenient to be signed in
+        // as its own parent, then sign out - all FamilyRepository() instances in
+        // this test share one process-wide FirebaseAuth session, so whichever
+        // identity is signed in *last* is the one active for the write below.
+        val otherParentRepo = FamilyRepository()
+        val otherParentUid = otherParentRepo.signUpParent(uniqueEmail(), "testpass123")
+        val otherChild = otherParentRepo.createChild(otherParentUid, "UnrelatedChild")
+        otherParentRepo.signOut()
+
         val parentRepo = FamilyRepository()
         val parentUid = parentRepo.signUpParent(uniqueEmail(), "testpass123")
         val child = parentRepo.createChild(parentUid, "ThirdChild")
@@ -103,13 +112,9 @@ class PairingFlowEmulatorTest {
         kidRepo.updateDailyLimit(parentUid, child.id, 45)
         kidRepo.setLocked(parentUid, child.id, true)
 
-        // But not another family's child, even one it doesn't know the id of directly -
-        // simulate a guess by reusing a real, but unrelated, parent/child pair.
-        val otherParentRepo = FamilyRepository()
-        val otherParentUid = otherParentRepo.signUpParent(uniqueEmail(), "testpass123")
-        val otherChild = otherParentRepo.createChild(otherParentUid, "UnrelatedChild")
-        otherParentRepo.signOut()
-
+        // But not another family's child. The kid's session is still the active
+        // auth identity here (never signed out), so this is a genuine
+        // authenticated-but-unauthorized write attempt, not an unauthenticated one.
         var threw = false
         try {
             kidRepo.updateDailyLimit(otherParentUid, otherChild.id, 10)
