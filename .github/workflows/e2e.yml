@@ -1,0 +1,79 @@
+name: E2E Pairing Test
+
+on:
+  workflow_dispatch:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'shared/**'
+      - 'firebase/**'
+      - 'firebase.json'
+      - '.github/workflows/e2e.yml'
+
+jobs:
+  e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install Firebase CLI
+        run: npm install -g firebase-tools
+
+      # Real, ephemeral Firestore + Auth backend for the test to run against -
+      # loads the actual firebase/firestore.rules from this repo, so a passing
+      # test genuinely exercises those rules, not a stand-in for them.
+      - name: Start Firebase emulators (Firestore + Auth)
+        run: |
+          firebase emulators:start --project openscreentime-e2e --only firestore,auth > /tmp/firebase-emulators.log 2>&1 &
+          for i in $(seq 1 30); do
+            if (echo > /dev/tcp/127.0.0.1/8080) 2>/dev/null && (echo > /dev/tcp/127.0.0.1/9099) 2>/dev/null; then
+              echo "Emulators are up."
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "Emulators did not come up in time"
+          cat /tmp/firebase-emulators.log
+          exit 1
+
+      # Standard recipe for reactivecircus/android-emulator-runner on GitHub-hosted
+      # Linux runners: without this, the emulator boots with no hardware
+      # acceleration and is extremely slow or times out.
+      - name: Enable KVM group perms
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      - name: Run pairing test on a real Android emulator
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 30
+          target: google_apis
+          arch: x86_64
+          disable-animations: true
+          script: ./gradlew :shared:connectedDebugAndroidTest --stacktrace
+
+      - name: Upload connected test report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: shared-connected-test-report
+          path: shared/build/reports/androidTests/connected
+          if-no-files-found: ignore
+
+      - name: Show Firebase emulator log on failure
+        if: failure()
+        run: cat /tmp/firebase-emulators.log || true

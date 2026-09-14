@@ -10,6 +10,7 @@ android {
 
     defaultConfig {
         minSdk = 26
+        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
     compileOptions {
@@ -27,4 +28,7 @@ dependencies {
     implementation(libs.firebase.auth)
     implementation(libs.kotlinx.serialization.json)
     implementation(libs.coroutines.play.services)
+
+    androidTestImplementation(libs.androidx.test.junit)
+    androidTestImplementation(libs.androidx.test.runner)
 }
