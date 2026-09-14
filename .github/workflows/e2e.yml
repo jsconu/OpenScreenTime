@@ -60,6 +60,13 @@ jobs:
           sudo udevadm control --reload-rules
           sudo udevadm trigger --name-match=kvm
 
+      # No gradle-wrapper.jar is checked into this repo (see README), so install
+      # Gradle directly rather than relying on ./gradlew, same as android-ci.yml.
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: "8.9"
+
       - name: Run pairing test on a real Android emulator
         uses: reactivecircus/android-emulator-runner@v2
         with:
@@ -67,7 +74,7 @@ jobs:
           target: google_apis
           arch: x86_64
           disable-animations: true
-          script: ./gradlew :shared:connectedDebugAndroidTest --stacktrace
+          script: gradle :shared:connectedDebugAndroidTest --stacktrace
 
       - name: Upload connected test report
         if: always()
