@@ -48,7 +48,7 @@ class PairingFlowEmulatorTest {
         }
     }
 
-    @Test
+    @Test(timeout = TEST_TIMEOUT_MS)
     fun parentCreatesChild_kidClaimsCode_pairingSucceeds() = runBlocking {
         val parentRepo = FamilyRepository()
         val parentUid = parentRepo.signUpParent(uniqueEmail(), "testpass123")
@@ -67,7 +67,7 @@ class PairingFlowEmulatorTest {
         assertNotNull("Claiming the code should stamp this device's uid onto the child", claimedChild.deviceUid)
     }
 
-    @Test
+    @Test(timeout = TEST_TIMEOUT_MS)
     fun pairingCodeCannotBeClaimedTwice() = runBlocking {
         val parentRepo = FamilyRepository()
         val parentUid = parentRepo.signUpParent(uniqueEmail(), "testpass123")
@@ -88,7 +88,7 @@ class PairingFlowEmulatorTest {
         assertTrue("A second device should not be able to claim an already-used pairing code", threw)
     }
 
-    @Test
+    @Test(timeout = TEST_TIMEOUT_MS)
     fun claimingDeviceCanEditItsOwnLimitsButNotAnotherFamilys() = runBlocking {
         val parentRepo = FamilyRepository()
         val parentUid = parentRepo.signUpParent(uniqueEmail(), "testpass123")
@@ -123,5 +123,6 @@ class PairingFlowEmulatorTest {
 
     companion object {
         private const val TEST_PROJECT_ID = "openscreentime-e2e"
+        private const val TEST_TIMEOUT_MS = 20_000L
     }
 }
