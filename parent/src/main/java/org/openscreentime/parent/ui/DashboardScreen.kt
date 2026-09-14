@@ -13,9 +13,11 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -41,6 +43,7 @@ import org.openscreentime.shared.repo.FamilyRepository
 fun DashboardScreen(
     repository: FamilyRepository,
     onOpenChild: (String) -> Unit,
+    onOpenSettings: () -> Unit,
     onSignOut: () -> Unit
 ) {
     val parentUid = repository.currentUid ?: return
@@ -58,7 +61,10 @@ fun DashboardScreen(
         topBar = {
             TopAppBar(
                 title = { Text("Your children") },
-                actions = { TextButton(onClick = onSignOut) { Text("Sign out") } }
+                actions = {
+                    TextButton(onClick = onOpenSettings) { Text("Passcode") }
+                    TextButton(onClick = onSignOut) { Text("Sign out") }
+                }
             )
         },
         floatingActionButton = {
@@ -113,7 +119,9 @@ private fun ChildSummaryCard(
     child: ChildProfile,
     onClick: () -> Unit
 ) {
+    val scope = rememberCoroutineScope()
     var stats by remember { mutableStateOf(DailyStats(date = todayDateString())) }
+    var showLockConfirm by remember { mutableStateOf(false) }
 
     DisposableEffect(child.id) {
         val reg = repository.listenDailyStats(parentUid, child.id, todayDateString()) { stats = it }
@@ -127,7 +135,30 @@ private fun ChildSummaryCard(
             .clickable(onClick = onClick)
     ) {
         Column(Modifier.padding(16.dp)) {
-            Text(child.name, style = MaterialTheme.typography.titleMedium)
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Text(child.name, style = MaterialTheme.typography.titleMedium)
+                if (child.paired) {
+                    OutlinedButton(
+                        onClick = {
+                            if (child.locked) {
+                                scope.launch { repository.setLocked(parentUid, child.id, false) }
+                            } else {
+                                showLockConfirm = true
+                            }
+                        },
+                        colors = if (child.locked) {
+                            ButtonDefaults.outlinedButtonColors()
+                        } else {
+                            ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error)
+                        }
+                    ) {
+                        Text(if (child.locked) "Resume" else "Lock now")
+                    }
+                }
+            }
             if (!child.paired) {
                 Spacer(Modifier.height(4.dp))
                 Text("Waiting for device pairing (code: ${child.pairingCode})", style = MaterialTheme.typography.bodySmall)
@@ -138,8 +169,31 @@ private fun ChildSummaryCard(
                     StatColumn("Unlocks", stats.unlockCount.toString())
                     StatColumn("Daily limit", "${child.dailyLimitMinutes} min")
                 }
+                if (child.locked) {
+                    Spacer(Modifier.height(8.dp))
+                    Text(
+                        "Screen time is paused",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.error
+                    )
+                }
             }
         }
+    }
+
+    if (showLockConfirm) {
+        AlertDialog(
+            onDismissRequest = { showLockConfirm = false },
+            title = { Text("End screen time now?") },
+            text = { Text("This blocks every app on ${child.name}'s device until you resume it.") },
+            confirmButton = {
+                TextButton(onClick = {
+                    scope.launch { repository.setLocked(parentUid, child.id, true) }
+                    showLockConfirm = false
+                }) { Text("Lock now") }
+            },
+            dismissButton = { TextButton(onClick = { showLockConfirm = false }) { Text("Cancel") } }
+        )
     }
 }
 

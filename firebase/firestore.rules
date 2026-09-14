@@ -9,7 +9,18 @@ rules_version = '2';
 // The kid app never has a normal account: it signs in anonymously and "claims"
 // a pairing code, which atomically stamps its anonymous uid onto the child
 // document as deviceUid. After that, these rules let that specific uid read
-// the child's limits and write that child's dailyStats, and nothing else.
+// the child's limits, write that child's dailyStats, and write its own
+// dailyLimitMinutes/appLimits/locked fields.
+//
+// That last one deliberately gives a paired kid device the same write access
+// a parent has to its OWN child's limits. The security boundary here is
+// "only the one device that claimed this child" - not "only the parent app" -
+// because the "parent mode" flow in the kid app (gated by the shared family
+// passcode, verified locally) needs to write those same fields from the kid
+// device. A kid with physical access to their own device can already disable
+// the accessibility service or uninstall the app, so this doesn't weaken the
+// real security boundary (one family's data from another's); it only affects
+// how much a kid can self-modify their own limits without a parent's app.
 
 service cloud.firestore {
   match /databases/{database}/documents {
@@ -43,6 +54,14 @@ service cloud.firestore {
           && resource.data.deviceUid == null
           && request.resource.data.deviceUid == request.auth.uid
           && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['deviceUid', 'paired']);
+
+        // "Parent mode" on an already-paired kid device: the linked device may
+        // change its own limits/lock state (never the passcode fields or pairing
+        // metadata - only the parent account can change those).
+        allow update: if request.auth != null
+          && resource.data.deviceUid == request.auth.uid
+          && request.resource.data.diff(resource.data).affectedKeys()
+               .hasOnly(['dailyLimitMinutes', 'appLimits', 'locked']);
 
         match /dailyStats/{date} {
           allow read, write: if request.auth != null && request.auth.uid == parentUid;

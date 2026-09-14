@@ -3,6 +3,7 @@ package org.openscreentime.kid
 import android.app.Application
 import android.app.NotificationChannel
 import android.app.NotificationManager
+import android.content.Intent
 import android.os.Build
 import androidx.work.ExistingPeriodicWorkPolicy
 import androidx.work.PeriodicWorkRequestBuilder
@@ -10,6 +11,7 @@ import androidx.work.WorkManager
 import org.openscreentime.kid.data.PairingStore
 import org.openscreentime.kid.monitor.AppLimitAccessibilityService
 import org.openscreentime.kid.monitor.SyncWorker
+import org.openscreentime.kid.ui.BlockOverlayActivity
 import org.openscreentime.shared.repo.FamilyRepository
 import java.util.concurrent.TimeUnit
 
@@ -18,19 +20,20 @@ class KidApp : Application() {
 
     override fun onCreate() {
         super.onCreate()
-        createNotificationChannel()
+        createNotificationChannels()
         scheduleSync()
-        listenForLimitChanges()
+        startLimitsListener()
     }
 
-    private fun createNotificationChannel() {
+    private fun createNotificationChannels() {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return
-        val channel = NotificationChannel(
-            MONITOR_CHANNEL_ID,
-            "Screen time monitoring",
-            NotificationManager.IMPORTANCE_MIN
+        val manager = getSystemService(NotificationManager::class.java)
+        manager.createNotificationChannel(
+            NotificationChannel(MONITOR_CHANNEL_ID, "Screen time monitoring", NotificationManager.IMPORTANCE_MIN)
         )
-        getSystemService(NotificationManager::class.java).createNotificationChannel(channel)
+        manager.createNotificationChannel(
+            NotificationChannel(WARNING_CHANNEL_ID, "Approaching a limit", NotificationManager.IMPORTANCE_DEFAULT)
+        )
     }
 
     private fun scheduleSync() {
@@ -42,8 +45,12 @@ class KidApp : Application() {
         )
     }
 
-    /** Keeps the in-memory limits used by the accessibility service up to date with Firestore. */
-    private fun listenForLimitChanges() {
+    /**
+     * Keeps the in-memory limits/lock state used by the accessibility service up to date with
+     * Firestore. Safe to call more than once (e.g. right after pairing completes, so the
+     * listener starts without needing an app restart) - each call just attaches a fresh listener.
+     */
+    fun startLimitsListener() {
         val pairingStore = PairingStore(this)
         val parentUid = pairingStore.parentUid
         val childId = pairingStore.childId
@@ -52,10 +59,22 @@ class KidApp : Application() {
         repository.listenChild(parentUid, childId) { child ->
             AppLimitAccessibilityService.limitsCache = child.appLimits
             AppLimitAccessibilityService.dailyLimitMinutes = child.dailyLimitMinutes
+
+            val wasLocked = AppLimitAccessibilityService.lockedCache
+            AppLimitAccessibilityService.lockedCache = child.locked
+            if (child.locked && !wasLocked) {
+                // Don't wait for the next app switch or tick - interrupt right away.
+                startActivity(
+                    Intent(this, BlockOverlayActivity::class.java)
+                        .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                        .putExtra(BlockOverlayActivity.EXTRA_REASON, "parent_lock")
+                )
+            }
         }
     }
 
     companion object {
         const val MONITOR_CHANNEL_ID = "monitor_service"
+        const val WARNING_CHANNEL_ID = "limit_warnings"
     }
 }

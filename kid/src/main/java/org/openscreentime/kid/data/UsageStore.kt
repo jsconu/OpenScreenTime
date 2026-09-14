@@ -22,6 +22,8 @@ class UsageStore(context: Context) {
                 .putLong("totalScreenTimeMs", 0)
                 .putInt("unlockCount", 0)
                 .putString("appUsage", "{}")
+                .putBoolean("warnedDaily", false)
+                .putStringSet("warnedApps", emptySet())
                 .apply()
         }
     }
@@ -31,6 +33,61 @@ class UsageStore(context: Context) {
         rolloverIfNeeded()
         prefs.edit().putLong("totalScreenTimeMs", totalScreenTimeMs + ms).apply()
     }
+
+    /** Call when the device is unlocked, to start a live screen-time session. */
+    fun startSession() {
+        rolloverIfNeeded()
+        prefs.edit().putLong("sessionStartMs", System.currentTimeMillis()).apply()
+    }
+
+    /** Call when the screen turns off, to fold the just-finished session into today's total. */
+    fun endSessionAndFlush() {
+        val start = sessionStartMs ?: return
+        addScreenTime(System.currentTimeMillis() - start)
+        prefs.edit().remove("sessionStartMs").apply()
+    }
+
+    private val sessionStartMs: Long?
+        get() {
+            val v = prefs.getLong("sessionStartMs", -1)
+            return if (v < 0) null else v
+        }
+
+    /**
+     * Today's total screen time including any session currently in progress -
+     * unlike [totalScreenTimeMs], which only reflects sessions already ended.
+     * Used for daily-limit checks so a single long unlocked session is still caught.
+     */
+    val liveTotalScreenTimeMs: Long
+        get() {
+            val base = totalScreenTimeMs
+            val start = sessionStartMs ?: return base
+            return base + (System.currentTimeMillis() - start)
+        }
+
+    fun markDailyWarned() {
+        rolloverIfNeeded()
+        prefs.edit().putBoolean("warnedDaily", true).apply()
+    }
+
+    val dailyWarned: Boolean
+        get() {
+            rolloverIfNeeded()
+            return prefs.getBoolean("warnedDaily", false)
+        }
+
+    fun markAppWarned(packageName: String) {
+        rolloverIfNeeded()
+        val set = warnedApps.toMutableSet()
+        set.add(packageName)
+        prefs.edit().putStringSet("warnedApps", set).apply()
+    }
+
+    val warnedApps: Set<String>
+        get() {
+            rolloverIfNeeded()
+            return prefs.getStringSet("warnedApps", emptySet()) ?: emptySet()
+        }
 
     fun addAppTime(packageName: String, ms: Long) {
         if (ms <= 0) return

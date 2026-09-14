@@ -22,20 +22,16 @@ import org.openscreentime.kid.ui.MainActivity
 class ScreenMonitorService : Service() {
 
     private lateinit var usageStore: UsageStore
-    private var unlockedAtMs: Long? = null
 
     private val receiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context, intent: Intent) {
             when (intent.action) {
                 Intent.ACTION_USER_PRESENT -> {
-                    unlockedAtMs = System.currentTimeMillis()
+                    usageStore.startSession()
                     usageStore.incrementUnlockCount()
                 }
                 Intent.ACTION_SCREEN_OFF -> {
-                    unlockedAtMs?.let { start ->
-                        usageStore.addScreenTime(System.currentTimeMillis() - start)
-                    }
-                    unlockedAtMs = null
+                    usageStore.endSessionAndFlush()
                 }
             }
         }

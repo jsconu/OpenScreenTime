@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.Button
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
@@ -24,6 +25,7 @@ fun StatusScreen(
     onRequestOverlay: () -> Unit,
     onRequestAccessibility: () -> Unit,
     onRequestNotifications: () -> Unit,
+    onOpenParentMode: () -> Unit,
     onUnpair: () -> Unit
 ) {
     Column(modifier = Modifier.fillMaxSize().padding(24.dp)) {
@@ -55,6 +57,10 @@ fun StatusScreen(
         )
 
         Spacer(Modifier.weight(1f, fill = true))
+        Button(onClick = onOpenParentMode, modifier = Modifier.fillMaxWidth()) {
+            Text("Parent controls")
+        }
+        Spacer(Modifier.height(8.dp))
         OutlinedButton(onClick = onUnpair, modifier = Modifier.fillMaxWidth()) {
             Text("Unpair this device")
         }

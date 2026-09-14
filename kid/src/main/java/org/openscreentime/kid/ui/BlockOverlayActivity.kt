@@ -35,13 +35,21 @@ class BlockOverlayActivity : ComponentActivity() {
                         verticalArrangement = Arrangement.Center
                     ) {
                         Text(
-                            if (reason == "daily_limit") "Screen time is up for today" else "This app's time limit is reached",
+                            when (reason) {
+                                "daily_limit" -> "Screen time is up for today"
+                                "parent_lock" -> "Screen time has been paused"
+                                else -> "This app's time limit is reached"
+                            },
                             style = MaterialTheme.typography.headlineSmall,
                             textAlign = TextAlign.Center
                         )
                         Spacer(Modifier.height(16.dp))
                         Text(
-                            "Ask a parent if you need more time.",
+                            if (reason == "parent_lock") {
+                                "A parent has paused screen time. Ask them to resume it."
+                            } else {
+                                "Ask a parent if you need more time."
+                            },
                             textAlign = TextAlign.Center,
                             style = MaterialTheme.typography.bodyMedium
                         )

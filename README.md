@@ -3,7 +3,9 @@
 A free, open-source, no-nonsense screen time app for parents. Two small Android
 apps — one for the kid's phone, one for the parent's — showing exactly what
 existing apps bury behind subscriptions and clutter: **total screen time,
-total unlocks, an overall daily limit, and per-app limits.** Nothing else.
+total unlocks, an overall daily limit, and per-app limits.** Plus a passcode,
+an immediate "lock now" button, and a heads-up before a limit hits. Nothing
+else.
 
 No account fees, no ads, no dark patterns. MIT licensed — fork it, self-host
 your own backend, send patches back.
@@ -34,6 +36,24 @@ parent app  <---sync--->  Firebase (Firestore + Auth)  <---sync--->  kid app
 2. In the kid app, enter that code. The kid app signs in anonymously to
    Firebase and atomically claims the code, linking that device to the child
    profile. No child email or personal info is ever collected.
+
+### Family passcode, "Parent controls," and locking
+
+Set a passcode from the parent app (top bar -> Passcode). It does two things:
+
+- It locks the parent app itself on next launch (a saved hash, checked
+  locally - no extra network round trip).
+- The same passcode can be entered on a paired kid device (Status screen ->
+  "Parent controls") to unlock the same limit editors and lock button
+  *locally on that device*, without needing the parent's phone in hand. The
+  kid device verifies it against a hash synced from Firestore, entirely
+  offline.
+
+Either app can hit "Lock now" / "End screen time now" at any point to block
+every app on the kid's device immediately, regardless of the daily limit -
+useful for dinner, bedtime, or just needing quiet right now. "Resume" undoes
+it. The kid app also posts a one-time notification when screen time or an
+app is within 5 minutes of its limit, so a limit is rarely a total surprise.
 
 ### What "screen time" means here
 

@@ -16,9 +16,13 @@ import androidx.compose.runtime.setValue
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
+import org.openscreentime.kid.KidApp
 import org.openscreentime.kid.data.PairingStore
 import org.openscreentime.kid.monitor.ScreenMonitorService
 import org.openscreentime.kid.util.checkPermissions
+import org.openscreentime.shared.model.ChildProfile
+
+private enum class KidScreen { STATUS, PARENT_UNLOCK, PARENT_CONTROLS }
 
 class MainActivity : ComponentActivity() {
 
@@ -30,11 +34,14 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         pairingStore = PairingStore(this)
+        val repository = (application as KidApp).repository
 
         setContent {
             OpenScreenTimeTheme {
                 var paired by remember { mutableStateOf(pairingStore.isPaired) }
                 var permissions by remember { mutableStateOf(checkPermissions(this)) }
+                var screen by remember { mutableStateOf(KidScreen.STATUS) }
+                var child by remember { mutableStateOf<ChildProfile?>(null) }
 
                 DisposableEffect(Unit) {
                     val observer = LifecycleEventObserver { _, event ->
@@ -46,6 +53,16 @@ class MainActivity : ComponentActivity() {
                     onDispose { lifecycle.removeObserver(observer) }
                 }
 
+                DisposableEffect(paired) {
+                    val parentUid = pairingStore.parentUid
+                    val childId = pairingStore.childId
+                    if (!paired || parentUid == null || childId == null) {
+                        return@DisposableEffect onDispose {}
+                    }
+                    val reg = repository.listenChild(parentUid, childId) { child = it }
+                    onDispose { reg.remove() }
+                }
+
                 if (!paired) {
                     PairingScreen(
                         onPaired = { name ->
@@ -55,33 +72,56 @@ class MainActivity : ComponentActivity() {
                                 this,
                                 Intent(this, ScreenMonitorService::class.java)
                             )
+                            (application as KidApp).startLimitsListener()
                         }
                     )
                 } else {
-                    StatusScreen(
-                        childName = pairingStore.childName ?: "",
-                        permissions = permissions,
-                        onRequestOverlay = {
-                            startActivity(
-                                Intent(
-                                    Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
-                                    Uri.parse("package:$packageName")
+                    when (screen) {
+                        KidScreen.STATUS -> StatusScreen(
+                            childName = pairingStore.childName ?: "",
+                            permissions = permissions,
+                            onRequestOverlay = {
+                                startActivity(
+                                    Intent(
+                                        Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
+                                        Uri.parse("package:$packageName")
+                                    )
                                 )
-                            )
-                        },
-                        onRequestAccessibility = {
-                            startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
-                        },
-                        onRequestNotifications = {
-                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                                notificationPermissionLauncher.launch(android.Manifest.permission.POST_NOTIFICATIONS)
+                            },
+                            onRequestAccessibility = {
+                                startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
+                            },
+                            onRequestNotifications = {
+                                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                                    notificationPermissionLauncher.launch(android.Manifest.permission.POST_NOTIFICATIONS)
+                                }
+                            },
+                            onOpenParentMode = { screen = KidScreen.PARENT_UNLOCK },
+                            onUnpair = {
+                                pairingStore.clear()
+                                paired = false
                             }
-                        },
-                        onUnpair = {
-                            pairingStore.clear()
-                            paired = false
+                        )
+                        KidScreen.PARENT_UNLOCK -> ParentModeUnlockScreen(
+                            child = child,
+                            onUnlocked = { screen = KidScreen.PARENT_CONTROLS },
+                            onCancel = { screen = KidScreen.STATUS }
+                        )
+                        KidScreen.PARENT_CONTROLS -> {
+                            val currentChild = child
+                            val parentUid = pairingStore.parentUid
+                            val childId = pairingStore.childId
+                            if (currentChild != null && parentUid != null && childId != null) {
+                                ParentControlsScreen(
+                                    repository = repository,
+                                    parentUid = parentUid,
+                                    childId = childId,
+                                    child = currentChild,
+                                    onDone = { screen = KidScreen.STATUS }
+                                )
+                            }
                         }
-                    )
+                    }
                 }
             }
         }

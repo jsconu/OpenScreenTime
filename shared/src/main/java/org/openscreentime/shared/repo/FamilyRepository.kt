@@ -7,6 +7,7 @@ import com.google.firebase.firestore.SetOptions
 import kotlinx.coroutines.tasks.await
 import org.openscreentime.shared.model.ChildProfile
 import org.openscreentime.shared.model.DailyStats
+import org.openscreentime.shared.model.PasscodeInfo
 import kotlin.random.Random
 
 /**
@@ -42,12 +43,52 @@ class FamilyRepository(
     suspend fun createChild(parentUid: String, name: String): ChildProfile {
         val code = generatePairingCode()
         val docRef = db.collection(FirestorePaths.childrenCollection(parentUid)).document()
-        val child = ChildProfile(id = docRef.id, name = name, pairingCode = code, paired = false)
+        val existingPasscode = getParentPasscode(parentUid)
+        val child = ChildProfile(
+            id = docRef.id,
+            name = name,
+            pairingCode = code,
+            paired = false,
+            parentPasscodeHash = existingPasscode?.hash,
+            parentPasscodeSalt = existingPasscode?.salt
+        )
         docRef.set(child.toMap()).await()
         db.collection(FirestorePaths.PAIRING_CODES).document(code).set(
             mapOf("parentUid" to parentUid, "childId" to docRef.id, "used" to false)
         ).await()
         return child
+    }
+
+    suspend fun setLocked(parentUid: String, childId: String, locked: Boolean) {
+        db.document(FirestorePaths.childDoc(parentUid, childId))
+            .update("locked", locked).await()
+    }
+
+    /** Reads the parent's passcode hash/salt, or null if no passcode has been set yet. */
+    suspend fun getParentPasscode(parentUid: String): PasscodeInfo? {
+        val snap = db.document("${FirestorePaths.PARENTS}/$parentUid").get().await()
+        val hash = snap.getString("passcodeHash") ?: return null
+        val salt = snap.getString("passcodeSalt") ?: return null
+        return PasscodeInfo(hash, salt)
+    }
+
+    /**
+     * Sets or changes the family passcode. Writes it to the parent's own account doc, and
+     * fans it out to every existing child doc so already-paired kid devices can verify it
+     * locally (see [ChildProfile.parentPasscodeHash]/[ChildProfile.parentPasscodeSalt]).
+     */
+    suspend fun setParentPasscode(parentUid: String, hash: String, salt: String) {
+        db.document("${FirestorePaths.PARENTS}/$parentUid")
+            .set(mapOf("passcodeHash" to hash, "passcodeSalt" to salt), SetOptions.merge())
+            .await()
+
+        val children = db.collection(FirestorePaths.childrenCollection(parentUid)).get().await()
+        if (children.isEmpty) return
+        val batch = db.batch()
+        for (doc in children.documents) {
+            batch.update(doc.reference, mapOf("parentPasscodeHash" to hash, "parentPasscodeSalt" to salt))
+        }
+        batch.commit().await()
     }
 
     fun listenChildren(parentUid: String, onChange: (List<ChildProfile>) -> Unit): ListenerRegistration =
