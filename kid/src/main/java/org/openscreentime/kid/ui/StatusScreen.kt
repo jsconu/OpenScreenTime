@@ -31,6 +31,7 @@ fun StatusScreen(
     permissions: PermissionState,
     themeMode: ThemeMode,
     textSize: TextSize,
+    streakDays: Int,
     onRequestOverlay: () -> Unit,
     onRequestAccessibility: () -> Unit,
     onRequestNotifications: () -> Unit,
@@ -57,6 +58,14 @@ fun StatusScreen(
             if (permissions.allGranted) "Screen time monitoring is active." else "A few permissions are needed to finish setup.",
             style = MaterialTheme.typography.bodyMedium
         )
+        if (streakDays > 0) {
+            Spacer(Modifier.height(8.dp))
+            Text(
+                "$streakDays day${if (streakDays == 1) "" else "s"} in a row under your goal",
+                style = MaterialTheme.typography.bodyMedium,
+                modifier = Modifier.testTag("status_streak")
+            )
+        }
         Spacer(Modifier.height(24.dp))
 
         PermissionRow(

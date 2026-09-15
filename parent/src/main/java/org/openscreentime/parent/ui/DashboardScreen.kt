@@ -25,7 +25,9 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -40,8 +42,11 @@ import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
 import org.openscreentime.shared.model.ChildProfile
 import org.openscreentime.shared.model.DailyStats
+import org.openscreentime.shared.model.computeStreak
 import org.openscreentime.shared.model.todayDateString
 import org.openscreentime.shared.repo.FamilyRepository
+
+private const val STREAK_LOOKBACK_DAYS = 14
 
 @Composable
 fun DashboardScreen(
@@ -187,11 +192,17 @@ private fun ChildSummaryCard(
 ) {
     val scope = rememberCoroutineScope()
     var stats by remember { mutableStateOf(DailyStats(date = todayDateString())) }
+    var streakDays by remember { mutableIntStateOf(0) }
     var showLockConfirm by remember { mutableStateOf(false) }
 
     DisposableEffect(child.id) {
         val reg = repository.listenDailyStats(parentUid, child.id, todayDateString()) { stats = it }
         onDispose { reg.remove() }
+    }
+
+    LaunchedEffect(child.id, child.dailyLimitMinutes, child.dailyUnlockGoal) {
+        val recent = repository.getRecentDailyStats(parentUid, child.id, STREAK_LOOKBACK_DAYS)
+        streakDays = computeStreak(recent, child.dailyLimitMinutes, child.dailyUnlockGoal)
     }
 
     Card(
@@ -236,6 +247,13 @@ private fun ChildSummaryCard(
                     StatColumn("Screen time today", formatDuration(stats.totalScreenTimeMs))
                     StatColumn("Unlocks", stats.unlockCount.toString())
                     StatColumn("Daily limit", "${child.dailyLimitMinutes} min")
+                }
+                if (streakDays > 0) {
+                    Spacer(Modifier.height(8.dp))
+                    Text(
+                        "$streakDays day${if (streakDays == 1) "" else "s"} in a row under goal",
+                        style = MaterialTheme.typography.bodySmall
+                    )
                 }
                 if (child.locked) {
                     Spacer(Modifier.height(8.dp))

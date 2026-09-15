@@ -11,7 +11,9 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -27,6 +29,7 @@ import org.openscreentime.kid.data.PairingStore
 import org.openscreentime.kid.monitor.ScreenMonitorService
 import org.openscreentime.kid.util.checkPermissions
 import org.openscreentime.shared.model.ChildProfile
+import org.openscreentime.shared.model.computeStreak
 
 private enum class KidScreen { STATUS, PARENT_UNLOCK, PARENT_CONTROLS }
 
@@ -55,6 +58,17 @@ class MainActivity : ComponentActivity() {
                 var permissions by remember { mutableStateOf(checkPermissions(this@MainActivity)) }
                 var screen by remember { mutableStateOf(KidScreen.STATUS) }
                 var child by remember { mutableStateOf<ChildProfile?>(null) }
+                var streakDays by remember { mutableIntStateOf(0) }
+
+                LaunchedEffect(pairingStore.parentUid, pairingStore.childId, child?.dailyLimitMinutes, child?.dailyUnlockGoal) {
+                    val parentUid = pairingStore.parentUid
+                    val childId = pairingStore.childId
+                    val currentChild = child
+                    if (parentUid != null && childId != null && currentChild != null) {
+                        val recent = repository.getRecentDailyStats(parentUid, childId, STREAK_LOOKBACK_DAYS)
+                        streakDays = computeStreak(recent, currentChild.dailyLimitMinutes, currentChild.dailyUnlockGoal)
+                    }
+                }
 
                 DisposableEffect(Unit) {
                     val observer = LifecycleEventObserver { _, event ->
@@ -95,6 +109,7 @@ class MainActivity : ComponentActivity() {
                             permissions = permissions,
                             themeMode = themeMode,
                             textSize = textSize,
+                            streakDays = streakDays,
                             onRequestOverlay = {
                                 startActivity(
                                     Intent(
@@ -154,5 +169,10 @@ class MainActivity : ComponentActivity() {
               }
             }
         }
+    }
+
+    companion object {
+        /** Look back far enough that a broken streak's reset is obvious, without querying forever. */
+        private const val STREAK_LOOKBACK_DAYS = 14
     }
 }

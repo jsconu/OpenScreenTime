@@ -24,7 +24,9 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -34,8 +36,11 @@ import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
 import org.openscreentime.shared.model.ChildProfile
 import org.openscreentime.shared.model.DailyStats
+import org.openscreentime.shared.model.computeStreak
 import org.openscreentime.shared.model.todayDateString
 import org.openscreentime.shared.repo.FamilyRepository
+
+private const val STREAK_LOOKBACK_DAYS = 14
 
 @Composable
 fun ChildDetailScreen(
@@ -48,6 +53,7 @@ fun ChildDetailScreen(
 
     var child by remember { mutableStateOf<ChildProfile?>(null) }
     var stats by remember { mutableStateOf(DailyStats(date = todayDateString())) }
+    var streakDays by remember { mutableIntStateOf(0) }
     var showLimitDialog by remember { mutableStateOf(false) }
     var showUnlockGoalDialog by remember { mutableStateOf(false) }
     var editingApp by remember { mutableStateOf<String?>(null) }
@@ -66,6 +72,11 @@ fun ChildDetailScreen(
     }
 
     val currentChild = child ?: return
+
+    LaunchedEffect(childId, currentChild.dailyLimitMinutes, currentChild.dailyUnlockGoal) {
+        val recent = repository.getRecentDailyStats(parentUid, childId, STREAK_LOOKBACK_DAYS)
+        streakDays = computeStreak(recent, currentChild.dailyLimitMinutes, currentChild.dailyUnlockGoal)
+    }
 
     Scaffold(
         topBar = {
@@ -101,6 +112,13 @@ fun ChildDetailScreen(
                     Row(horizontalArrangement = Arrangement.spacedBy(24.dp)) {
                         StatBlock("Screen time", formatDuration(stats.totalScreenTimeMs))
                         StatBlock("Unlocks", stats.unlockCount.toString())
+                    }
+                    if (streakDays > 0) {
+                        Spacer(Modifier.height(8.dp))
+                        Text(
+                            "$streakDays day${if (streakDays == 1) "" else "s"} in a row under goal",
+                            style = MaterialTheme.typography.bodyMedium
+                        )
                     }
                     Spacer(Modifier.height(16.dp))
                     val progress = (stats.totalScreenTimeMs / 60000f) / currentChild.dailyLimitMinutes.coerceAtLeast(1)
