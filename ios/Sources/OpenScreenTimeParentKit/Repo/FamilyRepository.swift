@@ -45,14 +45,14 @@ public final class FamilyRepository {
         let code = Self.generatePairingCode()
         let docRef = db.collection(FirestorePaths.childrenCollection(parentUid)).document()
         let existingPasscode = try await getParentPasscode(parentUid: parentUid)
-        var child = ChildProfile(id: docRef.id, name: name, pairingCode: code, paired: false)
+        var child = ChildProfile(id: docRef.documentID, name: name, pairingCode: code, paired: false)
         child.parentPasscodeHash = existingPasscode?.hash
         child.parentPasscodeSalt = existingPasscode?.salt
 
         try await docRef.setData(child.toMap())
         try await db.collection(FirestorePaths.pairingCodes).document(code).setData([
             "parentUid": parentUid,
-            "childId": docRef.id,
+            "childId": docRef.documentID,
             "used": false,
             // Must be the server's clock, not a client-supplied value - the security
             // rules require an exact match on this, see firestore.rules.
