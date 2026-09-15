@@ -49,6 +49,7 @@ fun DashboardScreen(
     onOpenChild: (String) -> Unit,
     onOpenSettings: () -> Unit,
     onOpenAppearance: () -> Unit,
+    onOpenSelfTracking: () -> Unit,
     onSignOut: () -> Unit
 ) {
     val parentUid = repository.currentUid ?: return
@@ -58,7 +59,9 @@ fun DashboardScreen(
     var newChildCode by remember { mutableStateOf<String?>(null) }
 
     DisposableEffect(parentUid) {
-        val reg = repository.listenChildren(parentUid) { children = it }
+        // Excludes the parent's own self-tracking profile (see #8) - that one gets its
+        // own dedicated "My screen time" card above, not a slot in the kids list.
+        val reg = repository.listenChildren(parentUid) { children = it.filter { child -> !child.isSelf } }
         onDispose { reg.remove() }
     }
 
@@ -82,12 +85,31 @@ fun DashboardScreen(
             ) { Text("+") }
         }
     ) { padding ->
-        if (children.isEmpty()) {
-            Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
-                Text("Add your first child to get started.")
+        LazyColumn(modifier = Modifier.fillMaxSize().padding(padding)) {
+            item {
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp)
+                        .clickable(onClick = onOpenSelfTracking)
+                ) {
+                    Column(Modifier.padding(16.dp)) {
+                        Text("My screen time", style = MaterialTheme.typography.titleMedium)
+                        Spacer(Modifier.height(4.dp))
+                        Text(
+                            "Track and limit your own screen time on this device too.",
+                            style = MaterialTheme.typography.bodySmall
+                        )
+                    }
+                }
             }
-        } else {
-            LazyColumn(modifier = Modifier.fillMaxSize().padding(padding)) {
+            if (children.isEmpty()) {
+                item {
+                    Box(Modifier.fillMaxWidth().padding(32.dp), contentAlignment = Alignment.Center) {
+                        Text("Add your first child to get started.")
+                    }
+                }
+            } else {
                 items(children, key = { it.id }) { child ->
                     ChildSummaryCard(
                         repository = repository,

@@ -20,7 +20,16 @@ data class ChildProfile(
      * ("parent mode") without needing read access to the parent's own account document.
      */
     val parentPasscodeHash: String? = null,
-    val parentPasscodeSalt: String? = null
+    val parentPasscodeSalt: String? = null,
+    /**
+     * True for the one special child doc, per parent, that represents the parent's
+     * OWN device rather than a paired kid's - see #8. Created and claimed directly
+     * by the parent app (deviceUid = the parent's own uid) with no pairing code,
+     * since the parent app is already signed in as parentUid.
+     */
+    val isSelf: Boolean = false,
+    /** Informational only - never enforced/blocked. See #10. */
+    val dailyUnlockGoal: Int? = null
 ) {
     fun toMap(): Map<String, Any?> = mapOf(
         "name" to name,
@@ -31,7 +40,9 @@ data class ChildProfile(
         "appLimits" to appLimits,
         "locked" to locked,
         "parentPasscodeHash" to parentPasscodeHash,
-        "parentPasscodeSalt" to parentPasscodeSalt
+        "parentPasscodeSalt" to parentPasscodeSalt,
+        "isSelf" to isSelf,
+        "dailyUnlockGoal" to dailyUnlockGoal
     )
 
     companion object {
@@ -46,7 +57,9 @@ data class ChildProfile(
             appLimits = (map["appLimits"] as? Map<String, Long>)?.mapValues { it.value.toInt() } ?: emptyMap(),
             locked = map["locked"] as? Boolean ?: false,
             parentPasscodeHash = map["parentPasscodeHash"] as? String,
-            parentPasscodeSalt = map["parentPasscodeSalt"] as? String
+            parentPasscodeSalt = map["parentPasscodeSalt"] as? String,
+            isSelf = map["isSelf"] as? Boolean ?: false,
+            dailyUnlockGoal = (map["dailyUnlockGoal"] as? Long)?.toInt()
         )
     }
 }

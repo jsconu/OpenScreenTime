@@ -128,6 +128,40 @@ class FamilyRepository(
             .update("appLimits", appLimits).await()
     }
 
+    suspend fun updateDailyUnlockGoal(parentUid: String, childId: String, goal: Int?) {
+        db.document(FirestorePaths.childDoc(parentUid, childId))
+            .update("dailyUnlockGoal", goal).await()
+    }
+
+    /**
+     * Returns the parent's own tracked profile (see [ChildProfile.isSelf]), creating it on
+     * first use. Unlike [createChild], this is claimed immediately - the parent app is
+     * already signed in as parentUid, which already has full read/write on its own
+     * children collection, so there's no pairing-code handshake to do.
+     */
+    suspend fun getOrCreateSelfProfile(parentUid: String, name: String): ChildProfile {
+        val existing = db.collection(FirestorePaths.childrenCollection(parentUid))
+            .whereEqualTo("isSelf", true)
+            .limit(1)
+            .get()
+            .await()
+        existing.documents.firstOrNull()?.let { return ChildProfile.fromMap(it.id, it.data ?: emptyMap()) }
+
+        val docRef = db.collection(FirestorePaths.childrenCollection(parentUid)).document()
+        val existingPasscode = getParentPasscode(parentUid)
+        val self = ChildProfile(
+            id = docRef.id,
+            name = name,
+            paired = true,
+            deviceUid = parentUid,
+            isSelf = true,
+            parentPasscodeHash = existingPasscode?.hash,
+            parentPasscodeSalt = existingPasscode?.salt
+        )
+        docRef.set(self.toMap()).await()
+        return self
+    }
+
     /** Deletes a child and its usage history. Firestore doesn't cascade-delete
      * subcollections, so dailyStats docs are removed explicitly first. */
     suspend fun deleteChild(parentUid: String, childId: String) {
