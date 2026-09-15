@@ -8,11 +8,16 @@ import android.provider.Settings
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.testTagsAsResourceId
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
@@ -38,6 +43,9 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             OpenScreenTimeTheme {
+              // Lets UiAutomator (used by the :e2e module) match Modifier.testTag(...) as a
+              // resource-id, since it can't drive Compose's own semantics tree directly.
+              Box(modifier = Modifier.fillMaxSize().semantics { testTagsAsResourceId = true }) {
                 var paired by remember { mutableStateOf(pairingStore.isPaired) }
                 var permissions by remember { mutableStateOf(checkPermissions(this)) }
                 var screen by remember { mutableStateOf(KidScreen.STATUS) }
@@ -123,6 +131,7 @@ class MainActivity : ComponentActivity() {
                         }
                     }
                 }
+              }
             }
         }
     }

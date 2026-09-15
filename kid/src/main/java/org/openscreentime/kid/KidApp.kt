@@ -8,6 +8,8 @@ import android.os.Build
 import androidx.work.ExistingPeriodicWorkPolicy
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
 import org.openscreentime.kid.data.PairingStore
 import org.openscreentime.kid.monitor.AppLimitAccessibilityService
 import org.openscreentime.kid.monitor.SyncWorker
@@ -20,6 +22,11 @@ class KidApp : Application() {
 
     override fun onCreate() {
         super.onCreate()
+        if (BuildConfig.USE_FIREBASE_EMULATOR) {
+            // Must happen before FamilyRepository's lazy init ever touches Firebase.
+            FirebaseFirestore.getInstance().useEmulator("10.0.2.2", 8080)
+            FirebaseAuth.getInstance().useEmulator("10.0.2.2", 9099)
+        }
         createNotificationChannels()
         scheduleSync()
         startLimitsListener()

@@ -19,6 +19,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
@@ -40,14 +41,21 @@ fun AuthScreen(repository: FamilyRepository, onSignedIn: () -> Unit) {
     ) {
         Text("OpenScreenTime", style = MaterialTheme.typography.headlineMedium)
         Spacer(Modifier.height(24.dp))
-        OutlinedTextField(value = email, onValueChange = { email = it }, label = { Text("Email") }, singleLine = true)
+        OutlinedTextField(
+            value = email,
+            onValueChange = { email = it },
+            label = { Text("Email") },
+            singleLine = true,
+            modifier = Modifier.testTag("auth_email")
+        )
         Spacer(Modifier.height(8.dp))
         OutlinedTextField(
             value = password,
             onValueChange = { password = it },
             label = { Text("Password") },
             singleLine = true,
-            visualTransformation = PasswordVisualTransformation()
+            visualTransformation = PasswordVisualTransformation(),
+            modifier = Modifier.testTag("auth_password")
         )
         error?.let {
             Spacer(Modifier.height(8.dp))
@@ -56,6 +64,7 @@ fun AuthScreen(repository: FamilyRepository, onSignedIn: () -> Unit) {
         Spacer(Modifier.height(16.dp))
         Button(
             enabled = email.isNotBlank() && password.length >= 6 && !loading,
+            modifier = Modifier.testTag("auth_submit"),
             onClick = {
                 loading = true
                 error = null

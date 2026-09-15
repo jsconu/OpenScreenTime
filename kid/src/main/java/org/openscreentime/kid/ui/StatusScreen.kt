@@ -15,6 +15,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import org.openscreentime.kid.util.PermissionState
 
@@ -29,7 +30,11 @@ fun StatusScreen(
     onUnpair: () -> Unit
 ) {
     Column(modifier = Modifier.fillMaxSize().padding(24.dp)) {
-        Text("Hi, $childName", style = MaterialTheme.typography.headlineSmall)
+        Text(
+            "Hi, $childName",
+            style = MaterialTheme.typography.headlineSmall,
+            modifier = Modifier.testTag("status_greeting")
+        )
         Spacer(Modifier.height(4.dp))
         Text(
             if (permissions.allGranted) "Screen time monitoring is active." else "A few permissions are needed to finish setup.",
@@ -57,7 +62,10 @@ fun StatusScreen(
         )
 
         Spacer(Modifier.weight(1f, fill = true))
-        Button(onClick = onOpenParentMode, modifier = Modifier.fillMaxWidth()) {
+        Button(
+            onClick = onOpenParentMode,
+            modifier = Modifier.fillMaxWidth().testTag("status_parent_controls")
+        ) {
             Text("Parent controls")
         }
         Spacer(Modifier.height(8.dp))

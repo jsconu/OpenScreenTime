@@ -6,6 +6,9 @@ on:
     branches: [main]
     paths:
       - 'shared/**'
+      - 'kid/**'
+      - 'parent/**'
+      - 'e2e/**'
       - 'firebase/**'
       - 'firebase.json'
       - '.github/workflows/e2e.yml'
@@ -13,7 +16,7 @@ on:
 jobs:
   e2e:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
 
@@ -67,21 +70,60 @@ jobs:
         with:
           gradle-version: "8.9"
 
-      - name: Run pairing test on a real Android emulator
+      # Same stub as android-ci.yml - the google-services plugin needs *a* file to
+      # process at build time, even though these builds point at the emulator.
+      - name: Write stub google-services.json
+        run: |
+          for app in kid parent; do
+            cat > "$app/google-services.json" <<'EOF'
+          {
+            "project_info": {
+              "project_number": "000000000000",
+              "project_id": "openscreentime-e2e",
+              "storage_bucket": "openscreentime-e2e.appspot.com"
+            },
+            "client": [
+              {
+                "client_info": {
+                  "mobilesdk_app_id": "1:000000000000:android:0000000000000000",
+                  "android_client_info": { "package_name": "org.openscreentime.APP" }
+                },
+                "oauth_client": [],
+                "api_key": [{ "current_key": "stub" }],
+                "services": { "appinvite_service": { "other_platform_oauth_client": [] } }
+              }
+            ],
+            "configuration_version": "1"
+          }
+          EOF
+            sed -i "s/org.openscreentime.APP/org.openscreentime.$app/" "$app/google-services.json"
+          done
+
+      # -PuseFirebaseEmulator=true is the opt-in flag read in each app's build.gradle.kts
+      # (see BuildConfig.USE_FIREBASE_EMULATOR) - only this workflow ever sets it.
+      - name: Build kid + parent debug APKs (pointed at the Firebase emulator)
+        run: gradle :kid:assembleDebug :parent:assembleDebug -PuseFirebaseEmulator=true --stacktrace
+
+      - name: Run pairing tests on a real Android emulator
         uses: reactivecircus/android-emulator-runner@v2
         with:
           api-level: 30
           target: google_apis
           arch: x86_64
           disable-animations: true
-          script: gradle :shared:connectedDebugAndroidTest --stacktrace
+          script: |
+            adb install -r kid/build/outputs/apk/debug/kid-debug.apk
+            adb install -r parent/build/outputs/apk/debug/parent-debug.apk
+            gradle :shared:connectedDebugAndroidTest :e2e:connectedDebugAndroidTest --stacktrace
 
-      - name: Upload connected test report
+      - name: Upload connected test reports
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: shared-connected-test-report
-          path: shared/build/reports/androidTests/connected
+          name: connected-test-reports
+          path: |
+            shared/build/reports/androidTests/connected
+            e2e/build/reports/androidTests/connected
           if-no-files-found: ignore
 
       - name: Show Firebase emulator log on failure

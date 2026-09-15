@@ -15,6 +15,14 @@ android {
         targetSdk = 35
         versionCode = 1
         versionName = "0.1.0"
+        // Opt-in flag for the E2E workflow only (-PuseFirebaseEmulator=true) - points
+        // Firebase at the local emulator suite instead of real Google servers. Off by
+        // default, so a normal debug/release build is unaffected.
+        buildConfigField(
+            "boolean",
+            "USE_FIREBASE_EMULATOR",
+            (project.findProperty("useFirebaseEmulator") == "true").toString()
+        )
     }
 
     buildTypes {
@@ -33,6 +41,7 @@ android {
     }
     buildFeatures {
         compose = true
+        buildConfig = true
     }
 }
 

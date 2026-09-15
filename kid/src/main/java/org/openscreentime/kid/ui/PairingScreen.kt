@@ -19,6 +19,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
@@ -50,7 +51,8 @@ fun PairingScreen(onPaired: (name: String) -> Unit) {
             value = code,
             onValueChange = { if (it.length <= 6) code = it.filter(Char::isDigit) },
             label = { Text("Pairing code") },
-            singleLine = true
+            singleLine = true,
+            modifier = Modifier.testTag("pairing_code_input")
         )
         error?.let {
             Spacer(Modifier.height(8.dp))
@@ -59,6 +61,7 @@ fun PairingScreen(onPaired: (name: String) -> Unit) {
         Spacer(Modifier.height(24.dp))
         Button(
             enabled = code.length == 6 && !loading,
+            modifier = Modifier.testTag("pairing_submit"),
             onClick = {
                 loading = true
                 error = null

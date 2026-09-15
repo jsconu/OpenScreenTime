@@ -32,6 +32,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
 import org.openscreentime.shared.model.ChildProfile
@@ -68,7 +69,10 @@ fun DashboardScreen(
             )
         },
         floatingActionButton = {
-            FloatingActionButton(onClick = { showAddDialog = true }) { Text("+") }
+            FloatingActionButton(
+                onClick = { showAddDialog = true },
+                modifier = Modifier.testTag("dashboard_add_child")
+            ) { Text("+") }
         }
     ) { padding ->
         if (children.isEmpty()) {
@@ -106,8 +110,23 @@ fun DashboardScreen(
         AlertDialog(
             onDismissRequest = { newChildCode = null },
             title = { Text("Pairing code") },
-            text = { Text("Enter this code in OpenScreenTime Kid on your child's phone:\n\n$code") },
-            confirmButton = { TextButton(onClick = { newChildCode = null }) { Text("Done") } }
+            text = {
+                Column {
+                    Text("Enter this code in OpenScreenTime Kid on your child's phone:")
+                    Spacer(Modifier.height(8.dp))
+                    Text(
+                        code,
+                        style = MaterialTheme.typography.headlineMedium,
+                        modifier = Modifier.testTag("pairing_code_value")
+                    )
+                }
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = { newChildCode = null },
+                    modifier = Modifier.testTag("pairing_code_done")
+                ) { Text("Done") }
+            }
         )
     }
 }
@@ -153,7 +172,9 @@ private fun ChildSummaryCard(
                             ButtonDefaults.outlinedButtonColors()
                         } else {
                             ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error)
-                        }
+                        },
+                        // Only rendered once child.paired is true - a reliable "is paired" marker for tests.
+                        modifier = Modifier.testTag("dashboard_child_lock_toggle")
                     ) {
                         Text(if (child.locked) "Resume" else "Lock now")
                     }
@@ -212,10 +233,20 @@ private fun AddChildDialog(onDismiss: () -> Unit, onCreate: (String) -> Unit) {
         onDismissRequest = onDismiss,
         title = { Text("Add a child") },
         text = {
-            OutlinedTextField(value = name, onValueChange = { name = it }, label = { Text("Child's name") }, singleLine = true)
+            OutlinedTextField(
+                value = name,
+                onValueChange = { name = it },
+                label = { Text("Child's name") },
+                singleLine = true,
+                modifier = Modifier.testTag("add_child_name")
+            )
         },
         confirmButton = {
-            TextButton(enabled = name.isNotBlank(), onClick = { onCreate(name) }) { Text("Create") }
+            TextButton(
+                enabled = name.isNotBlank(),
+                onClick = { onCreate(name) },
+                modifier = Modifier.testTag("add_child_create")
+            ) { Text("Create") }
         },
         dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } }
     )
