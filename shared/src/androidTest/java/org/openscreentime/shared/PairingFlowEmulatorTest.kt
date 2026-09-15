@@ -6,7 +6,10 @@ import com.google.firebase.FirebaseApp
 import com.google.firebase.FirebaseOptions
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.tasks.await
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
@@ -14,6 +17,7 @@ import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.openscreentime.shared.repo.FamilyRepository
+import org.openscreentime.shared.repo.FirestorePaths
 
 /**
  * Exercises the real pairing flow (FamilyRepository.createChild -> claimPairingCode)
@@ -122,6 +126,126 @@ class PairingFlowEmulatorTest {
             threw = true
         }
         assertTrue("A device must not be able to write another family's child doc", threw)
+    }
+
+    // --- Adversarial checks for #2 ---
+
+    @Test(timeout = TEST_TIMEOUT_MS)
+    fun concurrentClaimsOnlyOneWins() = runBlocking {
+        val parentRepo = FamilyRepository()
+        val parentUid = parentRepo.signUpParent(uniqueEmail(), "testpass123")
+        val child = parentRepo.createChild(parentUid, "RaceChild")
+        parentRepo.signOut()
+
+        // Two genuinely independent Firebase identities (separate FirebaseApp instances,
+        // not just separate FamilyRepository objects sharing one auth session), so this
+        // is a real "two different devices" race, not a same-uid retry.
+        val secondaryApp = secondaryFirebaseApp()
+        val deviceA = FamilyRepository()
+        val deviceB = FamilyRepository(
+            auth = FirebaseAuth.getInstance(secondaryApp),
+            db = FirebaseFirestore.getInstance(secondaryApp)
+        )
+
+        val resultA = async { runCatching { deviceA.claimPairingCode(child.pairingCode) } }
+        val resultB = async { runCatching { deviceB.claimPairingCode(child.pairingCode) } }
+        val successes = awaitAll(resultA, resultB).count { it.isSuccess }
+
+        assertEquals("Exactly one of two simultaneous claims on the same code should win", 1, successes)
+    }
+
+    @Test(timeout = TEST_TIMEOUT_MS)
+    fun claimedDeviceCannotSmugglePasscodeFieldIntoAnAllowedUpdate() = runBlocking {
+        val parentRepo = FamilyRepository()
+        val parentUid = parentRepo.signUpParent(uniqueEmail(), "testpass123")
+        val child = parentRepo.createChild(parentUid, "SmuggleChild")
+        parentRepo.signOut()
+
+        val kidRepo = FamilyRepository()
+        kidRepo.claimPairingCode(child.pairingCode)
+
+        // appLimits alone is allowed for a claimed device; parentPasscodeHash never is.
+        // Bundling them in one write must reject the whole write, not just ignore the bad field.
+        var threw = false
+        try {
+            FirebaseFirestore.getInstance()
+                .document(FirestorePaths.childDoc(parentUid, child.id))
+                .update(mapOf("appLimits" to mapOf("com.example" to 30), "parentPasscodeHash" to "hacked"))
+                .await()
+        } catch (e: Exception) {
+            threw = true
+        }
+        assertTrue("A write mixing an allowed field with a forbidden one must be rejected entirely", threw)
+    }
+
+    @Test(timeout = TEST_TIMEOUT_MS)
+    fun unrelatedAnonymousDeviceCannotReadParentAccountDoc() = runBlocking {
+        val parentRepo = FamilyRepository()
+        val parentUid = parentRepo.signUpParent(uniqueEmail(), "testpass123")
+        parentRepo.setParentPasscode(parentUid, "some-hash", "some-salt")
+        parentRepo.signOut()
+
+        // A stranger who has never seen a pairing code - just anonymous auth, same as
+        // any kid app install would get before pairing.
+        val strangerRepo = FamilyRepository()
+        strangerRepo.signInAnonymously()
+
+        var threw = false
+        try {
+            FirebaseFirestore.getInstance()
+                .document("${FirestorePaths.PARENTS}/$parentUid")
+                .get()
+                .await()
+        } catch (e: Exception) {
+            threw = true
+        }
+        assertTrue(
+            "An unrelated anonymous session must not be able to read a parent's account doc " +
+                "(it holds the family passcode hash)",
+            threw
+        )
+    }
+
+    @Test(timeout = TEST_TIMEOUT_MS)
+    fun claimedDeviceCannotListSiblingChildren() = runBlocking {
+        val parentRepo = FamilyRepository()
+        val parentUid = parentRepo.signUpParent(uniqueEmail(), "testpass123")
+        val child = parentRepo.createChild(parentUid, "ListChildA")
+        parentRepo.createChild(parentUid, "ListChildB")
+        parentRepo.signOut()
+
+        val kidRepo = FamilyRepository()
+        kidRepo.claimPairingCode(child.pairingCode)
+
+        var threw = false
+        try {
+            FirebaseFirestore.getInstance()
+                .collection(FirestorePaths.childrenCollection(parentUid))
+                .get()
+                .await()
+        } catch (e: Exception) {
+            threw = true
+        }
+        assertTrue(
+            "A claimed device must not be able to list its parent's whole children collection " +
+                "(only get its own child doc by id)",
+            threw
+        )
+    }
+
+    private fun secondaryFirebaseApp(): FirebaseApp {
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
+        FirebaseApp.getApps(context).find { it.name == "secondary" }?.let { return it }
+
+        val options = FirebaseOptions.Builder()
+            .setProjectId(TEST_PROJECT_ID)
+            .setApplicationId("1:000000000000:android:0000000000000001")
+            .setApiKey("test-api-key")
+            .build()
+        val app = FirebaseApp.initializeApp(context, options, "secondary")
+        FirebaseFirestore.getInstance(app).useEmulator("10.0.2.2", 8080)
+        FirebaseAuth.getInstance(app).useEmulator("10.0.2.2", 9099)
+        return app
     }
 
     private fun uniqueEmail() = "e2e-${System.currentTimeMillis()}-${(0..9999).random()}@example.com"

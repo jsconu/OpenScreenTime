@@ -1,6 +1,8 @@
 package org.openscreentime.shared.repo
 
+import com.google.firebase.Timestamp
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.ListenerRegistration
 import com.google.firebase.firestore.SetOptions
@@ -54,7 +56,14 @@ class FamilyRepository(
         )
         docRef.set(child.toMap()).await()
         db.collection(FirestorePaths.PAIRING_CODES).document(code).set(
-            mapOf("parentUid" to parentUid, "childId" to docRef.id, "used" to false)
+            mapOf(
+                "parentUid" to parentUid,
+                "childId" to docRef.id,
+                "used" to false,
+                // Must be the server's clock, not a client-supplied value - the
+                // security rules require an exact match on this, see firestore.rules.
+                "createdAt" to FieldValue.serverTimestamp()
+            )
         ).await()
         return child
     }
@@ -135,6 +144,11 @@ class FamilyRepository(
             require(codeSnap.exists()) { "That code doesn't match any account." }
             val used = codeSnap.getBoolean("used") ?: false
             require(!used) { "That code has already been used." }
+            val createdAt = codeSnap.getTimestamp("createdAt")
+            val ageMs = createdAt?.let { Timestamp.now().seconds - it.seconds } ?: 0
+            // Mirrors the security rule's own TTL check (see firestore.rules) so a
+            // stale code fails with a clear message instead of a raw permission error.
+            require(ageMs < PAIRING_CODE_TTL_SECONDS) { "That code has expired. Ask the parent for a new one." }
             val parentUid = codeSnap.getString("parentUid")!!
             val childId = codeSnap.getString("childId")!!
 
@@ -161,4 +175,9 @@ class FamilyRepository(
     }
 
     private fun generatePairingCode(): String = (100000 + Random.nextInt(900000)).toString()
+
+    companion object {
+        /** Must match the `duration.value(30, 'm')` window enforced in firestore.rules. */
+        const val PAIRING_CODE_TTL_SECONDS = 30 * 60
+    }
 }

@@ -28,10 +28,16 @@ service cloud.firestore {
     match /pairingCodes/{code} {
       allow get: if request.auth != null;
       allow list: if false;
+      // createdAt must be the server's own clock (via FieldValue.serverTimestamp()),
+      // not a client-supplied value, so a claimant can't extend its own window.
       allow create: if request.auth != null
-        && request.auth.uid == request.resource.data.parentUid;
+        && request.auth.uid == request.resource.data.parentUid
+        && request.resource.data.createdAt == request.time;
+      // A code can only be claimed within PAIRING_CODE_TTL of creation. This bounds
+      // how long a guessed/brute-forced code is actually exploitable - see #2.
       allow update: if request.auth != null
         && resource.data.used == false
+        && request.time < resource.data.createdAt + duration.value(30, 'm')
         && request.resource.data.used == true
         && request.resource.data.parentUid == resource.data.parentUid
         && request.resource.data.childId == resource.data.childId
