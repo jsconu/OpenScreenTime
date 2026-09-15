@@ -1,17 +1,22 @@
 package org.openscreentime.shared.util
 
-import java.security.MessageDigest
 import java.security.SecureRandom
+import javax.crypto.SecretKeyFactory
+import javax.crypto.spec.PBEKeySpec
 
 /**
- * Salted SHA-256 hashing for the family passcode. This is meant to keep a
- * casual look at Firestore from revealing the passcode, and to stop a kid
- * from guessing it by brute force through the UI (see the rate limiting in
- * the passcode-entry screens) - it is not meant to resist a determined
- * offline attack, which is out of scope for a 4-6 digit family PIN.
+ * PBKDF2-HMAC-SHA256 hashing for the family passcode, deliberately slow so that
+ * a leaked hash+salt (e.g. read off a paired kid device, which legitimately has
+ * access to it for local "parent mode" verification) can't be brute-forced
+ * offline in a fraction of a second the way a single round of SHA-256 could be
+ * for a 4-6 digit PIN. Callers should run [hash]/[verify] off the main thread -
+ * that cost is the point, but it means it shouldn't run on the UI thread.
  */
 object PasscodeHasher {
     private const val SALT_BYTES = 16
+    private const val ITERATIONS = 120_000
+    private const val KEY_LENGTH_BITS = 256
+    private const val ALGORITHM = "PBKDF2WithHmacSHA256"
 
     fun randomSalt(): String {
         val bytes = ByteArray(SALT_BYTES)
@@ -20,9 +25,9 @@ object PasscodeHasher {
     }
 
     fun hash(passcode: String, salt: String): String {
-        val digest = MessageDigest.getInstance("SHA-256")
-        val bytes = digest.digest((salt + passcode).toByteArray(Charsets.UTF_8))
-        return bytes.toHex()
+        val spec = PBEKeySpec(passcode.toCharArray(), salt.toByteArray(Charsets.UTF_8), ITERATIONS, KEY_LENGTH_BITS)
+        val secret = SecretKeyFactory.getInstance(ALGORITHM).generateSecret(spec)
+        return secret.encoded.toHex()
     }
 
     fun verify(passcode: String, salt: String, expectedHash: String): Boolean =

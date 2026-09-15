@@ -128,7 +128,17 @@ class FamilyRepository(
             .update("appLimits", appLimits).await()
     }
 
+    /** Deletes a child and its usage history. Firestore doesn't cascade-delete
+     * subcollections, so dailyStats docs are removed explicitly first. */
     suspend fun deleteChild(parentUid: String, childId: String) {
+        val statsSnap = db.collection(FirestorePaths.dailyStatsCollection(parentUid, childId)).get().await()
+        if (!statsSnap.isEmpty) {
+            val batch = db.batch()
+            for (doc in statsSnap.documents) {
+                batch.delete(doc.reference)
+            }
+            batch.commit().await()
+        }
         db.document(FirestorePaths.childDoc(parentUid, childId)).delete().await()
     }
 

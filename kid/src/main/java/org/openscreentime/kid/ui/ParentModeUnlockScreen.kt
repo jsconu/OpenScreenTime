@@ -15,12 +15,16 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import org.openscreentime.shared.model.ChildProfile
 import org.openscreentime.shared.util.PasscodeHasher
 
@@ -37,9 +41,11 @@ fun ParentModeUnlockScreen(
     onUnlocked: () -> Unit,
     onCancel: () -> Unit
 ) {
+    val scope = rememberCoroutineScope()
     var passcode by remember { mutableStateOf("") }
     var error by remember { mutableStateOf<String?>(null) }
     var attempts by remember { mutableStateOf(0) }
+    var verifying by remember { mutableStateOf(false) }
 
     val hash = child?.parentPasscodeHash
     val salt = child?.parentPasscodeSalt
@@ -79,22 +85,28 @@ fun ParentModeUnlockScreen(
             }
             Spacer(Modifier.height(16.dp))
             Button(
-                enabled = passcode.isNotBlank() && !locked,
+                enabled = passcode.isNotBlank() && !locked && !verifying,
                 onClick = {
-                    if (PasscodeHasher.verify(passcode, salt, hash)) {
-                        onUnlocked()
-                    } else {
-                        attempts++
-                        passcode = ""
-                        error = if (attempts >= MAX_ATTEMPTS) {
-                            "Too many incorrect attempts. Come back later."
+                    verifying = true
+                    scope.launch {
+                        // PBKDF2 is deliberately slow - keep it off the UI thread.
+                        val ok = withContext(Dispatchers.Default) { PasscodeHasher.verify(passcode, salt, hash) }
+                        verifying = false
+                        if (ok) {
+                            onUnlocked()
                         } else {
-                            "Incorrect passcode."
+                            attempts++
+                            passcode = ""
+                            error = if (attempts >= MAX_ATTEMPTS) {
+                                "Too many incorrect attempts. Come back later."
+                            } else {
+                                "Incorrect passcode."
+                            }
                         }
                     }
                 }
             ) {
-                Text("Unlock")
+                Text(if (verifying) "Checking..." else "Unlock")
             }
         }
 

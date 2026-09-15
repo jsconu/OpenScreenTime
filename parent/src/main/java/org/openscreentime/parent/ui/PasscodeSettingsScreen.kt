@@ -22,7 +22,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import org.openscreentime.shared.util.PasscodeHasher
 import org.openscreentime.shared.repo.FamilyRepository
 
@@ -99,8 +101,11 @@ fun PasscodeSettingsScreen(repository: FamilyRepository, onBack: () -> Unit) {
                     error = null
                     saving = true
                     scope.launch {
-                        val salt = PasscodeHasher.randomSalt()
-                        val hash = PasscodeHasher.hash(current, salt)
+                        // PBKDF2 is deliberately slow - keep it off the UI thread.
+                        val (hash, salt) = withContext(Dispatchers.Default) {
+                            val salt = PasscodeHasher.randomSalt()
+                            PasscodeHasher.hash(current, salt) to salt
+                        }
                         repository.setParentPasscode(parentUid, hash, salt)
                         hasPasscode = true
                         saved = true

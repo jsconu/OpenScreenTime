@@ -72,6 +72,25 @@ class PairingFlowEmulatorTest {
     }
 
     @Test(timeout = TEST_TIMEOUT_MS)
+    fun deletingAChildRemovesItsProfileAndDailyStats() = runBlocking {
+        val parentRepo = FamilyRepository()
+        val parentUid = parentRepo.signUpParent(uniqueEmail(), "testpass123")
+        val child = parentRepo.createChild(parentUid, "DoomedChild")
+
+        val db = FirebaseFirestore.getInstance()
+        db.document(FirestorePaths.dailyStatsDoc(parentUid, child.id, "2024-01-01"))
+            .set(mapOf("totalScreenTimeMs" to 1000L)).await()
+
+        parentRepo.deleteChild(parentUid, child.id)
+
+        val childSnap = db.document(FirestorePaths.childDoc(parentUid, child.id)).get().await()
+        assertTrue("The child doc should be gone after deletion", !childSnap.exists())
+
+        val statsSnap = db.collection(FirestorePaths.dailyStatsCollection(parentUid, child.id)).get().await()
+        assertTrue("dailyStats should be cleaned up along with the child, not orphaned", statsSnap.isEmpty)
+    }
+
+    @Test(timeout = TEST_TIMEOUT_MS)
     fun pairingCodeCannotBeClaimedTwice() = runBlocking {
         val parentRepo = FamilyRepository()
         val parentUid = parentRepo.signUpParent(uniqueEmail(), "testpass123")

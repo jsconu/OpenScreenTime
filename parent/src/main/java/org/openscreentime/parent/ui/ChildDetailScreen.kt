@@ -51,6 +51,7 @@ fun ChildDetailScreen(
     var showLimitDialog by remember { mutableStateOf(false) }
     var editingApp by remember { mutableStateOf<String?>(null) }
     var showLockConfirm by remember { mutableStateOf(false) }
+    var showDeleteConfirm by remember { mutableStateOf(false) }
 
     DisposableEffect(childId) {
         val reg1 = repository.listenChildren(parentUid) { list ->
@@ -146,6 +147,18 @@ fun ChildDetailScreen(
                     }
                 )
             }
+            item {
+                Column(Modifier.padding(16.dp)) {
+                    Spacer(Modifier.height(16.dp))
+                    OutlinedButton(
+                        onClick = { showDeleteConfirm = true },
+                        colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text("Remove ${currentChild.name}")
+                    }
+                }
+            }
         }
     }
 
@@ -173,6 +186,29 @@ fun ChildDetailScreen(
                 }) { Text("End now") }
             },
             dismissButton = { TextButton(onClick = { showLockConfirm = false }) { Text("Cancel") } }
+        )
+    }
+
+    if (showDeleteConfirm) {
+        AlertDialog(
+            onDismissRequest = { showDeleteConfirm = false },
+            title = { Text("Remove ${currentChild.name}?") },
+            text = {
+                Text(
+                    "This deletes ${currentChild.name}'s profile and all of their screen time history. " +
+                        "The kid app will need to be unpaired and re-paired to track again. This can't be undone."
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    scope.launch {
+                        repository.deleteChild(parentUid, childId)
+                        onBack()
+                    }
+                    showDeleteConfirm = false
+                }) { Text("Remove") }
+            },
+            dismissButton = { TextButton(onClick = { showDeleteConfirm = false }) { Text("Cancel") } }
         )
     }
 
