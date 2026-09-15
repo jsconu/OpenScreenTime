@@ -22,6 +22,7 @@ import androidx.core.content.ContextCompat
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import org.openscreentime.kid.KidApp
+import org.openscreentime.kid.data.AppearancePrefs
 import org.openscreentime.kid.data.PairingStore
 import org.openscreentime.kid.monitor.ScreenMonitorService
 import org.openscreentime.kid.util.checkPermissions
@@ -40,9 +41,13 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         pairingStore = PairingStore(this)
         val repository = (application as KidApp).repository
+        val appearancePrefs = AppearancePrefs(this)
 
         setContent {
-            OpenScreenTimeTheme {
+            var themeMode by remember { mutableStateOf(appearancePrefs.themeMode) }
+            var textSize by remember { mutableStateOf(appearancePrefs.textSize) }
+
+            OpenScreenTimeTheme(themeMode = themeMode, textSize = textSize) {
               // Lets UiAutomator (used by the :e2e module) match Modifier.testTag(...) as a
               // resource-id, since it can't drive Compose's own semantics tree directly.
               Box(modifier = Modifier.fillMaxSize().semantics { testTagsAsResourceId = true }) {
@@ -88,6 +93,8 @@ class MainActivity : ComponentActivity() {
                         KidScreen.STATUS -> StatusScreen(
                             childName = pairingStore.childName ?: "",
                             permissions = permissions,
+                            themeMode = themeMode,
+                            textSize = textSize,
                             onRequestOverlay = {
                                 startActivity(
                                     Intent(
@@ -112,6 +119,8 @@ class MainActivity : ComponentActivity() {
                                     )
                                 )
                             },
+                            onCycleTheme = { themeMode = appearancePrefs.cycleThemeMode() },
+                            onCycleTextSize = { textSize = appearancePrefs.cycleTextSize() },
                             onOpenParentMode = { screen = KidScreen.PARENT_UNLOCK },
                             onUnpair = {
                                 pairingStore.clear()

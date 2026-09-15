@@ -6,32 +6,46 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import org.openscreentime.kid.data.TextSize
+import org.openscreentime.kid.data.ThemeMode
+import org.openscreentime.kid.data.label
 import org.openscreentime.kid.util.PermissionState
 
 @Composable
 fun StatusScreen(
     childName: String,
     permissions: PermissionState,
+    themeMode: ThemeMode,
+    textSize: TextSize,
     onRequestOverlay: () -> Unit,
     onRequestAccessibility: () -> Unit,
     onRequestNotifications: () -> Unit,
     onRequestBatteryExemption: () -> Unit,
+    onCycleTheme: () -> Unit,
+    onCycleTextSize: () -> Unit,
     onOpenParentMode: () -> Unit,
     onUnpair: () -> Unit
 ) {
-    Column(modifier = Modifier.fillMaxSize().padding(24.dp)) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState())
+            .padding(24.dp)
+    ) {
         Text(
             "Hi, $childName",
             style = MaterialTheme.typography.headlineSmall,
@@ -78,7 +92,20 @@ fun StatusScreen(
             textAlign = TextAlign.Start
         )
 
-        Spacer(Modifier.weight(1f, fill = true))
+        Spacer(Modifier.height(24.dp))
+        Text("Display", style = MaterialTheme.typography.labelLarge)
+        ListItem(
+            headlineContent = { Text("Theme") },
+            supportingContent = { Text(themeMode.label()) },
+            trailingContent = { TextButton(onClick = onCycleTheme) { Text("Change") } }
+        )
+        ListItem(
+            headlineContent = { Text("Text size") },
+            supportingContent = { Text(textSize.label()) },
+            trailingContent = { TextButton(onClick = onCycleTextSize) { Text("Change") } }
+        )
+
+        Spacer(Modifier.height(24.dp))
         Button(
             onClick = onOpenParentMode,
             modifier = Modifier.fillMaxWidth().testTag("status_parent_controls")

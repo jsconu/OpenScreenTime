@@ -33,6 +33,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.testTagsAsResourceId
 import androidx.compose.ui.unit.dp
@@ -47,6 +48,7 @@ fun DashboardScreen(
     repository: FamilyRepository,
     onOpenChild: (String) -> Unit,
     onOpenSettings: () -> Unit,
+    onOpenAppearance: () -> Unit,
     onSignOut: () -> Unit
 ) {
     val parentUid = repository.currentUid ?: return
@@ -65,6 +67,7 @@ fun DashboardScreen(
             TopAppBar(
                 title = { Text("Your children") },
                 actions = {
+                    TextButton(onClick = onOpenAppearance) { Text("Style") }
                     TextButton(onClick = onOpenSettings) { Text("Passcode") }
                     TextButton(onClick = onSignOut) { Text("Sign out") }
                 }
@@ -73,7 +76,9 @@ fun DashboardScreen(
         floatingActionButton = {
             FloatingActionButton(
                 onClick = { showAddDialog = true },
-                modifier = Modifier.testTag("dashboard_add_child")
+                modifier = Modifier
+                    .testTag("dashboard_add_child")
+                    .semantics { contentDescription = "Add a child" }
             ) { Text("+") }
         }
     ) { padding ->

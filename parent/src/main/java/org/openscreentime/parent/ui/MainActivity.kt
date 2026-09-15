@@ -20,15 +20,20 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import org.openscreentime.parent.AppLockState
 import org.openscreentime.parent.ParentApp
+import org.openscreentime.parent.data.AppearancePrefs
 import org.openscreentime.shared.model.PasscodeInfo
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         val repository = (application as ParentApp).repository
+        val appearancePrefs = AppearancePrefs(this)
 
         setContent {
-            OpenScreenTimeTheme {
+            var themeMode by remember { mutableStateOf(appearancePrefs.themeMode) }
+            var textSize by remember { mutableStateOf(appearancePrefs.textSize) }
+
+            OpenScreenTimeTheme(themeMode = themeMode, textSize = textSize) {
               // Lets UiAutomator (used by the :e2e module) match Modifier.testTag(...) as a
               // resource-id, since it can't drive Compose's own semantics tree directly.
               Box(modifier = Modifier.fillMaxSize().semantics { testTagsAsResourceId = true }) {
@@ -67,6 +72,7 @@ class MainActivity : ComponentActivity() {
                                     repository = repository,
                                     onOpenChild = { childId -> navController.navigate("child/$childId") },
                                     onOpenSettings = { navController.navigate("settings") },
+                                    onOpenAppearance = { navController.navigate("appearance") },
                                     onSignOut = {
                                         repository.signOut()
                                         AppLockState.unlockedThisSession = false
@@ -88,6 +94,14 @@ class MainActivity : ComponentActivity() {
                             composable("settings") {
                                 PasscodeSettingsScreen(
                                     repository = repository,
+                                    onBack = { navController.popBackStack() }
+                                )
+                            }
+                            composable("appearance") {
+                                AppearanceSettingsScreen(
+                                    prefs = appearancePrefs,
+                                    onThemeModeChanged = { themeMode = it },
+                                    onTextSizeChanged = { textSize = it },
                                     onBack = { navController.popBackStack() }
                                 )
                             }
