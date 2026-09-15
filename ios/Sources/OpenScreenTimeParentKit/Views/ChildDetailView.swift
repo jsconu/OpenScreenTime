@@ -139,7 +139,10 @@ private struct LockSection: View {
                     showLockConfirm = true
                 }
             }
-            .foregroundStyle(child.locked ? .primary : .red)
+            // Explicit Color (not the bare .primary/.red shorthand) so both ternary
+            // branches resolve to the same concrete ShapeStyle type - .primary alone
+            // infers as HierarchicalShapeStyle, which .red can't also satisfy.
+            .foregroundStyle(child.locked ? Color.primary : Color.red)
         }
     }
 }
