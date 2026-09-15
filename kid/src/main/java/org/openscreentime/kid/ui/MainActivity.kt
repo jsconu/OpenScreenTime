@@ -121,6 +121,9 @@ class MainActivity : ComponentActivity() {
                             },
                             onCycleTheme = { themeMode = appearancePrefs.cycleThemeMode() },
                             onCycleTextSize = { textSize = appearancePrefs.cycleTextSize() },
+                            onOpenColorSettings = {
+                                startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
+                            },
                             onOpenParentMode = { screen = KidScreen.PARENT_UNLOCK },
                             onUnpair = {
                                 pairingStore.clear()

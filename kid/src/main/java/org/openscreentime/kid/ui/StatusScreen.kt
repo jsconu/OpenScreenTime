@@ -37,6 +37,7 @@ fun StatusScreen(
     onRequestBatteryExemption: () -> Unit,
     onCycleTheme: () -> Unit,
     onCycleTextSize: () -> Unit,
+    onOpenColorSettings: () -> Unit,
     onOpenParentMode: () -> Unit,
     onUnpair: () -> Unit
 ) {
@@ -104,6 +105,17 @@ fun StatusScreen(
             supportingContent = { Text(textSize.label()) },
             trailingContent = { TextButton(onClick = onCycleTextSize) { Text("Change") } }
         )
+        Spacer(Modifier.height(8.dp))
+        Text(
+            "Recommended: Android's built-in grayscale mode makes apps noticeably less " +
+                "compelling to check, which research shows measurably cuts phone use. This app " +
+                "can't turn it on directly - open Accessibility settings below, then look for " +
+                "\"Color and motion\" or \"Color correction\" and turn on grayscale. The exact " +
+                "wording and location varies by phone.",
+            style = MaterialTheme.typography.bodySmall
+        )
+        Spacer(Modifier.height(4.dp))
+        OutlinedButton(onClick = onOpenColorSettings) { Text("Open Accessibility settings") }
 
         Spacer(Modifier.height(24.dp))
         Button(

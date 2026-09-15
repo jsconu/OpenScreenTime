@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -36,6 +37,7 @@ fun AppearanceSettingsScreen(
     prefs: AppearancePrefs,
     onThemeModeChanged: (ThemeMode) -> Unit,
     onTextSizeChanged: (TextSize) -> Unit,
+    onOpenColorSettings: () -> Unit,
     onBack: () -> Unit
 ) {
     var themeMode by remember { mutableStateOf(prefs.themeMode) }
@@ -78,6 +80,20 @@ fun AppearanceSettingsScreen(
                     }
                 )
             }
+
+            Spacer(Modifier.height(24.dp))
+            Text("Grayscale", style = MaterialTheme.typography.labelLarge)
+            Spacer(Modifier.height(4.dp))
+            Text(
+                "Recommended: Android's built-in grayscale mode makes apps noticeably less " +
+                    "compelling to check, which research shows measurably cuts phone use. This " +
+                    "app can't turn it on directly - open Accessibility settings below, then " +
+                    "look for \"Color and motion\" or \"Color correction\" and turn on " +
+                    "grayscale. The exact wording and location varies by phone.",
+                style = MaterialTheme.typography.bodySmall
+            )
+            Spacer(Modifier.height(8.dp))
+            OutlinedButton(onClick = onOpenColorSettings) { Text("Open Accessibility settings") }
         }
     }
 }

@@ -132,6 +132,9 @@ class MainActivity : ComponentActivity() {
                                     prefs = appearancePrefs,
                                     onThemeModeChanged = { themeMode = it },
                                     onTextSizeChanged = { textSize = it },
+                                    onOpenColorSettings = {
+                                        startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
+                                    },
                                     onBack = { navController.popBackStack() }
                                 )
                             }
