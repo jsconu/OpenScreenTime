@@ -304,8 +304,12 @@ class PairingFlowEmulatorTest {
         val fetched = kidRepo.getParentSelfProfile(parentUid)
         assertNotNull("A linked device should be able to read the parent's self-tracked profile", fetched)
         assertEquals("Me", fetched?.name)
+        kidRepo.signOut()
 
         // A device that never claimed a pairing code under this parent is not linked.
+        // Must sign the linked kid out first - Firebase Auth's signInAnonymously() reuses
+        // the currently-signed-in anonymous user instead of minting a new one if one is
+        // already active, so without this the "stranger" would actually just be the kid.
         val strangerRepo = FamilyRepository()
         strangerRepo.signInAnonymously()
         assertNull(
