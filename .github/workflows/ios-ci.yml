@@ -34,9 +34,24 @@ jobs:
             -destination 'generic/platform=iOS Simulator' \
             -skipMacroValidation
 
+      - name: Find an available iOS simulator
+        id: sim
+        run: |
+          # Runner images periodically drop older device names as Xcode updates, so
+          # rather than pin one (e.g. "iPhone 15", which broke once already), pick
+          # whatever iPhone simulator is actually installed on this runner right now.
+          UDID=$(xcrun simctl list devices available -j \
+            | jq -r '[.devices[][] | select(.name | test("iPhone"))][0].udid')
+          if [ -z "$UDID" ] || [ "$UDID" = "null" ]; then
+            echo "No iPhone simulator found on this runner:"
+            xcrun simctl list devices available
+            exit 1
+          fi
+          echo "udid=$UDID" >> "$GITHUB_OUTPUT"
+
       - name: Run unit tests
         run: |
           xcodebuild test \
             -scheme OpenScreenTimeParentKit \
-            -destination 'platform=iOS Simulator,name=iPhone 15' \
+            -destination "platform=iOS Simulator,id=${{ steps.sim.outputs.udid }}" \
             -skipMacroValidation
