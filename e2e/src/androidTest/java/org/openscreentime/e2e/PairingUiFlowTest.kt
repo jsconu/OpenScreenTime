@@ -78,7 +78,27 @@ class PairingUiFlowTest {
         device.wait(Until.hasObject(By.pkg(packageName).depth(0)), FIND_TIMEOUT_MS)
     }
 
-    private fun find(packageName: String, tag: String): UiObject2 =
-        device.wait(Until.findObject(By.res(packageName, tag)), FIND_TIMEOUT_MS)
-            ?: error("Timed out waiting for $packageName:$tag")
+    private fun find(packageName: String, tag: String): UiObject2 {
+        val found = device.wait(Until.findObject(By.res(packageName, tag)), FIND_TIMEOUT_MS)
+        if (found == null) {
+            dumpHierarchy("timed_out_waiting_for_${packageName}_$tag")
+            error("Timed out waiting for $packageName:$tag")
+        }
+        return found
+    }
+
+    /** Logs the current on-screen accessibility tree so a failure shows what was
+     * actually rendered, not just that the expected element never appeared. */
+    private fun dumpHierarchy(label: String) {
+        try {
+            val out = java.io.ByteArrayOutputStream()
+            device.dumpWindowHierarchy(out)
+            val xml = out.toString("UTF-8")
+            android.util.Log.i("E2E_HIERARCHY_DUMP", "----- BEGIN $label (${xml.length} chars) -----")
+            xml.chunked(3500).forEach { android.util.Log.i("E2E_HIERARCHY_DUMP", it) }
+            android.util.Log.i("E2E_HIERARCHY_DUMP", "----- END $label -----")
+        } catch (e: Exception) {
+            android.util.Log.w("E2E_HIERARCHY_DUMP", "Failed to dump hierarchy for $label", e)
+        }
+    }
 }

@@ -148,7 +148,13 @@ jobs:
           echo "=== Crashes / exceptions ==="
           grep -iE "FATAL EXCEPTION|AndroidRuntime|Process.*died|ActivityTaskManager.*Crash" /tmp/logcat.txt | tail -100 || echo "(none found)"
           echo ""
-          echo "=== Lines mentioning this app ==="
+          echo "=== Activity launches for our apps ==="
+          grep -iE "cmp=org\.openscreentime|Displayed org\.openscreentime" /tmp/logcat.txt || echo "(none found)"
+          echo ""
+          echo "=== On-screen hierarchy dump at the moment of a find() timeout ==="
+          grep "E2E_HIERARCHY_DUMP" /tmp/logcat.txt | sed -E 's/^.*E2E_HIERARCHY_DUMP\s*:\s*//' || echo "(none found)"
+          echo ""
+          echo "=== Lines mentioning this app (tail) ==="
           grep -i "openscreentime" /tmp/logcat.txt | tail -200 || echo "(none found)"
 
       - name: Show Firebase emulator log on failure
