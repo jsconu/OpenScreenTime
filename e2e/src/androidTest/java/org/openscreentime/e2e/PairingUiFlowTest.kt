@@ -30,6 +30,12 @@ private const val KID_PKG = "org.openscreentime.kid"
  * testTagsAsResourceId, set at each app's Compose root in its MainActivity)
  * rather than matching visible text, since Compose's floating labels make
  * text-based matching ambiguous once a field has been typed into.
+ *
+ * Note: unlike a native Android view's R.id-based resource name, Compose's
+ * testTagsAsResourceId bridge surfaces the bare tag as the resource-id (e.g.
+ * "auth_email"), not package-qualified ("pkg:id/auth_email") - confirmed via
+ * an on-failure UiAutomator hierarchy dump. So matching uses By.res(tag)
+ * (single-arg, exact string) rather than By.res(packageName, tag).
  */
 @RunWith(AndroidJUnit4::class)
 class PairingUiFlowTest {
@@ -79,7 +85,7 @@ class PairingUiFlowTest {
     }
 
     private fun find(packageName: String, tag: String): UiObject2 {
-        val found = device.wait(Until.findObject(By.res(packageName, tag)), FIND_TIMEOUT_MS)
+        val found = device.wait(Until.findObject(By.res(tag)), FIND_TIMEOUT_MS)
         if (found == null) {
             dumpHierarchy("timed_out_waiting_for_${packageName}_$tag")
             error("Timed out waiting for $packageName:$tag")
