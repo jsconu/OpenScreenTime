@@ -161,6 +161,43 @@ class FamilyRepository(
     }
 
     /**
+     * Kid-initiated, passcode-free suggestion (see #14) - writes only the two proposal
+     * fields, never the real limits. Either parameter may be left null to leave that
+     * half of the proposal untouched (e.g. proposing just a new daily limit keeps
+     * whatever app-limit proposal, if any, was already pending).
+     */
+    suspend fun proposeLimits(
+        parentUid: String,
+        childId: String,
+        proposedDailyLimitMinutes: Int? = null,
+        proposedAppLimits: Map<String, Int>? = null
+    ) {
+        val updates = mutableMapOf<String, Any?>()
+        if (proposedDailyLimitMinutes != null) updates["proposedDailyLimitMinutes"] = proposedDailyLimitMinutes
+        if (proposedAppLimits != null) updates["proposedAppLimits"] = proposedAppLimits
+        if (updates.isEmpty()) return
+        db.document(FirestorePaths.childDoc(parentUid, childId)).update(updates).await()
+    }
+
+    /** Copies a pending proposal into the real limits and clears it. See #14. */
+    suspend fun approveProposal(parentUid: String, childId: String, child: ChildProfile) {
+        val updates = mutableMapOf<String, Any?>(
+            "proposedDailyLimitMinutes" to null,
+            "proposedAppLimits" to null
+        )
+        child.proposedDailyLimitMinutes?.let { updates["dailyLimitMinutes"] = it }
+        child.proposedAppLimits?.let { updates["appLimits"] = it }
+        db.document(FirestorePaths.childDoc(parentUid, childId)).update(updates).await()
+    }
+
+    /** Clears a pending proposal without applying it. See #14. */
+    suspend fun declineProposal(parentUid: String, childId: String) {
+        db.document(FirestorePaths.childDoc(parentUid, childId))
+            .update(mapOf("proposedDailyLimitMinutes" to null, "proposedAppLimits" to null))
+            .await()
+    }
+
+    /**
      * Returns the parent's own tracked profile (see [ChildProfile.isSelf]), creating it on
      * first use. Unlike [createChild], this is claimed immediately - the parent app is
      * already signed in as parentUid, which already has full read/write on its own

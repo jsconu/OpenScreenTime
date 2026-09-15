@@ -13,6 +13,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
@@ -87,6 +88,36 @@ fun ChildDetailScreen(
         }
     ) { padding ->
         LazyColumn(modifier = Modifier.fillMaxSize().padding(padding)) {
+            val hasPendingProposal = currentChild.proposedDailyLimitMinutes != null || currentChild.proposedAppLimits != null
+            if (hasPendingProposal) {
+                item {
+                    Card(modifier = Modifier.fillMaxWidth().padding(16.dp)) {
+                        Column(Modifier.padding(16.dp)) {
+                            Text("${currentChild.name} suggested a change", style = MaterialTheme.typography.titleMedium)
+                            Spacer(Modifier.height(8.dp))
+                            currentChild.proposedDailyLimitMinutes?.let {
+                                Text(
+                                    "New daily limit: $it min (currently ${currentChild.dailyLimitMinutes} min)",
+                                    style = MaterialTheme.typography.bodyMedium
+                                )
+                            }
+                            currentChild.proposedAppLimits?.let {
+                                Spacer(Modifier.height(4.dp))
+                                Text("Suggested app limits included", style = MaterialTheme.typography.bodyMedium)
+                            }
+                            Spacer(Modifier.height(12.dp))
+                            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                Button(onClick = {
+                                    scope.launch { repository.approveProposal(parentUid, childId, currentChild) }
+                                }) { Text("Approve") }
+                                OutlinedButton(onClick = {
+                                    scope.launch { repository.declineProposal(parentUid, childId) }
+                                }) { Text("Decline") }
+                            }
+                        }
+                    }
+                }
+            }
             item {
                 Column(Modifier.padding(16.dp)) {
                     Button(

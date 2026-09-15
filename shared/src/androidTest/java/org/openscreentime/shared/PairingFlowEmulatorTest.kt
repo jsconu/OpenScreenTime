@@ -12,10 +12,12 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.tasks.await
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.openscreentime.shared.model.ChildProfile
 import org.openscreentime.shared.repo.FamilyRepository
 import org.openscreentime.shared.repo.FirestorePaths
 
@@ -196,6 +198,88 @@ class PairingFlowEmulatorTest {
             threw = true
         }
         assertTrue("A write mixing an allowed field with a forbidden one must be rejected entirely", threw)
+    }
+
+    // --- Negotiated limits (#14) ---
+
+    @Test(timeout = TEST_TIMEOUT_MS)
+    fun claimedDeviceCanProposeAndParentCanApprove() = runBlocking {
+        val parentRepo = FamilyRepository()
+        val parentEmail = uniqueEmail()
+        val parentUid = parentRepo.signUpParent(parentEmail, "testpass123")
+        val child = parentRepo.createChild(parentUid, "ProposeChild")
+        parentRepo.signOut()
+
+        val kidRepo = FamilyRepository()
+        kidRepo.claimPairingCode(child.pairingCode)
+
+        // No passcode/parent-mode needed for this - it's a suggestion, never applied on its own.
+        kidRepo.proposeLimits(parentUid, child.id, proposedDailyLimitMinutes = 90)
+
+        val afterPropose = FirebaseFirestore.getInstance()
+            .document(FirestorePaths.childDoc(parentUid, child.id)).get().await()
+        val proposedProfile = ChildProfile.fromMap(child.id, afterPropose.data ?: emptyMap())
+        assertEquals(90, proposedProfile.proposedDailyLimitMinutes)
+        assertEquals("A proposal must never touch the real limit on its own", 120, proposedProfile.dailyLimitMinutes)
+
+        // The parent signs back in to review it. Approving copies proposed -> real and clears it.
+        kidRepo.signOut()
+        parentRepo.signInParent(parentEmail, "testpass123")
+        parentRepo.approveProposal(parentUid, child.id, proposedProfile)
+
+        val afterApprove = FirebaseFirestore.getInstance()
+            .document(FirestorePaths.childDoc(parentUid, child.id)).get().await()
+        val approvedProfile = ChildProfile.fromMap(child.id, afterApprove.data ?: emptyMap())
+        assertEquals(90, approvedProfile.dailyLimitMinutes)
+        assertNull("Approving must clear the pending proposal", approvedProfile.proposedDailyLimitMinutes)
+    }
+
+    @Test(timeout = TEST_TIMEOUT_MS)
+    fun parentCanDeclineAProposalWithoutApplyingIt() = runBlocking {
+        val parentRepo = FamilyRepository()
+        val parentEmail = uniqueEmail()
+        val parentUid = parentRepo.signUpParent(parentEmail, "testpass123")
+        val child = parentRepo.createChild(parentUid, "DeclineChild")
+        parentRepo.signOut()
+
+        val kidRepo = FamilyRepository()
+        kidRepo.claimPairingCode(child.pairingCode)
+        kidRepo.proposeLimits(parentUid, child.id, proposedDailyLimitMinutes = 500)
+        kidRepo.signOut()
+
+        parentRepo.signInParent(parentEmail, "testpass123")
+        parentRepo.declineProposal(parentUid, child.id)
+
+        val afterDecline = FirebaseFirestore.getInstance()
+            .document(FirestorePaths.childDoc(parentUid, child.id)).get().await()
+        val declinedProfile = ChildProfile.fromMap(child.id, afterDecline.data ?: emptyMap())
+        assertEquals("Declining must leave the real limit untouched", 120, declinedProfile.dailyLimitMinutes)
+        assertNull(declinedProfile.proposedDailyLimitMinutes)
+    }
+
+    @Test(timeout = TEST_TIMEOUT_MS)
+    fun claimedDeviceCannotSmuggleARealLimitChangeIntoAProposalWrite() = runBlocking {
+        val parentRepo = FamilyRepository()
+        val parentUid = parentRepo.signUpParent(uniqueEmail(), "testpass123")
+        val child = parentRepo.createChild(parentUid, "ProposeSmuggleChild")
+        parentRepo.signOut()
+
+        val kidRepo = FamilyRepository()
+        kidRepo.claimPairingCode(child.pairingCode)
+
+        // proposedDailyLimitMinutes alone is allowed for a claimed device via the
+        // narrowly-scoped proposal rule; dailyLimitMinutes is not part of that rule.
+        // Bundling them must reject the whole write, not just apply the proposal half.
+        var threw = false
+        try {
+            FirebaseFirestore.getInstance()
+                .document(FirestorePaths.childDoc(parentUid, child.id))
+                .update(mapOf("proposedDailyLimitMinutes" to 5, "dailyLimitMinutes" to 5))
+                .await()
+        } catch (e: Exception) {
+            threw = true
+        }
+        assertTrue("A proposal write must not be able to smuggle in a real-limit change", threw)
     }
 
     @Test(timeout = TEST_TIMEOUT_MS)

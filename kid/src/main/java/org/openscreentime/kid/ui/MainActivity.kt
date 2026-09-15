@@ -31,7 +31,7 @@ import org.openscreentime.kid.util.checkPermissions
 import org.openscreentime.shared.model.ChildProfile
 import org.openscreentime.shared.model.computeStreak
 
-private enum class KidScreen { STATUS, PARENT_UNLOCK, PARENT_CONTROLS }
+private enum class KidScreen { STATUS, PARENT_UNLOCK, PARENT_CONTROLS, PROPOSE_CHANGE }
 
 class MainActivity : ComponentActivity() {
 
@@ -140,6 +140,7 @@ class MainActivity : ComponentActivity() {
                                 startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
                             },
                             onOpenParentMode = { screen = KidScreen.PARENT_UNLOCK },
+                            onProposeChange = { screen = KidScreen.PROPOSE_CHANGE },
                             onUnpair = {
                                 pairingStore.clear()
                                 paired = false
@@ -156,6 +157,20 @@ class MainActivity : ComponentActivity() {
                             val childId = pairingStore.childId
                             if (currentChild != null && parentUid != null && childId != null) {
                                 ParentControlsScreen(
+                                    repository = repository,
+                                    parentUid = parentUid,
+                                    childId = childId,
+                                    child = currentChild,
+                                    onDone = { screen = KidScreen.STATUS }
+                                )
+                            }
+                        }
+                        KidScreen.PROPOSE_CHANGE -> {
+                            val currentChild = child
+                            val parentUid = pairingStore.parentUid
+                            val childId = pairingStore.childId
+                            if (currentChild != null && parentUid != null && childId != null) {
+                                ProposeChangeScreen(
                                     repository = repository,
                                     parentUid = parentUid,
                                     childId = childId,

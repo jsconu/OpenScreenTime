@@ -242,6 +242,14 @@ private fun ChildSummaryCard(
                 Spacer(Modifier.height(4.dp))
                 Text("Waiting for device pairing (code: ${child.pairingCode})", style = MaterialTheme.typography.bodySmall)
             } else {
+                if (child.proposedDailyLimitMinutes != null || child.proposedAppLimits != null) {
+                    Spacer(Modifier.height(4.dp))
+                    Text(
+                        "${child.name} suggested a change - tap to review",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                }
                 Spacer(Modifier.height(8.dp))
                 Row(horizontalArrangement = Arrangement.spacedBy(24.dp)) {
                     StatColumn("Screen time today", formatDuration(stats.totalScreenTimeMs))

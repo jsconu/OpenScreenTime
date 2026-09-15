@@ -40,6 +40,7 @@ fun StatusScreen(
     onCycleTextSize: () -> Unit,
     onOpenColorSettings: () -> Unit,
     onOpenParentMode: () -> Unit,
+    onProposeChange: () -> Unit,
     onUnpair: () -> Unit
 ) {
     Column(
@@ -127,6 +128,13 @@ fun StatusScreen(
         OutlinedButton(onClick = onOpenColorSettings) { Text("Open Accessibility settings") }
 
         Spacer(Modifier.height(24.dp))
+        OutlinedButton(
+            onClick = onProposeChange,
+            modifier = Modifier.fillMaxWidth().testTag("status_propose_change")
+        ) {
+            Text("Suggest a change")
+        }
+        Spacer(Modifier.height(8.dp))
         Button(
             onClick = onOpenParentMode,
             modifier = Modifier.fillMaxWidth().testTag("status_parent_controls")

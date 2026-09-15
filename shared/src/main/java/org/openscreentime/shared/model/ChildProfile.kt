@@ -29,7 +29,18 @@ data class ChildProfile(
      */
     val isSelf: Boolean = false,
     /** Informational only - never enforced/blocked. See #10. */
-    val dailyUnlockGoal: Int? = null
+    val dailyUnlockGoal: Int? = null,
+    /**
+     * A kid-proposed daily limit awaiting parent approval, or null when there's no
+     * pending proposal. See #14 - autonomy-supportive negotiated limits: the kid app
+     * can write this (and [proposedAppLimits]) directly, with no passcode required,
+     * since the whole point is a kid can suggest a change without a parent present.
+     * Approving copies this into [dailyLimitMinutes] and clears both proposal fields;
+     * declining just clears them.
+     */
+    val proposedDailyLimitMinutes: Int? = null,
+    /** A kid-proposed replacement for [appLimits] awaiting parent approval. See #14. */
+    val proposedAppLimits: Map<String, Int>? = null
 ) {
     fun toMap(): Map<String, Any?> = mapOf(
         "name" to name,
@@ -42,7 +53,9 @@ data class ChildProfile(
         "parentPasscodeHash" to parentPasscodeHash,
         "parentPasscodeSalt" to parentPasscodeSalt,
         "isSelf" to isSelf,
-        "dailyUnlockGoal" to dailyUnlockGoal
+        "dailyUnlockGoal" to dailyUnlockGoal,
+        "proposedDailyLimitMinutes" to proposedDailyLimitMinutes,
+        "proposedAppLimits" to proposedAppLimits
     )
 
     companion object {
@@ -59,7 +72,9 @@ data class ChildProfile(
             parentPasscodeHash = map["parentPasscodeHash"] as? String,
             parentPasscodeSalt = map["parentPasscodeSalt"] as? String,
             isSelf = map["isSelf"] as? Boolean ?: false,
-            dailyUnlockGoal = (map["dailyUnlockGoal"] as? Long)?.toInt()
+            dailyUnlockGoal = (map["dailyUnlockGoal"] as? Long)?.toInt(),
+            proposedDailyLimitMinutes = (map["proposedDailyLimitMinutes"] as? Long)?.toInt(),
+            proposedAppLimits = (map["proposedAppLimits"] as? Map<String, Long>)?.mapValues { it.value.toInt() }
         )
     }
 }
