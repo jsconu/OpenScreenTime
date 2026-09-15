@@ -33,6 +33,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.testTagsAsResourceId
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
 import org.openscreentime.shared.model.ChildProfile
@@ -111,23 +113,41 @@ fun DashboardScreen(
             onDismissRequest = { newChildCode = null },
             title = { Text("Pairing code") },
             text = {
-                Column {
-                    Text("Enter this code in OpenScreenTime Kid on your child's phone:")
-                    Spacer(Modifier.height(8.dp))
-                    Text(
-                        code,
-                        style = MaterialTheme.typography.headlineMedium,
-                        modifier = Modifier.testTag("pairing_code_value")
-                    )
+                DialogTestTagRoot {
+                    Column {
+                        Text("Enter this code in OpenScreenTime Kid on your child's phone:")
+                        Spacer(Modifier.height(8.dp))
+                        Text(
+                            code,
+                            style = MaterialTheme.typography.headlineMedium,
+                            modifier = Modifier.testTag("pairing_code_value")
+                        )
+                    }
                 }
             },
             confirmButton = {
-                TextButton(
-                    onClick = { newChildCode = null },
-                    modifier = Modifier.testTag("pairing_code_done")
-                ) { Text("Done") }
+                DialogTestTagRoot {
+                    TextButton(
+                        onClick = { newChildCode = null },
+                        modifier = Modifier.testTag("pairing_code_done")
+                    ) { Text("Done") }
+                }
             }
         )
+    }
+}
+
+/**
+ * AlertDialog content composes into its own Window, disconnected from the
+ * activity's semantics tree - so testTagsAsResourceId (set once at the
+ * activity root in MainActivity) doesn't reach inside a dialog on its own.
+ * Wrap any dialog slot that has testTag'd children in this so UiAutomator
+ * (used by the :e2e module) can still match them by resource-id.
+ */
+@Composable
+private fun DialogTestTagRoot(content: @Composable () -> Unit) {
+    Box(modifier = Modifier.semantics { testTagsAsResourceId = true }) {
+        content()
     }
 }
 
@@ -233,20 +253,24 @@ private fun AddChildDialog(onDismiss: () -> Unit, onCreate: (String) -> Unit) {
         onDismissRequest = onDismiss,
         title = { Text("Add a child") },
         text = {
-            OutlinedTextField(
-                value = name,
-                onValueChange = { name = it },
-                label = { Text("Child's name") },
-                singleLine = true,
-                modifier = Modifier.testTag("add_child_name")
-            )
+            DialogTestTagRoot {
+                OutlinedTextField(
+                    value = name,
+                    onValueChange = { name = it },
+                    label = { Text("Child's name") },
+                    singleLine = true,
+                    modifier = Modifier.testTag("add_child_name")
+                )
+            }
         },
         confirmButton = {
-            TextButton(
-                enabled = name.isNotBlank(),
-                onClick = { onCreate(name) },
-                modifier = Modifier.testTag("add_child_create")
-            ) { Text("Create") }
+            DialogTestTagRoot {
+                TextButton(
+                    enabled = name.isNotBlank(),
+                    onClick = { onCreate(name) },
+                    modifier = Modifier.testTag("add_child_create")
+                ) { Text("Create") }
+            }
         },
         dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } }
     )
