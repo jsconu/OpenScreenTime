@@ -114,7 +114,15 @@ jobs:
           script: |
             adb install -r kid/build/outputs/apk/debug/kid-debug.apk
             adb install -r parent/build/outputs/apk/debug/parent-debug.apk
+            adb logcat -c
+            adb logcat > /tmp/logcat.txt &
+            LOGCAT_PID=$!
+            set +e
             gradle :shared:connectedDebugAndroidTest :e2e:connectedDebugAndroidTest --stacktrace
+            TEST_EXIT=$?
+            set -e
+            kill "$LOGCAT_PID" || true
+            exit $TEST_EXIT
 
       - name: Upload connected test reports
         if: always()
@@ -125,6 +133,23 @@ jobs:
             shared/build/reports/androidTests/connected
             e2e/build/reports/androidTests/connected
           if-no-files-found: ignore
+
+      - name: Upload logcat
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: logcat
+          path: /tmp/logcat.txt
+          if-no-files-found: ignore
+
+      - name: Show relevant logcat lines on failure
+        if: failure()
+        run: |
+          echo "=== Crashes / exceptions ==="
+          grep -iE "FATAL EXCEPTION|AndroidRuntime|Process.*died|ActivityTaskManager.*Crash" /tmp/logcat.txt | tail -100 || echo "(none found)"
+          echo ""
+          echo "=== Lines mentioning this app ==="
+          grep -i "openscreentime" /tmp/logcat.txt | tail -200 || echo "(none found)"
 
       - name: Show Firebase emulator log on failure
         if: failure()
