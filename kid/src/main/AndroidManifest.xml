@@ -39,6 +39,13 @@
             android:launchMode="singleInstance"
             android:theme="@style/Theme.OpenScreenTime.Overlay" />
 
+        <activity
+            android:name=".ui.PauseOverlayActivity"
+            android:exported="false"
+            android:excludeFromRecents="true"
+            android:launchMode="singleInstance"
+            android:theme="@style/Theme.OpenScreenTime.Overlay" />
+
         <service
             android:name=".monitor.ScreenMonitorService"
             android:exported="false"

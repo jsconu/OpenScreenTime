@@ -24,6 +24,7 @@ class UsageStore(context: Context) {
                 .putString("appUsage", "{}")
                 .putBoolean("warnedDaily", false)
                 .putStringSet("warnedApps", emptySet())
+                .putStringSet("pausedApps", emptySet())
                 .apply()
         }
     }
@@ -87,6 +88,20 @@ class UsageStore(context: Context) {
         get() {
             rolloverIfNeeded()
             return prefs.getStringSet("warnedApps", emptySet()) ?: emptySet()
+        }
+
+    /** Apps that have already shown the friction pause (see #12) today, so it shows once per app per day. */
+    fun markAppPaused(packageName: String) {
+        rolloverIfNeeded()
+        val set = pausedApps.toMutableSet()
+        set.add(packageName)
+        prefs.edit().putStringSet("pausedApps", set).apply()
+    }
+
+    val pausedApps: Set<String>
+        get() {
+            rolloverIfNeeded()
+            return prefs.getStringSet("pausedApps", emptySet()) ?: emptySet()
         }
 
     fun addAppTime(packageName: String, ms: Long) {

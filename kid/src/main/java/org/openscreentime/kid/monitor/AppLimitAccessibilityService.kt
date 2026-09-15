@@ -13,6 +13,7 @@ import org.openscreentime.kid.R
 import org.openscreentime.kid.data.UsageStore
 import org.openscreentime.kid.ui.BlockOverlayActivity
 import org.openscreentime.kid.ui.MainActivity
+import org.openscreentime.kid.ui.PauseOverlayActivity
 
 /**
  * Watches foreground app changes to (a) attribute time per app and (b) enforce
@@ -114,6 +115,10 @@ class AppLimitAccessibilityService : AccessibilityService() {
         val appName = usageStore.appNames[pkg] ?: pkg
         when {
             usedMs >= limitMs -> showBlockOverlay("app_limit")
+            usedMs >= limitMs / 2 && pkg !in usageStore.pausedApps -> {
+                usageStore.markAppPaused(pkg)
+                showPauseOverlay(appName)
+            }
             limitMs - usedMs <= WARNING_THRESHOLD_MS && pkg !in usageStore.warnedApps -> {
                 usageStore.markAppWarned(pkg)
                 notifyWarning(
@@ -139,6 +144,14 @@ class AppLimitAccessibilityService : AccessibilityService() {
         val overlay = Intent(this, BlockOverlayActivity::class.java)
             .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
             .putExtra(BlockOverlayActivity.EXTRA_REASON, reason)
+        startActivity(overlay)
+    }
+
+    /** See #12 - a brief, dismissible breath, not a block, shown once per app per day. */
+    private fun showPauseOverlay(appName: String) {
+        val overlay = Intent(this, PauseOverlayActivity::class.java)
+            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            .putExtra(PauseOverlayActivity.EXTRA_APP_NAME, appName)
         startActivity(overlay)
     }
 
