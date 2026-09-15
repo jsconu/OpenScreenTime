@@ -51,6 +51,11 @@ private const val STREAK_LOOKBACK_DAYS = 14
 @Composable
 fun DashboardScreen(
     repository: FamilyRepository,
+    tip: String,
+    tipAcknowledged: Boolean,
+    tipDismissed: Boolean,
+    onTipAcknowledge: () -> Unit,
+    onTipDismiss: () -> Unit,
     onOpenChild: (String) -> Unit,
     onOpenSettings: () -> Unit,
     onOpenAppearance: () -> Unit,
@@ -91,6 +96,17 @@ fun DashboardScreen(
         }
     ) { padding ->
         LazyColumn(modifier = Modifier.fillMaxSize().padding(padding)) {
+            if (!tipDismissed) {
+                item {
+                    TipCard(
+                        tip = tip,
+                        acknowledged = tipAcknowledged,
+                        onAcknowledge = onTipAcknowledge,
+                        onDismiss = onTipDismiss,
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp)
+                    )
+                }
+            }
             item {
                 Card(
                     modifier = Modifier
@@ -288,6 +304,41 @@ private fun ChildSummaryCard(
             },
             dismissButton = { TextButton(onClick = { showLockConfirm = false }) { Text("Cancel") } }
         )
+    }
+}
+
+/**
+ * See #17 - dismissible, not naggy: acknowledging or dismissing never nudges again this
+ * app open, and there's no visible "you never do this" state either way.
+ */
+@Composable
+private fun TipCard(
+    tip: String,
+    acknowledged: Boolean,
+    onAcknowledge: () -> Unit,
+    onDismiss: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Card(modifier = modifier) {
+        Column(Modifier.padding(12.dp)) {
+            if (acknowledged) {
+                Text(
+                    "Nice job! You're practicing great screen time management!",
+                    style = MaterialTheme.typography.bodyMedium
+                )
+                Spacer(Modifier.height(6.dp))
+                TextButton(onClick = onDismiss) { Text("Dismiss") }
+            } else {
+                Text("Idea", style = MaterialTheme.typography.labelMedium)
+                Spacer(Modifier.height(2.dp))
+                Text(tip, style = MaterialTheme.typography.bodyMedium)
+                Spacer(Modifier.height(6.dp))
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    TextButton(onClick = onAcknowledge) { Text("I did this") }
+                    TextButton(onClick = onDismiss) { Text("Not now") }
+                }
+            }
+        }
     }
 }
 

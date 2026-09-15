@@ -1,6 +1,8 @@
 package org.openscreentime.kid.ui
 
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -9,6 +11,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
+import androidx.compose.material3.Card
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
@@ -32,6 +35,11 @@ fun StatusScreen(
     themeMode: ThemeMode,
     textSize: TextSize,
     streakDays: Int,
+    tip: String,
+    tipAcknowledged: Boolean,
+    tipDismissed: Boolean,
+    onTipAcknowledge: () -> Unit,
+    onTipDismiss: () -> Unit,
     onRequestOverlay: () -> Unit,
     onRequestAccessibility: () -> Unit,
     onRequestNotifications: () -> Unit,
@@ -59,6 +67,10 @@ fun StatusScreen(
             if (permissions.allGranted) "Screen time monitoring is active." else "A few permissions are needed to finish setup.",
             style = MaterialTheme.typography.bodyMedium
         )
+        if (!tipDismissed) {
+            Spacer(Modifier.height(12.dp))
+            TipCard(tip, tipAcknowledged, onTipAcknowledge, onTipDismiss)
+        }
         if (streakDays > 0) {
             Spacer(Modifier.height(8.dp))
             Text(
@@ -144,6 +156,40 @@ fun StatusScreen(
         Spacer(Modifier.height(8.dp))
         OutlinedButton(onClick = onUnpair, modifier = Modifier.fillMaxWidth()) {
             Text("Unpair this device")
+        }
+    }
+}
+
+/**
+ * See #17 - dismissible, not naggy: acknowledging or dismissing never nudges again this
+ * app open, and there's no visible "you never do this" state either way.
+ */
+@Composable
+private fun TipCard(
+    tip: String,
+    acknowledged: Boolean,
+    onAcknowledge: () -> Unit,
+    onDismiss: () -> Unit
+) {
+    Card(modifier = Modifier.fillMaxWidth()) {
+        Column(Modifier.padding(12.dp)) {
+            if (acknowledged) {
+                Text(
+                    "Nice job! You're practicing great screen time management!",
+                    style = MaterialTheme.typography.bodyMedium
+                )
+                Spacer(Modifier.height(6.dp))
+                TextButton(onClick = onDismiss) { Text("Dismiss") }
+            } else {
+                Text("Idea", style = MaterialTheme.typography.labelMedium)
+                Spacer(Modifier.height(2.dp))
+                Text(tip, style = MaterialTheme.typography.bodyMedium)
+                Spacer(Modifier.height(6.dp))
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    TextButton(onClick = onAcknowledge) { Text("I did this") }
+                    TextButton(onClick = onDismiss) { Text("Not now") }
+                }
+            }
         }
     }
 }
