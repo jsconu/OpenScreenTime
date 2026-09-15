@@ -289,7 +289,7 @@
     <p class="lede">
       A reproduction of the two shipped apps' actual Compose UI &mdash; real copy, real component
       states, real <code style="font-family:var(--font-mono);font-size:.92em;">Modifier.testTag</code>
-      identifiers from the codebase, not placeholder text. Twelve screens across the kid device app
+      identifiers from the codebase, not placeholder text. Sixteen screens across the kid device app
       and the parent app, shown in their default light theme.
     </p>
     <div class="legend">
@@ -332,23 +332,29 @@
       <!-- 2. Status -->
       <div class="screen-card">
         <div class="phone"><div class="phone-inner">
-          <div class="body">
-            <div class="headline">Hi, Mia</div>
-            <p class="subtext tight">Screen time monitoring is active.</p>
+          <div class="body" style="padding-top:12px;">
+            <div class="headline" style="margin-bottom:2px;">Hi, Mia</div>
+            <p class="subtext" style="margin-bottom:4px;">Screen time monitoring is active.</p>
+            <p class="subtext tight" style="color:var(--app-primary);font-weight:600;">5 days in a row under your goal</p>
             <div class="m-list-item"><div><div class="head">Display over other apps</div><div class="sub">Shows a screen when a limit is reached</div></div><div class="trailing granted">Granted</div></div>
             <div class="m-list-item"><div><div class="head">Accessibility service</div><div class="sub">Detects which app is open</div></div><div class="trailing granted">Granted</div></div>
             <div class="m-list-item"><div><div class="head">Notifications</div><div class="sub">Ongoing monitoring notice</div></div><div class="trailing granted">Granted</div></div>
             <div class="m-list-item"><div><div class="head">Battery optimization</div><div class="sub">Stops the OS killing tracking</div></div><div class="trailing">Fix</div></div>
-            <p class="subtext" style="font-size:8.5px;margin-top:8px;">Some phone makers have extra battery settings &mdash; check for &ldquo;auto-start&rdquo; or &ldquo;protected apps&rdquo; if tracking stops unexpectedly.</p>
+            <div class="label-eyebrow">Display</div>
+            <div class="m-list-item"><div class="head">Theme</div><div class="trailing">System &nbsp;Change</div></div>
+            <div class="m-list-item"><div class="head">Text size</div><div class="trailing">Default &nbsp;Change</div></div>
+            <p class="subtext" style="font-size:8.5px;margin:6px 0 4px;">Recommended: built-in grayscale makes apps noticeably less compelling to check.</p>
+            <div class="m-btn-outline full" style="padding:7px 16px;">Open Accessibility settings</div>
             <div style="flex:1;"></div>
+            <div class="m-btn-outline full">Suggest a change</div>
             <div class="m-btn full">Parent controls</div>
             <div class="m-btn-outline full">Unpair this device</div>
           </div>
         </div></div>
         <div class="caption">
           <p class="screen-name">Status</p>
-          <p class="screen-desc">Home screen once paired. Permission checklist drives the headline copy above it; all four green means monitoring is fully active.</p>
-          <div class="tag-row"><span class="tag">status_greeting</span><span class="tag">status_parent_controls</span></div>
+          <p class="screen-desc">Home screen once paired. Permission checklist drives the headline copy above it; a streak line appears only once it's &gt; 0 days, never a broken-streak state (#13). &ldquo;Suggest a change&rdquo; needs no passcode &mdash; it's a request, not an override (#14).</p>
+          <div class="tag-row"><span class="tag">status_greeting</span><span class="tag">status_streak</span><span class="tag">status_propose_change</span><span class="tag">status_parent_controls</span></div>
         </div>
       </div>
 
@@ -381,6 +387,8 @@
             <div class="m-btn-outline danger full">End screen time now</div>
             <p class="subtext tight" style="margin-top:6px;">Daily limit: 120 min</p>
             <div class="m-btn-outline full">Change daily limit</div>
+            <p class="subtext tight" style="margin-top:4px;">Unlock goal: 15 a day</p>
+            <div class="m-btn-outline full">Change unlock goal</div>
             <div class="label-eyebrow">App limits</div>
             <div class="m-list-item"><div class="head">Instagram</div><div class="trailing">Limit</div></div>
             <div class="m-list-item"><div><div class="head">YouTube</div><div class="sub">No limit set</div></div><div class="trailing">Limit</div></div>
@@ -407,6 +415,46 @@
           <p class="screen-name">Block overlay</p>
           <p class="screen-desc">Full-screen interrupt shown on top of whatever app was open. Also renders for a per-app limit and for a parent's immediate lock, each with its own wording.</p>
           <div class="tag-row"><span class="tag">reason=daily_limit</span><span class="tag">app_limit</span><span class="tag">parent_lock</span></div>
+        </div>
+      </div>
+
+      <!-- 6. Pause overlay -->
+      <div class="screen-card">
+        <div class="phone"><div class="phone-inner">
+          <div class="block-screen">
+            <div class="headline">Just a breath</div>
+            <p class="subtext">Instagram is over halfway to today's limit. Take a moment &mdash; is this still what you meant to do?</p>
+            <div class="m-btn" style="margin-top:10px;opacity:.5;">Continue (3)</div>
+          </div>
+        </div></div>
+        <div class="caption">
+          <p class="screen-name">Pause overlay</p>
+          <p class="screen-desc">Not a block &mdash; a 4-second countdown before &ldquo;Continue&rdquo; enables, shown once per app per day the first time it crosses 50% of its limit (#12). Interrupts the automatic reach for the app without removing the choice.</p>
+          <div class="tag-row"><span class="tag">PauseOverlayActivity.kt</span></div>
+        </div>
+      </div>
+
+      <!-- 7. Suggest a change -->
+      <div class="screen-card">
+        <div class="phone"><div class="phone-inner">
+          <div class="appbar"><span class="title">Suggest a change</span><span class="action">DONE</span></div>
+          <div class="body">
+            <p class="subtext">Suggest a new limit. A parent will need to approve it before it changes anything &mdash; no passcode needed to send a suggestion.</p>
+            <div class="card-tint">
+              <div class="label-eyebrow" style="margin:0 0 4px;">Waiting for a parent to review</div>
+              <p class="subtext tight" style="margin:0;">Suggested daily limit: 150 min</p>
+            </div>
+            <p class="subtext tight" style="margin-top:8px;">Daily limit: 120 min</p>
+            <div class="m-btn-outline full">Suggest a new daily limit</div>
+            <div class="label-eyebrow">App limits</div>
+            <div class="m-list-item"><div><div class="head">Instagram</div><div class="sub">Limit: 30 min/day</div></div><div class="trailing">Suggest</div></div>
+            <div class="m-list-item"><div><div class="head">YouTube</div><div class="sub">No limit set</div></div><div class="trailing">Suggest</div></div>
+          </div>
+        </div></div>
+        <div class="caption">
+          <p class="screen-name">Suggest a change</p>
+          <p class="screen-desc">Reachable straight from Status with no passcode &mdash; a request, not an override (#14). Writes only proposedDailyLimitMinutes/proposedAppLimits; the real limit never changes until a parent approves.</p>
+          <div class="tag-row"><span class="tag">ProposeChangeScreen.kt</span></div>
         </div>
       </div>
 
@@ -460,18 +508,24 @@
       <!-- 8. Dashboard -->
       <div class="screen-card">
         <div class="phone"><div class="phone-inner" style="position:relative;">
-          <div class="appbar"><span class="title">Your children</span><div class="actions"><span class="action">PASSCODE</span><span class="action">SIGN OUT</span></div></div>
+          <div class="appbar"><span class="title">Your children</span><div class="actions"><span class="action">STYLE</span><span class="action">PASSCODE</span></div></div>
           <div class="body">
+            <div class="card-tint" style="border-left:3px solid var(--app-primary);">
+              <div style="font-size:12px;font-weight:600;margin-bottom:2px;">My screen time</div>
+              <div class="sub">Track and limit your own screen time on this device too.</div>
+            </div>
             <div class="card-tint">
               <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
                 <span class="head" style="font-size:12px;font-weight:600;">Mia</span>
                 <span class="m-btn-outline danger" style="margin:0;padding:4px 10px;font-size:9px;">Lock now</span>
               </div>
-              <div class="stat-row" style="margin-bottom:0;">
+              <p class="subtext" style="font-size:9px;color:var(--app-primary);font-weight:600;margin:0 0 6px;">Mia suggested a change &mdash; tap to review</p>
+              <div class="stat-row" style="margin-bottom:4px;">
                 <div class="stat"><div class="num">1h 42m</div><div class="label">SCREEN TIME</div></div>
                 <div class="stat"><div class="num">23</div><div class="label">UNLOCKS</div></div>
                 <div class="stat"><div class="num">120m</div><div class="label">DAILY LIMIT</div></div>
               </div>
+              <div class="sub">5 days in a row under goal</div>
             </div>
             <div class="card-tint" style="margin-bottom:0;">
               <div style="font-size:12px;font-weight:600;margin-bottom:4px;">Theo</div>
@@ -482,7 +536,7 @@
         </div></div>
         <div class="caption">
           <p class="screen-name">Dashboard</p>
-          <p class="screen-desc">One card per child, live from Firestore. An unpaired child shows its pairing code inline until claimed; a paired one shows today's stats and a one-tap lock.</p>
+          <p class="screen-desc">A dedicated card tracks the parent's own device (#8), separate from the per-child list. Each child's card shows a streak line when &gt; 0 (#13) and a pending-proposal hint when the kid has suggested a change (#14).</p>
           <div class="tag-row"><span class="tag">dashboard_add_child</span><span class="tag">dashboard_child_lock_toggle</span></div>
         </div>
       </div>
@@ -531,15 +585,25 @@
         <div class="phone"><div class="phone-inner">
           <div class="appbar"><span class="title">Mia</span><span class="action">BACK</span></div>
           <div class="body">
+            <div class="card-tint" style="border-left:3px solid var(--app-primary);">
+              <div style="font-size:12px;font-weight:600;margin-bottom:4px;">Mia suggested a change</div>
+              <p class="subtext tight" style="margin:0 0 8px;">New daily limit: 150 min (currently 120 min)</p>
+              <div style="display:flex;gap:8px;">
+                <span class="m-btn" style="margin:0;padding:6px 14px;">Approve</span>
+                <span class="m-btn-outline" style="margin:0;padding:6px 14px;">Decline</span>
+              </div>
+            </div>
             <div class="m-btn-outline danger full">End screen time now</div>
             <div class="label-eyebrow" style="margin-top:8px;">Today</div>
-            <div class="stat-row">
+            <div class="stat-row" style="margin-bottom:4px;">
               <div class="stat"><div class="num">1h 42m</div><div class="label">SCREEN TIME</div></div>
               <div class="stat"><div class="num">23</div><div class="label">UNLOCKS</div></div>
             </div>
+            <p class="subtext tight" style="color:var(--app-primary);font-weight:600;">5 days in a row under goal</p>
             <div class="m-progress"><div class="fill" style="width:85%"></div></div>
             <p class="subtext tight">Daily limit: 120 min</p>
             <div class="m-btn-outline full" style="margin-bottom:8px;">Change daily limit</div>
+            <p class="subtext tight">Unlock goal: 15 a day</p>
             <div class="label-eyebrow">App usage today</div>
             <div class="m-list-item"><div><div class="head">Instagram</div><div class="sub over">45m of 30m limit</div></div><div class="trailing">Limit</div></div>
             <div class="m-list-item"><div><div class="head">YouTube</div><div class="sub">32m</div></div><div class="trailing">Limit</div></div>
@@ -547,7 +611,7 @@
         </div></div>
         <div class="caption">
           <p class="screen-name">Child detail</p>
-          <p class="screen-desc">Full stats, the daily-limit progress bar, and per-app limit editing. &ldquo;Remove Mia&rdquo; sits below the app list (scrolled out of frame here).</p>
+          <p class="screen-desc">Full stats, streak line, the daily-limit progress bar, and per-app limit editing. A pending-proposal card (#14) sits at the top when the kid has suggested a change; &ldquo;Remove Mia&rdquo; sits below the app list (scrolled out of frame here).</p>
           <div class="tag-row"><span class="tag">ChildDetailScreen.kt</span></div>
         </div>
       </div>
@@ -567,6 +631,50 @@
           <p class="screen-name">Family passcode</p>
           <p class="screen-desc">Hashed with PBKDF2-HMAC-SHA256 on save, then fanned out to every child doc so already-paired kid devices pick it up.</p>
           <div class="tag-row"><span class="tag">PasscodeSettingsScreen.kt</span></div>
+        </div>
+      </div>
+
+      <!-- 13. Appearance settings -->
+      <div class="screen-card">
+        <div class="phone"><div class="phone-inner">
+          <div class="appbar"><span class="title">Appearance</span><span class="action">BACK</span></div>
+          <div class="body">
+            <div class="label-eyebrow" style="margin-top:0;">Theme</div>
+            <div class="m-list-item" style="border:none;padding:5px 0;"><div class="head">&#9679; System</div></div>
+            <div class="m-list-item" style="border:none;padding:5px 0;"><div class="head">&#9675; Light</div></div>
+            <div class="m-list-item" style="border-bottom:1px solid rgba(0,0,0,.06);padding:5px 0 9px;"><div class="head">&#9675; Dark</div></div>
+            <div class="label-eyebrow">Text size</div>
+            <div class="m-list-item" style="border:none;padding:5px 0;"><div class="head">&#9675; Small</div></div>
+            <div class="m-list-item" style="border-bottom:1px solid rgba(0,0,0,.06);padding:5px 0 9px;"><div class="head">&#9679; Default</div></div>
+            <div class="label-eyebrow">Grayscale</div>
+            <p class="subtext" style="font-size:8.5px;">Recommended: built-in grayscale makes apps noticeably less compelling to check &mdash; look for &ldquo;Color correction&rdquo; in Accessibility settings.</p>
+            <div class="m-btn-outline full" style="padding:7px 16px;">Open Accessibility settings</div>
+          </div>
+        </div></div>
+        <div class="caption">
+          <p class="screen-name">Appearance settings</p>
+          <p class="screen-desc">Per-device display preferences &mdash; theme, text-size scaling, and the same grayscale guidance as the kid app. Reached from Dashboard's STYLE action.</p>
+          <div class="tag-row"><span class="tag">AppearanceSettingsScreen.kt</span></div>
+        </div>
+      </div>
+
+      <!-- 14. Self tracking -->
+      <div class="screen-card">
+        <div class="phone"><div class="phone-inner">
+          <div class="appbar"><span class="title">My screen time</span><span class="action">BACK</span></div>
+          <div class="body">
+            <p class="subtext">Track and limit your own screen time on this device, the same way you track your kids' &mdash; walking the walk.</p>
+            <div class="m-list-item"><div><div class="head">Display over other apps</div></div><div class="trailing granted">Granted</div></div>
+            <div class="m-list-item"><div><div class="head">Accessibility service</div></div><div class="trailing granted">Granted</div></div>
+            <div class="m-list-item"><div><div class="head">Notifications</div></div><div class="trailing granted">Granted</div></div>
+            <div style="flex:1;"></div>
+            <div class="m-btn full">View my stats</div>
+          </div>
+        </div></div>
+        <div class="caption">
+          <p class="screen-name">Self tracking</p>
+          <p class="screen-desc">Opt-in parental self-tracking (#8) &mdash; the core mechanic behind the &ldquo;diametrical opposite of an addiction machine&rdquo; goal. Once started, &ldquo;View my stats&rdquo; reuses ChildDetailScreen for the parent's own profile.</p>
+          <div class="tag-row"><span class="tag">SelfTrackingScreen.kt</span></div>
         </div>
       </div>
 
