@@ -211,17 +211,13 @@ class FamilyRepository(
      * children collection, so there's no pairing-code handshake to do.
      */
     suspend fun getOrCreateSelfProfile(parentUid: String, name: String): ChildProfile {
-        val existing = db.collection(FirestorePaths.childrenCollection(parentUid))
-            .whereEqualTo("isSelf", true)
-            .limit(1)
-            .get()
-            .await()
-        existing.documents.firstOrNull()?.let { return ChildProfile.fromMap(it.id, it.data ?: emptyMap()) }
+        val docRef = db.document(FirestorePaths.childDoc(parentUid, FirestorePaths.SELF_CHILD_ID))
+        val existing = docRef.get().await()
+        if (existing.exists()) return ChildProfile.fromMap(existing.id, existing.data ?: emptyMap())
 
-        val docRef = db.collection(FirestorePaths.childrenCollection(parentUid)).document()
         val existingPasscode = getParentPasscode(parentUid)
         val self = ChildProfile(
-            id = docRef.id,
+            id = FirestorePaths.SELF_CHILD_ID,
             name = name,
             paired = true,
             deviceUid = parentUid,
@@ -270,12 +266,35 @@ class FamilyRepository(
             val childRef = db.document(FirestorePaths.childDoc(parentUid, childId))
             txn.update(childRef, mapOf("deviceUid" to uid, "paired" to true))
             txn.update(codeRef, mapOf("used" to true, "claimedByUid" to uid))
+            // Lets this device later read the parent's self-tracked stats, if the parent
+            // has opted into self-tracking (see #18 - visible by default, not a separate
+            // opt-in). set(merge) rather than update(), since the parent doc may not
+            // exist yet (e.g. a parent who hasn't set a passcode has no doc at all).
+            val parentRef = db.document("${FirestorePaths.PARENTS}/$parentUid")
+            txn.set(parentRef, mapOf("linkedDeviceUids" to FieldValue.arrayUnion(uid)), SetOptions.merge())
             parentUid to childId
         }.await()
 
         val childSnap = db.document(FirestorePaths.childDoc(parentUid, childId)).get().await()
         val child = ChildProfile.fromMap(childId, childSnap.data ?: emptyMap())
         return parentUid to child
+    }
+
+    /**
+     * The parent's self-tracked profile (see #8), if they've opted into self-tracking
+     * and this device is linked to their family (see #18 - claimPairingCode appends
+     * this device's uid to linkedDeviceUids). Reads the fixed "self" doc id directly,
+     * since a linked device has no permission to list/query the children collection.
+     * Returns null both when the parent hasn't started self-tracking (the doc simply
+     * doesn't exist) and when the security rule denies it (an unlinked device) -
+     * Firestore surfaces both as a failure here, and either way there's nothing to
+     * show, matching this feature's calm/non-intrusive framing.
+     */
+    suspend fun getParentSelfProfile(parentUid: String): ChildProfile? = try {
+        val snap = db.document(FirestorePaths.childDoc(parentUid, FirestorePaths.SELF_CHILD_ID)).get().await()
+        if (snap.exists()) ChildProfile.fromMap(snap.id, snap.data ?: emptyMap()) else null
+    } catch (e: Exception) {
+        null
     }
 
     fun listenChild(parentUid: String, childId: String, onChange: (ChildProfile) -> Unit): ListenerRegistration =

@@ -40,6 +40,7 @@ fun StatusScreen(
     tipDismissed: Boolean,
     onTipAcknowledge: () -> Unit,
     onTipDismiss: () -> Unit,
+    parentStatusLabel: String?,
     onRequestOverlay: () -> Unit,
     onRequestAccessibility: () -> Unit,
     onRequestNotifications: () -> Unit,
@@ -77,6 +78,14 @@ fun StatusScreen(
                 "$streakDays day${if (streakDays == 1) "" else "s"} in a row under your goal",
                 style = MaterialTheme.typography.bodyMedium,
                 modifier = Modifier.testTag("status_streak")
+            )
+        }
+        if (parentStatusLabel != null) {
+            Spacer(Modifier.height(8.dp))
+            Text(
+                "Parent's screen time today: $parentStatusLabel",
+                style = MaterialTheme.typography.bodyMedium,
+                modifier = Modifier.testTag("status_parent_status")
             )
         }
         Spacer(Modifier.height(24.dp))

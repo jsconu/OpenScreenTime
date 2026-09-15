@@ -29,8 +29,12 @@ import org.openscreentime.kid.data.PairingStore
 import org.openscreentime.kid.monitor.ScreenMonitorService
 import org.openscreentime.kid.util.checkPermissions
 import org.openscreentime.shared.model.ChildProfile
+import org.openscreentime.shared.model.DailyStats
+import org.openscreentime.shared.model.calmParentStatusLabel
 import org.openscreentime.shared.model.computeStreak
 import org.openscreentime.shared.model.randomTip
+import org.openscreentime.shared.model.todayDateString
+import org.openscreentime.shared.repo.FirestorePaths
 
 private enum class KidScreen { STATUS, PARENT_UNLOCK, PARENT_CONTROLS, PROPOSE_CHANGE }
 
@@ -65,6 +69,24 @@ class MainActivity : ComponentActivity() {
                 val tip = remember { randomTip() }
                 var tipAcknowledged by remember { mutableStateOf(false) }
                 var tipDismissed by remember { mutableStateOf(false) }
+                var parentSelfProfile by remember { mutableStateOf<ChildProfile?>(null) }
+                var parentSelfStats by remember { mutableStateOf(DailyStats(date = todayDateString())) }
+
+                // See #18: null whenever the parent hasn't opted into self-tracking (or
+                // this device claimed before they did) - the card just doesn't render then.
+                LaunchedEffect(pairingStore.parentUid) {
+                    val parentUid = pairingStore.parentUid ?: return@LaunchedEffect
+                    parentSelfProfile = repository.getParentSelfProfile(parentUid)
+                }
+
+                DisposableEffect(parentSelfProfile?.id) {
+                    val parentUid = pairingStore.parentUid
+                    if (parentUid == null || parentSelfProfile == null) return@DisposableEffect onDispose {}
+                    val reg = repository.listenDailyStats(parentUid, FirestorePaths.SELF_CHILD_ID, todayDateString()) {
+                        parentSelfStats = it
+                    }
+                    onDispose { reg.remove() }
+                }
 
                 LaunchedEffect(pairingStore.parentUid, pairingStore.childId, child?.dailyLimitMinutes, child?.dailyUnlockGoal) {
                     val parentUid = pairingStore.parentUid
@@ -121,6 +143,7 @@ class MainActivity : ComponentActivity() {
                             tipDismissed = tipDismissed,
                             onTipAcknowledge = { tipAcknowledged = true },
                             onTipDismiss = { tipDismissed = true },
+                            parentStatusLabel = parentSelfProfile?.let { calmParentStatusLabel(it, parentSelfStats) },
                             onRequestOverlay = {
                                 startActivity(
                                     Intent(

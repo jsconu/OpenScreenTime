@@ -18,6 +18,7 @@ import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.openscreentime.shared.model.ChildProfile
+import org.openscreentime.shared.model.DailyStats
 import org.openscreentime.shared.repo.FamilyRepository
 import org.openscreentime.shared.repo.FirestorePaths
 
@@ -281,6 +282,59 @@ class PairingFlowEmulatorTest {
             threw = true
         }
         assertTrue("A proposal write must not be able to smuggle in a real-limit change", threw)
+    }
+
+    // --- Kid sees parent's self-tracked stats (#18) ---
+
+    @Test(timeout = TEST_TIMEOUT_MS)
+    fun linkedDeviceCanReadParentsSelfProfileButUnlinkedDeviceCannot() = runBlocking {
+        val parentRepo = FamilyRepository()
+        val parentUid = parentRepo.signUpParent(uniqueEmail(), "testpass123")
+        val child = parentRepo.createChild(parentUid, "SelfViewChild")
+
+        // Parent opts into self-tracking and pushes a day of stats, still signed in as parent.
+        val self = parentRepo.getOrCreateSelfProfile(parentUid, "Me")
+        parentRepo.pushDailyStats(parentUid, self.id, DailyStats(date = "2024-01-01", totalScreenTimeMs = 1000))
+        parentRepo.signOut()
+
+        // claimPairingCode appends this device's uid to linkedDeviceUids (see #18).
+        val kidRepo = FamilyRepository()
+        kidRepo.claimPairingCode(child.pairingCode)
+
+        val fetched = kidRepo.getParentSelfProfile(parentUid)
+        assertNotNull("A linked device should be able to read the parent's self-tracked profile", fetched)
+        assertEquals("Me", fetched?.name)
+
+        // A device that never claimed a pairing code under this parent is not linked.
+        val strangerRepo = FamilyRepository()
+        strangerRepo.signInAnonymously()
+        assertNull(
+            "An unrelated device must not be able to read another family's self-tracked profile",
+            strangerRepo.getParentSelfProfile(parentUid)
+        )
+    }
+
+    @Test(timeout = TEST_TIMEOUT_MS)
+    fun claimingDeviceCannotSmuggleOtherFieldsIntoTheLinkedDeviceUidsWrite() = runBlocking {
+        val parentRepo = FamilyRepository()
+        val parentUid = parentRepo.signUpParent(uniqueEmail(), "testpass123")
+        val child = parentRepo.createChild(parentUid, "LinkSmuggleChild")
+        parentRepo.signOut()
+
+        val kidRepo = FamilyRepository()
+        kidRepo.claimPairingCode(child.pairingCode) // legitimately appends its own uid
+
+        // A follow-up write bundling linkedDeviceUids with an unrelated field must be rejected.
+        var threw = false
+        try {
+            FirebaseFirestore.getInstance()
+                .document("${FirestorePaths.PARENTS}/$parentUid")
+                .update(mapOf("linkedDeviceUids" to listOf("someone"), "passcodeHash" to "hacked"))
+                .await()
+        } catch (e: Exception) {
+            threw = true
+        }
+        assertTrue("A linkedDeviceUids write must not be able to smuggle in another field", threw)
     }
 
     @Test(timeout = TEST_TIMEOUT_MS)
