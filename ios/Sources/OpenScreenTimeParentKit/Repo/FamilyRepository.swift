@@ -12,11 +12,11 @@ import Foundation
 /// code claiming, self-tracking, bedtime windows, negotiated-limit proposals, unlock
 /// goals) - `shared/repo/FamilyRepository.kt` is the reference for those when this app
 /// grows to cover them.
-final class FamilyRepository {
+public final class FamilyRepository {
     private let auth: Auth
     private let db: Firestore
 
-    init(auth: Auth = Auth.auth(), db: Firestore = Firestore.firestore()) {
+    public init(auth: Auth = Auth.auth(), db: Firestore = Firestore.firestore()) {
         self.auth = auth
         self.db = db
     }
