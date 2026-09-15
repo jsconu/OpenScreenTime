@@ -47,7 +47,7 @@ class MainActivity : ComponentActivity() {
               // resource-id, since it can't drive Compose's own semantics tree directly.
               Box(modifier = Modifier.fillMaxSize().semantics { testTagsAsResourceId = true }) {
                 var paired by remember { mutableStateOf(pairingStore.isPaired) }
-                var permissions by remember { mutableStateOf(checkPermissions(this)) }
+                var permissions by remember { mutableStateOf(checkPermissions(this@MainActivity)) }
                 var screen by remember { mutableStateOf(KidScreen.STATUS) }
                 var child by remember { mutableStateOf<ChildProfile?>(null) }
 
@@ -77,8 +77,8 @@ class MainActivity : ComponentActivity() {
                             pairingStore.childName = name
                             paired = true
                             ContextCompat.startForegroundService(
-                                this,
-                                Intent(this, ScreenMonitorService::class.java)
+                                this@MainActivity,
+                                Intent(this@MainActivity, ScreenMonitorService::class.java)
                             )
                             (application as KidApp).startLimitsListener()
                         }
