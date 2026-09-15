@@ -15,12 +15,14 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import org.openscreentime.parent.monitor.AppLimitAccessibilityService
 import org.openscreentime.shared.model.formatMinutesOfDay
+import org.openscreentime.shared.model.randomAlternativeActivity
 
 /**
  * Self-tracking equivalent of the kid app's BlockOverlayActivity (see #8) - shown when
@@ -61,6 +63,16 @@ class BlockOverlayActivity : ComponentActivity() {
                             textAlign = TextAlign.Center,
                             style = MaterialTheme.typography.bodyMedium
                         )
+                        if (reason != "bedtime") {
+                            Spacer(Modifier.height(20.dp))
+                            val suggestion = remember { randomAlternativeActivity() }
+                            Text(
+                                "In the meantime: $suggestion",
+                                textAlign = TextAlign.Center,
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                        }
                         Spacer(Modifier.height(32.dp))
                         Button(onClick = {
                             startActivity(

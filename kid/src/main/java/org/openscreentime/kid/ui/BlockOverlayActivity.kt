@@ -15,12 +15,14 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import org.openscreentime.kid.monitor.AppLimitAccessibilityService
 import org.openscreentime.shared.model.formatMinutesOfDay
+import org.openscreentime.shared.model.randomAlternativeActivity
 
 /** Full-screen interruption shown when a daily or per-app limit is reached. */
 class BlockOverlayActivity : ComponentActivity() {
@@ -60,6 +62,18 @@ class BlockOverlayActivity : ComponentActivity() {
                             textAlign = TextAlign.Center,
                             style = MaterialTheme.typography.bodyMedium
                         )
+                        // Winding down for bedtime is the point there, not finding something
+                        // else active to do - see #16's design-principle note.
+                        if (reason != "bedtime") {
+                            Spacer(Modifier.height(20.dp))
+                            val suggestion = remember { randomAlternativeActivity() }
+                            Text(
+                                "In the meantime: $suggestion",
+                                textAlign = TextAlign.Center,
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                        }
                         Spacer(Modifier.height(32.dp))
                         Button(onClick = {
                             startActivity(
