@@ -134,6 +134,7 @@ class PairingFlowEmulatorTest {
         // this is the write path the kid app's "Parent controls" screen relies on.
         kidRepo.updateDailyLimit(parentUid, child.id, 45)
         kidRepo.setLocked(parentUid, child.id, true)
+        kidRepo.updateDailyUnlockGoal(parentUid, child.id, 30)
 
         // But not another family's child. The kid's session is still the active
         // auth identity here (never signed out), so this is a genuine

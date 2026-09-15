@@ -1,0 +1,12 @@
+<!-- Thumbs up: comfortably under today's goals. Simplified/blocky by design - this
+     renders tiny as a status-bar silhouette, where legibility at scale matters more
+     than anatomical accuracy. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24"
+    android:tint="#FFFFFF">
+    <path android:fillColor="#FF000000" android:pathData="M3,11 L21,11 L21,21 L3,21 Z" />
+    <path android:fillColor="#FF000000" android:pathData="M6,2 L13,2 L13,13 L6,13 Z" />
+</vector>

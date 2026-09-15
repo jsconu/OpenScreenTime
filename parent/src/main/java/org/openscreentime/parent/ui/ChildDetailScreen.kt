@@ -49,6 +49,7 @@ fun ChildDetailScreen(
     var child by remember { mutableStateOf<ChildProfile?>(null) }
     var stats by remember { mutableStateOf(DailyStats(date = todayDateString())) }
     var showLimitDialog by remember { mutableStateOf(false) }
+    var showUnlockGoalDialog by remember { mutableStateOf(false) }
     var editingApp by remember { mutableStateOf<String?>(null) }
     var showLockConfirm by remember { mutableStateOf(false) }
     var showDeleteConfirm by remember { mutableStateOf(false) }
@@ -111,6 +112,17 @@ fun ChildDetailScreen(
                     Text("Daily limit: ${currentChild.dailyLimitMinutes} min", style = MaterialTheme.typography.bodySmall)
                     Spacer(Modifier.height(8.dp))
                     OutlinedButton(onClick = { showLimitDialog = true }) { Text("Change daily limit") }
+                    Spacer(Modifier.height(16.dp))
+                    Text(
+                        currentChild.dailyUnlockGoal?.let { "Unlock goal: $it a day" } ?: "No unlock goal set",
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                    Text(
+                        "Informational only - never blocks. Today's unlocks: ${stats.unlockCount}.",
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                    Spacer(Modifier.height(8.dp))
+                    OutlinedButton(onClick = { showUnlockGoalDialog = true }) { Text("Change unlock goal") }
                 }
             }
             item {
@@ -170,6 +182,17 @@ fun ChildDetailScreen(
             onConfirm = { minutes ->
                 scope.launch { repository.updateDailyLimit(parentUid, childId, minutes) }
                 showLimitDialog = false
+            }
+        )
+    }
+
+    if (showUnlockGoalDialog) {
+        UnlockGoalInputDialog(
+            initialGoal = currentChild.dailyUnlockGoal,
+            onDismiss = { showUnlockGoalDialog = false },
+            onConfirm = { goal ->
+                scope.launch { repository.updateDailyUnlockGoal(parentUid, childId, goal) }
+                showUnlockGoalDialog = false
             }
         )
     }
@@ -258,6 +281,38 @@ private fun MinutesInputDialog(
         },
         confirmButton = {
             TextButton(onClick = { text.toIntOrNull()?.let(onConfirm) }) { Text("Save") }
+        },
+        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } }
+    )
+}
+
+@Composable
+private fun UnlockGoalInputDialog(
+    initialGoal: Int?,
+    onDismiss: () -> Unit,
+    onConfirm: (Int?) -> Unit
+) {
+    var text by remember { mutableStateOf(initialGoal?.toString() ?: "") }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Daily unlock goal") },
+        text = {
+            Column {
+                Text(
+                    "Informational only - this is never enforced or blocked, just shown alongside actual unlocks.",
+                    style = MaterialTheme.typography.bodySmall
+                )
+                Spacer(Modifier.height(8.dp))
+                OutlinedTextField(
+                    value = text,
+                    onValueChange = { text = it.filter(Char::isDigit) },
+                    label = { Text("Unlocks per day (blank = no goal)") },
+                    singleLine = true
+                )
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = { onConfirm(text.toIntOrNull()) }) { Text("Save") }
         },
         dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } }
     )

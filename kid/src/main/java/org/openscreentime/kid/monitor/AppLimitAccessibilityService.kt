@@ -2,6 +2,7 @@ package org.openscreentime.kid.monitor
 
 import android.accessibilityservice.AccessibilityService
 import android.app.NotificationManager
+import android.app.PendingIntent
 import android.content.Intent
 import android.os.Handler
 import android.os.Looper
@@ -11,6 +12,7 @@ import org.openscreentime.kid.KidApp
 import org.openscreentime.kid.R
 import org.openscreentime.kid.data.UsageStore
 import org.openscreentime.kid.ui.BlockOverlayActivity
+import org.openscreentime.kid.ui.MainActivity
 
 /**
  * Watches foreground app changes to (a) attribute time per app and (b) enforce
@@ -34,6 +36,7 @@ class AppLimitAccessibilityService : AccessibilityService() {
         override fun run() {
             flushCurrent(restart = true)
             currentPackage?.let { checkLimits(it) } ?: checkLockOnly()
+            updateStatusNotification()
             handler.postDelayed(this, TICK_INTERVAL_MS)
         }
     }
@@ -58,6 +61,7 @@ class AppLimitAccessibilityService : AccessibilityService() {
         currentPackageStartMs = System.currentTimeMillis()
         cacheAppLabel(pkg)
         checkLimits(pkg)
+        updateStatusNotification()
     }
 
     /** Adds elapsed time for the current package. If [restart], keeps tracking it from now. */
@@ -138,6 +142,44 @@ class AppLimitAccessibilityService : AccessibilityService() {
         startActivity(overlay)
     }
 
+    /**
+     * Calm status signal (see #9) instead of exact numbers - updates the existing ongoing
+     * notification's icon rather than posting a new one, so this never interrupts/alerts,
+     * just reflects current state whenever it's glanced at.
+     */
+    private fun updateStatusNotification() {
+        val dailyLimitMs = dailyLimitMinutes * 60_000L
+        val timeRatio = if (dailyLimitMs in 1..Long.MAX_VALUE) {
+            usageStore.liveTotalScreenTimeMs.toFloat() / dailyLimitMs
+        } else 0f
+        val unlockGoal = dailyUnlockGoal
+        val unlockRatio = if (unlockGoal != null && unlockGoal > 0) {
+            usageStore.unlockCount.toFloat() / unlockGoal
+        } else 0f
+        val ratio = maxOf(timeRatio, unlockRatio)
+
+        val iconRes = when {
+            lockedCache || ratio >= 1f -> R.drawable.ic_status_stop
+            ratio >= 0.7f -> R.drawable.ic_status_caution
+            else -> R.drawable.ic_status_good
+        }
+
+        val openIntent = PendingIntent.getActivity(
+            this, 0, Intent(this, MainActivity::class.java),
+            PendingIntent.FLAG_IMMUTABLE
+        )
+        val notification = NotificationCompat.Builder(this, KidApp.MONITOR_CHANNEL_ID)
+            .setSmallIcon(iconRes)
+            .setContentTitle(getString(R.string.monitor_notification_title))
+            .setContentText(getString(R.string.monitor_notification_text))
+            .setContentIntent(openIntent)
+            .setOngoing(true)
+            .setOnlyAlertOnce(true)
+            .setPriority(NotificationCompat.PRIORITY_MIN)
+            .build()
+        getSystemService(NotificationManager::class.java).notify(ScreenMonitorService.NOTIFICATION_ID, notification)
+    }
+
     override fun onInterrupt() {}
 
     companion object {
@@ -149,5 +191,7 @@ class AppLimitAccessibilityService : AccessibilityService() {
         @Volatile var limitsCache: Map<String, Int> = emptyMap()
         @Volatile var dailyLimitMinutes: Int = Int.MAX_VALUE
         @Volatile var lockedCache: Boolean = false
+        /** Informational only (see #10) - factors into the status icon, never blocks. */
+        @Volatile var dailyUnlockGoal: Int? = null
     }
 }

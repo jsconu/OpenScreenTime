@@ -76,6 +76,7 @@ class ScreenMonitorService : Service() {
     }
 
     companion object {
-        private const val NOTIFICATION_ID = 2001
+        /** Also used by AppLimitAccessibilityService to update this same notification's icon. */
+        const val NOTIFICATION_ID = 2001
     }
 }

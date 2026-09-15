@@ -58,6 +58,7 @@ fun ParentControlsScreen(
     }
 
     var showLimitDialog by remember { mutableStateOf(false) }
+    var showUnlockGoalDialog by remember { mutableStateOf(false) }
     var editingApp by remember { mutableStateOf<String?>(null) }
     var showLockConfirm by remember { mutableStateOf(false) }
 
@@ -93,6 +94,13 @@ fun ParentControlsScreen(
                     Text("Daily limit: ${child.dailyLimitMinutes} min", style = MaterialTheme.typography.bodyMedium)
                     Spacer(Modifier.height(8.dp))
                     OutlinedButton(onClick = { showLimitDialog = true }) { Text("Change daily limit") }
+                    Spacer(Modifier.height(16.dp))
+                    Text(
+                        child.dailyUnlockGoal?.let { "Unlock goal: $it a day" } ?: "No unlock goal set",
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                    Spacer(Modifier.height(8.dp))
+                    OutlinedButton(onClick = { showUnlockGoalDialog = true }) { Text("Change unlock goal") }
                 }
             }
             item {
@@ -153,6 +161,17 @@ fun ParentControlsScreen(
         )
     }
 
+    if (showUnlockGoalDialog) {
+        UnlockGoalInputDialog(
+            initialGoal = child.dailyUnlockGoal,
+            onDismiss = { showUnlockGoalDialog = false },
+            onConfirm = { goal ->
+                scope.launch { repository.updateDailyUnlockGoal(parentUid, childId, goal) }
+                showUnlockGoalDialog = false
+            }
+        )
+    }
+
     editingApp?.let { pkg ->
         val appName = usageStore.appNames[pkg] ?: pkg
         MinutesInputDialog(
@@ -191,6 +210,38 @@ private fun MinutesInputDialog(
         },
         confirmButton = {
             TextButton(onClick = { text.toIntOrNull()?.let(onConfirm) }) { Text("Save") }
+        },
+        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } }
+    )
+}
+
+@Composable
+private fun UnlockGoalInputDialog(
+    initialGoal: Int?,
+    onDismiss: () -> Unit,
+    onConfirm: (Int?) -> Unit
+) {
+    var text by remember { mutableStateOf(initialGoal?.toString() ?: "") }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Daily unlock goal") },
+        text = {
+            Column {
+                Text(
+                    "Informational only - never enforced or blocked, just shown alongside actual unlocks.",
+                    style = MaterialTheme.typography.bodySmall
+                )
+                Spacer(Modifier.height(8.dp))
+                OutlinedTextField(
+                    value = text,
+                    onValueChange = { text = it.filter(Char::isDigit) },
+                    label = { Text("Unlocks per day (blank = no goal)") },
+                    singleLine = true
+                )
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = { onConfirm(text.toIntOrNull()) }) { Text("Save") }
         },
         dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } }
     )

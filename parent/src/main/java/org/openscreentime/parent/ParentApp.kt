@@ -65,6 +65,7 @@ class ParentApp : Application() {
         repository.listenChild(parentUid, childId) { child ->
             AppLimitAccessibilityService.limitsCache = child.appLimits
             AppLimitAccessibilityService.dailyLimitMinutes = child.dailyLimitMinutes
+            AppLimitAccessibilityService.dailyUnlockGoal = child.dailyUnlockGoal
 
             val wasLocked = AppLimitAccessibilityService.lockedCache
             AppLimitAccessibilityService.lockedCache = child.locked
