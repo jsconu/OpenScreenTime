@@ -1,0 +1,583 @@
+<title>Screen Gallery</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Libre+Franklin:wght@400;500;600;700&family=Source+Sans+3:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&family=Roboto:wght@400;500;700&display=swap">
+<style>
+  :root {
+    --page-bg: #f3f1ea;
+    --surface: #ffffff;
+    --ink: #221f1a;
+    --ink-soft: #5c574c;
+    --ink-faint: #8c8676;
+    --rule: #e2ddd0;
+    --accent: #6b5b95;
+    --accent-soft: #ede8f5;
+    --shadow: rgba(24, 18, 8, .45);
+
+    --kid-primary: #2e7d32;
+    --kid-secondary: #558b2f;
+    --kid-on-primary: #ffffff;
+    --kid-bg: #fbfdf7;
+    --kid-surface-variant: #e3e9dc;
+    --kid-outline: #c9cfc2;
+
+    --parent-primary: #1565c0;
+    --parent-secondary: #00838f;
+    --parent-on-primary: #ffffff;
+    --parent-bg: #f8fbff;
+    --parent-surface-variant: #dde6f0;
+    --parent-outline: #c2ccd8;
+
+    --font-display: 'Libre Franklin', 'Segoe UI', sans-serif;
+    --font-body: 'Source Sans 3', 'Segoe UI', sans-serif;
+    --font-mono: 'IBM Plex Mono', 'Cascadia Mono', monospace;
+    --font-android: 'Roboto', 'Segoe UI', sans-serif;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --page-bg: #17150f;
+      --surface: #211e18;
+      --ink: #f1ede2;
+      --ink-soft: #b3ac9a;
+      --ink-faint: #7c7666;
+      --rule: #37322a;
+      --accent: #b7a3e8;
+      --accent-soft: #2b2540;
+      --shadow: rgba(0, 0, 0, .6);
+    }
+  }
+  :root[data-theme="dark"] {
+    --page-bg: #17150f;
+    --surface: #211e18;
+    --ink: #f1ede2;
+    --ink-soft: #b3ac9a;
+    --ink-faint: #7c7666;
+    --rule: #37322a;
+    --accent: #b7a3e8;
+    --accent-soft: #2b2540;
+    --shadow: rgba(0, 0, 0, .6);
+  }
+
+  * { box-sizing: border-box; }
+  html { color-scheme: light dark; }
+  body {
+    margin: 0;
+    background: var(--page-bg);
+    color: var(--ink);
+    font-family: var(--font-body);
+    padding-inline: 24px;
+    padding-block: 56px 80px;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 1280px; margin: 0 auto; }
+
+  header.intro { max-width: 900px; margin-bottom: 64px; }
+  .eyebrow {
+    font-family: var(--font-mono);
+    text-transform: uppercase;
+    letter-spacing: .09em;
+    font-size: .72rem;
+    color: var(--accent);
+    margin-bottom: 14px;
+  }
+  h1 {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: clamp(1.9rem, 3.4vw, 2.7rem);
+    line-height: 1.08;
+    letter-spacing: -.01em;
+    text-wrap: balance;
+    margin: 0 0 18px;
+  }
+  .lede {
+    max-width: 62ch;
+    color: var(--ink-soft);
+    font-size: 1.05rem;
+    line-height: 1.65;
+    margin: 0 0 28px;
+  }
+  .legend { display: flex; flex-wrap: wrap; gap: 10px 28px; }
+  .legend-item { display: flex; align-items: center; gap: 9px; font-size: .85rem; color: var(--ink-soft); }
+  .swatch { width: 13px; height: 13px; border-radius: 4px; flex: none; }
+
+  section.app-section { margin-bottom: 76px; }
+  section.app-section:last-child { margin-bottom: 0; }
+  .section-head {
+    display: flex;
+    align-items: baseline;
+    gap: 16px;
+    flex-wrap: wrap;
+    border-bottom: 1px solid var(--rule);
+    padding-bottom: 16px;
+    margin-bottom: 40px;
+  }
+  .section-head h2 {
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: 1.5rem;
+    margin: 0;
+  }
+  .section-head .pkg {
+    font-family: var(--font-mono);
+    font-size: .8rem;
+    color: var(--ink-faint);
+  }
+  .section-head .app-dot { width: 10px; height: 10px; border-radius: 50%; flex: none; }
+
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(248px, 1fr));
+    gap: 48px 28px;
+  }
+
+  .screen-card { display: flex; flex-direction: column; }
+
+  .phone {
+    width: 248px;
+    aspect-ratio: 9 / 19.5;
+    margin: 0 auto 20px;
+    border-radius: 34px;
+    padding: 9px;
+    background: #141414;
+    box-shadow: 0 1px 1px rgba(0,0,0,.06), 0 20px 40px -20px var(--shadow);
+  }
+  .phone-inner {
+    width: 100%;
+    height: 100%;
+    border-radius: 26px;
+    overflow: hidden;
+    background: var(--app-bg);
+    display: flex;
+    flex-direction: column;
+    font-family: var(--font-android);
+    color: #1b1b1b;
+    position: relative;
+  }
+
+  .appbar {
+    flex: none;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 14px 14px 10px;
+    background: var(--app-bg);
+    border-bottom: 1px solid rgba(0,0,0,.06);
+  }
+  .appbar .title { font-size: 14px; font-weight: 500; color: #1b1b1b; }
+  .appbar .actions { display: flex; gap: 10px; }
+  .appbar .action { font-size: 10px; font-weight: 600; color: var(--app-primary); text-transform: none; }
+
+  .body { flex: 1; padding: 16px 14px; display: flex; flex-direction: column; overflow: hidden; }
+  .body.centered { align-items: center; justify-content: center; text-align: center; }
+
+  .headline { font-size: 16px; font-weight: 700; color: #161616; margin: 0 0 6px; line-height: 1.25; }
+  .subtext { font-size: 10.5px; color: #55534d; line-height: 1.5; margin: 0 0 14px; }
+  .subtext.tight { margin-bottom: 8px; }
+
+  .m-field {
+    border: 1.4px solid #8a8778;
+    border-radius: 5px;
+    padding: 9px 10px 7px;
+    margin-bottom: 10px;
+    position: relative;
+  }
+  .m-field .m-label { font-size: 8px; color: #6b6a63; position: absolute; top: -6px; left: 8px; background: var(--app-bg); padding: 0 4px; }
+  .m-field .m-value { font-size: 11px; color: #1b1b1b; letter-spacing: .02em; }
+  .m-field .m-value.dots { letter-spacing: 3px; }
+
+  .m-btn {
+    background: var(--app-primary);
+    color: var(--app-on-primary);
+    font-size: 11px;
+    font-weight: 600;
+    text-align: center;
+    border-radius: 20px;
+    padding: 9px 16px;
+    margin-bottom: 8px;
+  }
+  .m-btn.danger { background: #b3261e; }
+  .m-btn.full { width: 100%; }
+  .m-btn-outline {
+    border: 1.4px solid var(--app-primary);
+    color: var(--app-primary);
+    font-size: 11px;
+    font-weight: 600;
+    text-align: center;
+    border-radius: 20px;
+    padding: 8px 16px;
+    margin-bottom: 8px;
+  }
+  .m-btn-outline.danger { border-color: #b3261e; color: #b3261e; }
+  .m-btn-outline.full { width: 100%; }
+  .m-text-btn { color: var(--app-primary); font-size: 10.5px; font-weight: 600; }
+
+  .m-list-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 9px 0;
+    border-bottom: 1px solid rgba(0,0,0,.06);
+  }
+  .m-list-item:last-child { border-bottom: none; }
+  .m-list-item .head { font-size: 11px; font-weight: 500; color: #1b1b1b; }
+  .m-list-item .sub { font-size: 9.5px; color: #5c594f; margin-top: 2px; }
+  .m-list-item .sub.over { color: #b3261e; font-weight: 600; }
+  .m-list-item .trailing { font-size: 9.5px; font-weight: 600; color: var(--app-primary); flex: none; }
+  .m-list-item .trailing.granted { color: #2e7d32; }
+
+  .m-progress { height: 7px; border-radius: 4px; background: rgba(0,0,0,.08); overflow: hidden; margin: 4px 0 10px; }
+  .m-progress .fill { height: 100%; background: var(--app-primary); }
+
+  .stat-row { display: flex; gap: 20px; margin-bottom: 10px; }
+  .stat { }
+  .stat .num { font-size: 15px; font-weight: 700; color: #161616; }
+  .stat .label { font-size: 8.5px; color: #5c594f; }
+
+  .label-eyebrow { font-size: 9px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: #6b6a63; margin: 12px 0 4px; }
+
+  .dialog-scrim { position: absolute; inset: 0; background: rgba(0,0,0,.42); display: flex; align-items: center; justify-content: center; padding: 18px; }
+  .dialog-box { background: var(--app-bg); border-radius: 14px; padding: 16px; width: 100%; box-shadow: 0 8px 20px rgba(0,0,0,.3); }
+  .dialog-box .d-title { font-size: 13px; font-weight: 700; margin-bottom: 8px; }
+  .dialog-box .d-text { font-size: 10px; color: #48463f; line-height: 1.5; margin-bottom: 10px; }
+  .dialog-code { font-size: 26px; font-weight: 700; letter-spacing: .12em; color: #161616; font-variant-numeric: tabular-nums; text-align: center; margin: 6px 0 12px; }
+  .dialog-actions { display: flex; justify-content: flex-end; gap: 14px; }
+
+  .pill-row { display: flex; gap: 6px; margin-bottom: 10px; flex-wrap: wrap; }
+  .pill { font-size: 8.5px; padding: 3px 8px; border-radius: 20px; background: var(--app-surface-variant); color: #3a382f; }
+
+  .block-screen { display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; flex: 1; padding: 22px 16px; }
+  .block-screen .headline { font-size: 15px; }
+
+  .card-tint { background: var(--app-surface-variant); border-radius: 10px; padding: 10px; margin-bottom: 10px; }
+
+  .caption { text-align: left; }
+  .screen-name { font-family: var(--font-display); font-weight: 600; font-size: .95rem; margin: 0 0 4px; }
+  .screen-desc { font-size: .82rem; color: var(--ink-soft); line-height: 1.5; margin: 0 0 8px; }
+  .tag-row { display: flex; flex-wrap: wrap; gap: 6px; }
+  .tag {
+    font-family: var(--font-mono);
+    font-size: .68rem;
+    color: var(--accent);
+    background: var(--accent-soft);
+    border-radius: 5px;
+    padding: 2px 7px;
+  }
+
+  footer.note {
+    margin-top: 80px;
+    padding-top: 24px;
+    border-top: 1px solid var(--rule);
+    font-size: .82rem;
+    color: var(--ink-faint);
+    max-width: 62ch;
+    line-height: 1.6;
+  }
+
+  @media (max-width: 480px) {
+    body { padding-inline: 16px; }
+    .grid { grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 40px 18px; }
+    .phone { width: 200px; }
+  }
+</style>
+
+<div class="wrap">
+
+  <header class="intro">
+    <div class="eyebrow">OpenScreenTime &middot; design reference</div>
+    <h1>Every screen, as built</h1>
+    <p class="lede">
+      A reproduction of the two shipped apps' actual Compose UI &mdash; real copy, real component
+      states, real <code style="font-family:var(--font-mono);font-size:.92em;">Modifier.testTag</code>
+      identifiers from the codebase, not placeholder text. Twelve screens across the kid device app
+      and the parent app, shown in their default light theme.
+    </p>
+    <div class="legend">
+      <span class="legend-item"><span class="swatch" style="background:#2e7d32"></span>Kid app &mdash; org.openscreentime.kid</span>
+      <span class="legend-item"><span class="swatch" style="background:#1565c0"></span>Parent app &mdash; org.openscreentime.parent</span>
+      <span class="legend-item"><span class="swatch" style="background:var(--accent);border-radius:50%"></span>monospace tag = testTag / resource-id used by the E2E test suite</span>
+    </div>
+  </header>
+
+  <!-- ================= KID APP ================= -->
+  <section class="app-section" style="--app-primary:var(--kid-primary);--app-on-primary:var(--kid-on-primary);--app-bg:var(--kid-bg);--app-surface-variant:var(--kid-surface-variant);">
+    <div class="section-head">
+      <span class="app-dot" style="background:var(--kid-primary)"></span>
+      <h2>Kid app</h2>
+      <span class="pkg">org.openscreentime.kid</span>
+    </div>
+
+    <div class="grid">
+
+      <!-- 1. Pairing -->
+      <div class="screen-card">
+        <div class="phone"><div class="phone-inner">
+          <div class="body centered">
+            <div class="headline">Pair this device</div>
+            <p class="subtext">Ask the parent for the 6-digit pairing code shown in their app.</p>
+            <div class="m-field" style="width:100%;text-align:left;">
+              <span class="m-label">Pairing code</span>
+              <div class="m-value">728491</div>
+            </div>
+            <div class="m-btn full" style="margin-top:6px;">Pair device</div>
+          </div>
+        </div></div>
+        <div class="caption">
+          <p class="screen-name">Pairing</p>
+          <p class="screen-desc">First launch, before any parent has claimed this device. Six digits only; button enables once the code is complete.</p>
+          <div class="tag-row"><span class="tag">pairing_code_input</span><span class="tag">pairing_submit</span></div>
+        </div>
+      </div>
+
+      <!-- 2. Status -->
+      <div class="screen-card">
+        <div class="phone"><div class="phone-inner">
+          <div class="body">
+            <div class="headline">Hi, Mia</div>
+            <p class="subtext tight">Screen time monitoring is active.</p>
+            <div class="m-list-item"><div><div class="head">Display over other apps</div><div class="sub">Shows a screen when a limit is reached</div></div><div class="trailing granted">Granted</div></div>
+            <div class="m-list-item"><div><div class="head">Accessibility service</div><div class="sub">Detects which app is open</div></div><div class="trailing granted">Granted</div></div>
+            <div class="m-list-item"><div><div class="head">Notifications</div><div class="sub">Ongoing monitoring notice</div></div><div class="trailing granted">Granted</div></div>
+            <div class="m-list-item"><div><div class="head">Battery optimization</div><div class="sub">Stops the OS killing tracking</div></div><div class="trailing">Fix</div></div>
+            <p class="subtext" style="font-size:8.5px;margin-top:8px;">Some phone makers have extra battery settings &mdash; check for &ldquo;auto-start&rdquo; or &ldquo;protected apps&rdquo; if tracking stops unexpectedly.</p>
+            <div style="flex:1;"></div>
+            <div class="m-btn full">Parent controls</div>
+            <div class="m-btn-outline full">Unpair this device</div>
+          </div>
+        </div></div>
+        <div class="caption">
+          <p class="screen-name">Status</p>
+          <p class="screen-desc">Home screen once paired. Permission checklist drives the headline copy above it; all four green means monitoring is fully active.</p>
+          <div class="tag-row"><span class="tag">status_greeting</span><span class="tag">status_parent_controls</span></div>
+        </div>
+      </div>
+
+      <!-- 3. Parent mode unlock -->
+      <div class="screen-card">
+        <div class="phone"><div class="phone-inner">
+          <div class="body centered">
+            <div class="headline">Parent controls</div>
+            <p class="subtext">Enter the family passcode to change limits on this device.</p>
+            <div class="m-field" style="width:100%;text-align:left;">
+              <span class="m-label">Passcode</span>
+              <div class="m-value dots">&bull;&bull;&bull;&bull;</div>
+            </div>
+            <div class="m-btn full" style="margin-top:6px;">Unlock</div>
+            <div class="m-text-btn" style="margin-top:4px;">Back</div>
+          </div>
+        </div></div>
+        <div class="caption">
+          <p class="screen-name">Parent-mode unlock</p>
+          <p class="screen-desc">Verified entirely on-device against a synced passcode hash &mdash; works offline, five attempts before a cooldown.</p>
+          <div class="tag-row"><span class="tag">shared/util/PasscodeHasher</span></div>
+        </div>
+      </div>
+
+      <!-- 4. Parent controls -->
+      <div class="screen-card">
+        <div class="phone"><div class="phone-inner">
+          <div class="appbar"><span class="title">Parent controls</span><span class="action">DONE</span></div>
+          <div class="body">
+            <div class="m-btn-outline danger full">End screen time now</div>
+            <p class="subtext tight" style="margin-top:6px;">Daily limit: 120 min</p>
+            <div class="m-btn-outline full">Change daily limit</div>
+            <div class="label-eyebrow">App limits</div>
+            <div class="m-list-item"><div class="head">Instagram</div><div class="trailing">Limit</div></div>
+            <div class="m-list-item"><div><div class="head">YouTube</div><div class="sub">No limit set</div></div><div class="trailing">Limit</div></div>
+            <div class="m-list-item"><div><div class="head">Minecraft</div><div class="sub">Limit: 60 min/day</div></div><div class="trailing">Limit</div></div>
+          </div>
+        </div></div>
+        <div class="caption">
+          <p class="screen-name">Parent controls</p>
+          <p class="screen-desc">Reached only after the passcode unlock. Reads today's usage from this device's own local store &mdash; no round trip needed.</p>
+          <div class="tag-row"><span class="tag">ParentControlsScreen.kt</span></div>
+        </div>
+      </div>
+
+      <!-- 5. Block overlay -->
+      <div class="screen-card">
+        <div class="phone"><div class="phone-inner">
+          <div class="block-screen">
+            <div class="headline">Screen time is up for today</div>
+            <p class="subtext">Ask a parent if you need more time.</p>
+            <div class="m-btn" style="margin-top:10px;">Go to home screen</div>
+          </div>
+        </div></div>
+        <div class="caption">
+          <p class="screen-name">Block overlay</p>
+          <p class="screen-desc">Full-screen interrupt shown on top of whatever app was open. Also renders for a per-app limit and for a parent's immediate lock, each with its own wording.</p>
+          <div class="tag-row"><span class="tag">reason=daily_limit</span><span class="tag">app_limit</span><span class="tag">parent_lock</span></div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ================= PARENT APP ================= -->
+  <section class="app-section" style="--app-primary:var(--parent-primary);--app-on-primary:var(--parent-on-primary);--app-bg:var(--parent-bg);--app-surface-variant:var(--parent-surface-variant);">
+    <div class="section-head">
+      <span class="app-dot" style="background:var(--parent-primary)"></span>
+      <h2>Parent app</h2>
+      <span class="pkg">org.openscreentime.parent</span>
+    </div>
+
+    <div class="grid">
+
+      <!-- 6. Auth -->
+      <div class="screen-card">
+        <div class="phone"><div class="phone-inner">
+          <div class="body centered">
+            <div class="headline" style="font-size:17px;">OpenScreenTime</div>
+            <div class="m-field" style="width:100%;text-align:left;margin-top:10px;"><span class="m-label">Email</span><div class="m-value">jordan@family.com</div></div>
+            <div class="m-field" style="width:100%;text-align:left;"><span class="m-label">Password</span><div class="m-value dots">&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;</div></div>
+            <div class="m-btn full" style="margin-top:4px;">Create account</div>
+            <div class="m-text-btn" style="margin-top:6px;">Already have an account? Sign in</div>
+          </div>
+        </div></div>
+        <div class="caption">
+          <p class="screen-name">Sign up / sign in</p>
+          <p class="screen-desc">Firebase email/password auth. Same screen toggles between create-account and sign-in copy.</p>
+          <div class="tag-row"><span class="tag">auth_email</span><span class="tag">auth_password</span><span class="tag">auth_submit</span></div>
+        </div>
+      </div>
+
+      <!-- 7. Passcode unlock -->
+      <div class="screen-card">
+        <div class="phone"><div class="phone-inner">
+          <div class="body centered">
+            <div class="headline">Enter passcode</div>
+            <div class="m-field" style="width:100%;text-align:left;margin-top:8px;"><span class="m-label">Passcode</span><div class="m-value dots">&bull;&bull;&bull;&bull;</div></div>
+            <div class="m-btn full" style="margin-top:6px;">Unlock</div>
+          </div>
+        </div></div>
+        <div class="caption">
+          <p class="screen-name">App-lock gate</p>
+          <p class="screen-desc">Shown on launch once a passcode is set &mdash; same passcode as the kid device's Parent controls. Skipped entirely if no passcode has been set yet.</p>
+          <div class="tag-row"><span class="tag">AppLockState.unlockedThisSession</span></div>
+        </div>
+      </div>
+
+      <!-- 8. Dashboard -->
+      <div class="screen-card">
+        <div class="phone"><div class="phone-inner" style="position:relative;">
+          <div class="appbar"><span class="title">Your children</span><div class="actions"><span class="action">PASSCODE</span><span class="action">SIGN OUT</span></div></div>
+          <div class="body">
+            <div class="card-tint">
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+                <span class="head" style="font-size:12px;font-weight:600;">Mia</span>
+                <span class="m-btn-outline danger" style="margin:0;padding:4px 10px;font-size:9px;">Lock now</span>
+              </div>
+              <div class="stat-row" style="margin-bottom:0;">
+                <div class="stat"><div class="num">1h 42m</div><div class="label">SCREEN TIME</div></div>
+                <div class="stat"><div class="num">23</div><div class="label">UNLOCKS</div></div>
+                <div class="stat"><div class="num">120m</div><div class="label">DAILY LIMIT</div></div>
+              </div>
+            </div>
+            <div class="card-tint" style="margin-bottom:0;">
+              <div style="font-size:12px;font-weight:600;margin-bottom:4px;">Theo</div>
+              <div class="sub">Waiting for device pairing (code: 349217)</div>
+            </div>
+          </div>
+          <div style="position:absolute;right:12px;bottom:14px;width:36px;height:36px;border-radius:50%;background:var(--app-primary);color:#fff;display:flex;align-items:center;justify-content:center;font-size:18px;box-shadow:0 4px 10px rgba(0,0,0,.25);">+</div>
+        </div></div>
+        <div class="caption">
+          <p class="screen-name">Dashboard</p>
+          <p class="screen-desc">One card per child, live from Firestore. An unpaired child shows its pairing code inline until claimed; a paired one shows today's stats and a one-tap lock.</p>
+          <div class="tag-row"><span class="tag">dashboard_add_child</span><span class="tag">dashboard_child_lock_toggle</span></div>
+        </div>
+      </div>
+
+      <!-- 9. Add child dialog -->
+      <div class="screen-card">
+        <div class="phone"><div class="phone-inner" style="position:relative;">
+          <div class="appbar"><span class="title">Your children</span><div class="actions"><span class="action" style="opacity:.4">PASSCODE</span><span class="action" style="opacity:.4">SIGN OUT</span></div></div>
+          <div class="dialog-scrim">
+            <div class="dialog-box">
+              <div class="d-title">Add a child</div>
+              <div class="m-field" style="margin-bottom:14px;"><span class="m-label">Child's name</span><div class="m-value">Theo</div></div>
+              <div class="dialog-actions"><span class="m-text-btn">Cancel</span><span class="m-text-btn">Create</span></div>
+            </div>
+          </div>
+        </div></div>
+        <div class="caption">
+          <p class="screen-name">Add a child</p>
+          <p class="screen-desc">Opened from the dashboard's + button. Creating generates the pairing code shown next.</p>
+          <div class="tag-row"><span class="tag">add_child_name</span><span class="tag">add_child_create</span></div>
+        </div>
+      </div>
+
+      <!-- 10. Pairing code dialog -->
+      <div class="screen-card">
+        <div class="phone"><div class="phone-inner" style="position:relative;">
+          <div class="appbar"><span class="title">Your children</span><div class="actions"><span class="action" style="opacity:.4">PASSCODE</span><span class="action" style="opacity:.4">SIGN OUT</span></div></div>
+          <div class="dialog-scrim">
+            <div class="dialog-box">
+              <div class="d-title">Pairing code</div>
+              <div class="d-text">Enter this code in OpenScreenTime Kid on your child's phone:</div>
+              <div class="dialog-code">349217</div>
+              <div class="dialog-actions"><span class="m-text-btn">Done</span></div>
+            </div>
+          </div>
+        </div></div>
+        <div class="caption">
+          <p class="screen-name">Pairing code</p>
+          <p class="screen-desc">Shown once, immediately after creating a child. The code itself expires 30 minutes after this moment.</p>
+          <div class="tag-row"><span class="tag">pairing_code_value</span><span class="tag">pairing_code_done</span></div>
+        </div>
+      </div>
+
+      <!-- 11. Child detail -->
+      <div class="screen-card">
+        <div class="phone"><div class="phone-inner">
+          <div class="appbar"><span class="title">Mia</span><span class="action">BACK</span></div>
+          <div class="body">
+            <div class="m-btn-outline danger full">End screen time now</div>
+            <div class="label-eyebrow" style="margin-top:8px;">Today</div>
+            <div class="stat-row">
+              <div class="stat"><div class="num">1h 42m</div><div class="label">SCREEN TIME</div></div>
+              <div class="stat"><div class="num">23</div><div class="label">UNLOCKS</div></div>
+            </div>
+            <div class="m-progress"><div class="fill" style="width:85%"></div></div>
+            <p class="subtext tight">Daily limit: 120 min</p>
+            <div class="m-btn-outline full" style="margin-bottom:8px;">Change daily limit</div>
+            <div class="label-eyebrow">App usage today</div>
+            <div class="m-list-item"><div><div class="head">Instagram</div><div class="sub over">45m of 30m limit</div></div><div class="trailing">Limit</div></div>
+            <div class="m-list-item"><div><div class="head">YouTube</div><div class="sub">32m</div></div><div class="trailing">Limit</div></div>
+          </div>
+        </div></div>
+        <div class="caption">
+          <p class="screen-name">Child detail</p>
+          <p class="screen-desc">Full stats, the daily-limit progress bar, and per-app limit editing. &ldquo;Remove Mia&rdquo; sits below the app list (scrolled out of frame here).</p>
+          <div class="tag-row"><span class="tag">ChildDetailScreen.kt</span></div>
+        </div>
+      </div>
+
+      <!-- 12. Passcode settings -->
+      <div class="screen-card">
+        <div class="phone"><div class="phone-inner">
+          <div class="appbar"><span class="title">Family passcode</span><span class="action">BACK</span></div>
+          <div class="body">
+            <p class="subtext">This locks the app, and can be entered on a paired kid device to unlock &ldquo;Parent controls&rdquo; there. Set a new one to replace it.</p>
+            <div class="m-field"><span class="m-label">New passcode (4-6 digits)</span><div class="m-value dots">&bull;&bull;&bull;&bull;</div></div>
+            <div class="m-field"><span class="m-label">Confirm passcode</span><div class="m-value dots">&bull;&bull;&bull;&bull;</div></div>
+            <div class="m-btn full" style="margin-top:2px;">Save passcode</div>
+          </div>
+        </div></div>
+        <div class="caption">
+          <p class="screen-name">Family passcode</p>
+          <p class="screen-desc">Hashed with PBKDF2-HMAC-SHA256 on save, then fanned out to every child doc so already-paired kid devices pick it up.</p>
+          <div class="tag-row"><span class="tag">PasscodeSettingsScreen.kt</span></div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <footer class="note">
+    Reproduced from the live Jetpack Compose source in <code style="font-family:var(--font-mono);">kid/src/main/java/.../ui</code>
+    and <code style="font-family:var(--font-mono);">parent/src/main/java/.../ui</code> &mdash; component shapes, copy, and color
+    values match the running app; pixel-exact Material 3 tonal-palette shading is approximated. All names, codes, and figures
+    on this page are illustrative examples, not real account data.
+  </footer>
+
+</div>

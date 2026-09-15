@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- Without this, Android 11+ package-visibility filtering silently blocks this
+         test's startActivity() calls into the two real apps it drives (confirmed via
+         an AppsFilter "BLOCKED" logcat entry between openscreentime test/app
+         packages) - the launch intent resolves but the activity never actually
+         comes to the foreground, so every element wait then times out. -->
+    <queries>
+        <package android:name="org.openscreentime.kid" />
+        <package android:name="org.openscreentime.parent" />
+    </queries>
+
+</manifest>
