@@ -104,6 +104,14 @@ class MainActivity : ComponentActivity() {
                                     notificationPermissionLauncher.launch(android.Manifest.permission.POST_NOTIFICATIONS)
                                 }
                             },
+                            onRequestBatteryExemption = {
+                                startActivity(
+                                    Intent(
+                                        Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS,
+                                        Uri.parse("package:$packageName")
+                                    )
+                                )
+                            },
                             onOpenParentMode = { screen = KidScreen.PARENT_UNLOCK },
                             onUnpair = {
                                 pairingStore.clear()

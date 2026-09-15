@@ -12,6 +12,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -26,6 +27,7 @@ fun StatusScreen(
     onRequestOverlay: () -> Unit,
     onRequestAccessibility: () -> Unit,
     onRequestNotifications: () -> Unit,
+    onRequestBatteryExemption: () -> Unit,
     onOpenParentMode: () -> Unit,
     onUnpair: () -> Unit
 ) {
@@ -59,6 +61,21 @@ fun StatusScreen(
             "Shows the ongoing monitoring notification",
             permissions.notifications,
             onRequestNotifications
+        )
+        PermissionRow(
+            "Battery optimization",
+            "Stops the system from killing tracking in the background",
+            permissions.ignoringBatteryOptimizations,
+            onRequestBatteryExemption
+        )
+        Spacer(Modifier.height(8.dp))
+        Text(
+            "Some phone makers (Samsung, Xiaomi, and others) have their own extra battery " +
+                "settings beyond this one - if tracking still stops unexpectedly after enabling " +
+                "this, check this phone's battery/app settings for anything mentioning " +
+                "\"auto-start,\" \"protected apps,\" or \"sleeping apps.\"",
+            style = MaterialTheme.typography.bodySmall,
+            textAlign = TextAlign.Start
         )
 
         Spacer(Modifier.weight(1f, fill = true))
