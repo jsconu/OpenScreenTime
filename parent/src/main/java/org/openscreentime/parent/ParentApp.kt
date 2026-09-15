@@ -66,6 +66,8 @@ class ParentApp : Application() {
             AppLimitAccessibilityService.limitsCache = child.appLimits
             AppLimitAccessibilityService.dailyLimitMinutes = child.dailyLimitMinutes
             AppLimitAccessibilityService.dailyUnlockGoal = child.dailyUnlockGoal
+            AppLimitAccessibilityService.bedtimeStartMinutes = child.bedtimeStartMinutes
+            AppLimitAccessibilityService.bedtimeEndMinutes = child.bedtimeEndMinutes
 
             val wasLocked = AppLimitAccessibilityService.lockedCache
             AppLimitAccessibilityService.lockedCache = child.locked

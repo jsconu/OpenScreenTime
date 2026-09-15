@@ -67,7 +67,8 @@ service cloud.firestore {
         allow update: if request.auth != null
           && resource.data.deviceUid == request.auth.uid
           && request.resource.data.diff(resource.data).affectedKeys()
-               .hasOnly(['dailyLimitMinutes', 'appLimits', 'locked', 'dailyUnlockGoal']);
+               .hasOnly(['dailyLimitMinutes', 'appLimits', 'locked', 'dailyUnlockGoal',
+                         'bedtimeStartMinutes', 'bedtimeEndMinutes']);
 
         // Negotiated limits (#14): the linked device may propose new limits with no
         // passcode/parent-mode gate at all - deliberately separate from the rule above,

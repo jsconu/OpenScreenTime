@@ -19,6 +19,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import org.openscreentime.kid.monitor.AppLimitAccessibilityService
+import org.openscreentime.shared.model.formatMinutesOfDay
 
 /** Full-screen interruption shown when a daily or per-app limit is reached. */
 class BlockOverlayActivity : ComponentActivity() {
@@ -38,6 +40,7 @@ class BlockOverlayActivity : ComponentActivity() {
                             when (reason) {
                                 "daily_limit" -> "Screen time is up for today"
                                 "parent_lock" -> "Screen time has been paused"
+                                "bedtime" -> "It's bedtime"
                                 else -> "This app's time limit is reached"
                             },
                             style = MaterialTheme.typography.headlineSmall,
@@ -45,10 +48,14 @@ class BlockOverlayActivity : ComponentActivity() {
                         )
                         Spacer(Modifier.height(16.dp))
                         Text(
-                            if (reason == "parent_lock") {
-                                "A parent has paused screen time. Ask them to resume it."
-                            } else {
-                                "Ask a parent if you need more time."
+                            when (reason) {
+                                "parent_lock" -> "A parent has paused screen time. Ask them to resume it."
+                                "bedtime" -> {
+                                    val end = AppLimitAccessibilityService.bedtimeEndMinutes
+                                    if (end != null) "Screen time starts again at ${formatMinutesOfDay(end)}."
+                                    else "Screen time starts again in the morning."
+                                }
+                                else -> "Ask a parent if you need more time."
                             },
                             textAlign = TextAlign.Center,
                             style = MaterialTheme.typography.bodyMedium

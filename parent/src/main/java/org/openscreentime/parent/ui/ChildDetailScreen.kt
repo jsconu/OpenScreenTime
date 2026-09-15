@@ -38,6 +38,7 @@ import kotlinx.coroutines.launch
 import org.openscreentime.shared.model.ChildProfile
 import org.openscreentime.shared.model.DailyStats
 import org.openscreentime.shared.model.computeStreak
+import org.openscreentime.shared.model.formatMinutesOfDay
 import org.openscreentime.shared.model.todayDateString
 import org.openscreentime.shared.repo.FamilyRepository
 
@@ -57,6 +58,7 @@ fun ChildDetailScreen(
     var streakDays by remember { mutableIntStateOf(0) }
     var showLimitDialog by remember { mutableStateOf(false) }
     var showUnlockGoalDialog by remember { mutableStateOf(false) }
+    var showBedtimeDialog by remember { mutableStateOf(false) }
     var editingApp by remember { mutableStateOf<String?>(null) }
     var showLockConfirm by remember { mutableStateOf(false) }
     var showDeleteConfirm by remember { mutableStateOf(false) }
@@ -172,6 +174,23 @@ fun ChildDetailScreen(
                     )
                     Spacer(Modifier.height(8.dp))
                     OutlinedButton(onClick = { showUnlockGoalDialog = true }) { Text("Change unlock goal") }
+                    Spacer(Modifier.height(16.dp))
+                    val bedtimeStart = currentChild.bedtimeStartMinutes
+                    val bedtimeEnd = currentChild.bedtimeEndMinutes
+                    Text(
+                        if (bedtimeStart != null && bedtimeEnd != null) {
+                            "Bedtime: ${formatMinutesOfDay(bedtimeStart)} - ${formatMinutesOfDay(bedtimeEnd)}"
+                        } else {
+                            "No bedtime set"
+                        },
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                    Text(
+                        "Blocks every app during this window, independent of the daily limit.",
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                    Spacer(Modifier.height(8.dp))
+                    OutlinedButton(onClick = { showBedtimeDialog = true }) { Text("Change bedtime") }
                 }
             }
             item {
@@ -242,6 +261,18 @@ fun ChildDetailScreen(
             onConfirm = { goal ->
                 scope.launch { repository.updateDailyUnlockGoal(parentUid, childId, goal) }
                 showUnlockGoalDialog = false
+            }
+        )
+    }
+
+    if (showBedtimeDialog) {
+        BedtimeWindowDialog(
+            initialStartMinutes = currentChild.bedtimeStartMinutes,
+            initialEndMinutes = currentChild.bedtimeEndMinutes,
+            onDismiss = { showBedtimeDialog = false },
+            onConfirm = { start, end ->
+                scope.launch { repository.updateBedtimeWindow(parentUid, childId, start, end) }
+                showBedtimeDialog = false
             }
         )
     }
@@ -366,3 +397,61 @@ private fun UnlockGoalInputDialog(
         dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } }
     )
 }
+
+@Composable
+private fun BedtimeWindowDialog(
+    initialStartMinutes: Int?,
+    initialEndMinutes: Int?,
+    onDismiss: () -> Unit,
+    onConfirm: (Int?, Int?) -> Unit
+) {
+    var startText by remember { mutableStateOf(initialStartMinutes?.let(::formatHHmm) ?: "") }
+    var endText by remember { mutableStateOf(initialEndMinutes?.let(::formatHHmm) ?: "") }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Bedtime") },
+        text = {
+            Column {
+                Text(
+                    "Blocks every app during this window, independent of the daily limit. " +
+                        "Leave both blank to turn it off.",
+                    style = MaterialTheme.typography.bodySmall
+                )
+                Spacer(Modifier.height(8.dp))
+                OutlinedTextField(
+                    value = startText,
+                    onValueChange = { startText = it },
+                    label = { Text("Start (24h, e.g. 21:00)") },
+                    singleLine = true
+                )
+                Spacer(Modifier.height(8.dp))
+                OutlinedTextField(
+                    value = endText,
+                    onValueChange = { endText = it },
+                    label = { Text("End (24h, e.g. 07:00)") },
+                    singleLine = true
+                )
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = {
+                val start = parseHHmm(startText)
+                val end = parseHHmm(endText)
+                if (start != null && end != null) onConfirm(start, end) else onConfirm(null, null)
+            }) { Text("Save") }
+        },
+        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } }
+    )
+}
+
+/** Parses a "HH:MM" 24-hour string into minutes since midnight, or null if it's not valid. */
+private fun parseHHmm(text: String): Int? {
+    val parts = text.trim().split(":")
+    if (parts.size != 2) return null
+    val h = parts[0].toIntOrNull() ?: return null
+    val m = parts[1].toIntOrNull() ?: return null
+    if (h !in 0..23 || m !in 0..59) return null
+    return h * 60 + m
+}
+
+private fun formatHHmm(minutes: Int): String = "%02d:%02d".format(minutes / 60, minutes % 60)

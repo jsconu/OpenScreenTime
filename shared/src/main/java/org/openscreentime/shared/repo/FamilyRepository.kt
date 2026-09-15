@@ -160,6 +160,13 @@ class FamilyRepository(
             .update("dailyUnlockGoal", goal).await()
     }
 
+    /** Both null clears the bedtime window (see #15). */
+    suspend fun updateBedtimeWindow(parentUid: String, childId: String, startMinutes: Int?, endMinutes: Int?) {
+        db.document(FirestorePaths.childDoc(parentUid, childId))
+            .update(mapOf("bedtimeStartMinutes" to startMinutes, "bedtimeEndMinutes" to endMinutes))
+            .await()
+    }
+
     /**
      * Kid-initiated, passcode-free suggestion (see #14) - writes only the two proposal
      * fields, never the real limits. Either parameter may be left null to leave that

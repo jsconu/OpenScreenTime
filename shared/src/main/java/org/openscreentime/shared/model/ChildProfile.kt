@@ -40,7 +40,15 @@ data class ChildProfile(
      */
     val proposedDailyLimitMinutes: Int? = null,
     /** A kid-proposed replacement for [appLimits] awaiting parent approval. See #14. */
-    val proposedAppLimits: Map<String, Int>? = null
+    val proposedAppLimits: Map<String, Int>? = null,
+    /**
+     * Minutes since local midnight (0-1439). Both null = no bedtime window set. A full
+     * block, independent of the daily minute-count limit - see #15. [bedtimeStartMinutes]
+     * may be greater than [bedtimeEndMinutes] for a window that spans midnight (e.g.
+     * 21:00-07:00 is 1260-420); see [isInBedtimeWindow] for the wraparound-safe check.
+     */
+    val bedtimeStartMinutes: Int? = null,
+    val bedtimeEndMinutes: Int? = null
 ) {
     fun toMap(): Map<String, Any?> = mapOf(
         "name" to name,
@@ -55,7 +63,9 @@ data class ChildProfile(
         "isSelf" to isSelf,
         "dailyUnlockGoal" to dailyUnlockGoal,
         "proposedDailyLimitMinutes" to proposedDailyLimitMinutes,
-        "proposedAppLimits" to proposedAppLimits
+        "proposedAppLimits" to proposedAppLimits,
+        "bedtimeStartMinutes" to bedtimeStartMinutes,
+        "bedtimeEndMinutes" to bedtimeEndMinutes
     )
 
     companion object {
@@ -74,7 +84,9 @@ data class ChildProfile(
             isSelf = map["isSelf"] as? Boolean ?: false,
             dailyUnlockGoal = (map["dailyUnlockGoal"] as? Long)?.toInt(),
             proposedDailyLimitMinutes = (map["proposedDailyLimitMinutes"] as? Long)?.toInt(),
-            proposedAppLimits = (map["proposedAppLimits"] as? Map<String, Long>)?.mapValues { it.value.toInt() }
+            proposedAppLimits = (map["proposedAppLimits"] as? Map<String, Long>)?.mapValues { it.value.toInt() },
+            bedtimeStartMinutes = (map["bedtimeStartMinutes"] as? Long)?.toInt(),
+            bedtimeEndMinutes = (map["bedtimeEndMinutes"] as? Long)?.toInt()
         )
     }
 }

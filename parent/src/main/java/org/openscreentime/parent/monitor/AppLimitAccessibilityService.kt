@@ -13,6 +13,8 @@ import org.openscreentime.parent.R
 import org.openscreentime.parent.data.UsageStore
 import org.openscreentime.parent.ui.BlockOverlayActivity
 import org.openscreentime.parent.ui.MainActivity
+import org.openscreentime.shared.model.isInBedtimeWindow
+import org.openscreentime.shared.model.nowMinutesOfDay
 
 /**
  * Self-tracking equivalent of the kid app's AppLimitAccessibilityService (see #8) -
@@ -79,10 +81,19 @@ class AppLimitAccessibilityService : AccessibilityService() {
     }
 
     private fun checkLockOnly() {
+        if (isInBedtime()) {
+            showBlockOverlay("bedtime")
+            return
+        }
         if (lockedCache) showBlockOverlay("parent_lock")
     }
 
     private fun checkLimits(pkg: String) {
+        // Bedtime is a hard block independent of the minute-count limit (see #15).
+        if (isInBedtime()) {
+            showBlockOverlay("bedtime")
+            return
+        }
         if (lockedCache) {
             showBlockOverlay("parent_lock")
             return
@@ -120,6 +131,9 @@ class AppLimitAccessibilityService : AccessibilityService() {
         }
     }
 
+    private fun isInBedtime(): Boolean =
+        isInBedtimeWindow(nowMinutesOfDay(), bedtimeStartMinutes, bedtimeEndMinutes)
+
     private fun notifyWarning(title: String, text: String) {
         val notification = NotificationCompat.Builder(this, ParentApp.WARNING_CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_monitor)
@@ -155,7 +169,7 @@ class AppLimitAccessibilityService : AccessibilityService() {
         val ratio = maxOf(timeRatio, unlockRatio)
 
         val iconRes = when {
-            lockedCache || ratio >= 1f -> R.drawable.ic_status_stop
+            lockedCache || isInBedtime() || ratio >= 1f -> R.drawable.ic_status_stop
             ratio >= 0.7f -> R.drawable.ic_status_caution
             else -> R.drawable.ic_status_good
         }
@@ -189,5 +203,8 @@ class AppLimitAccessibilityService : AccessibilityService() {
         @Volatile var lockedCache: Boolean = false
         /** Informational only (see #10) - factors into the status icon, never blocks. */
         @Volatile var dailyUnlockGoal: Int? = null
+        /** Minutes since local midnight; either null = no bedtime window set. See #15. */
+        @Volatile var bedtimeStartMinutes: Int? = null
+        @Volatile var bedtimeEndMinutes: Int? = null
     }
 }
