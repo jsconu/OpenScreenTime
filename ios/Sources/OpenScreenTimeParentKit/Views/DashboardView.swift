@@ -16,6 +16,25 @@ struct DashboardView: View {
     @State private var errorMessage: String?
 
     var body: some View {
+        childList
+            .navigationTitle("Your children")
+            .navigationDestination(for: String.self) { childId in
+                ChildDetailView(repository: repository, parentUid: parentUid, childId: childId)
+            }
+            .toolbar { toolbarContent }
+            .sheet(isPresented: $showAddChild) { addChildSheet }
+            .sheet(item: newChildCodeBinding) { item in PairingCodeSheet(code: item.code) { newChildCode = nil } }
+            .alert("Something went wrong", isPresented: errorMessageBinding) {
+                Button("OK", role: .cancel) {}
+            } message: {
+                Text(errorMessage ?? "")
+            }
+            .onAppear(perform: startListening)
+            .onDisappear { listener?.remove() }
+    }
+
+    @ViewBuilder
+    private var childList: some View {
         List {
             if children.isEmpty {
                 Text("Add your first child to get started.")
@@ -28,46 +47,43 @@ struct DashboardView: View {
                 }
             }
         }
-        .navigationTitle("Your children")
-        .navigationDestination(for: String.self) { childId in
-            ChildDetailView(repository: repository, parentUid: parentUid, childId: childId)
-        }
-        .toolbar {
-            ToolbarItem(placement: .navigationBarTrailing) {
-                NavigationLink("Passcode") {
-                    PasscodeSettingsView(repository: repository, parentUid: parentUid)
-                }
-            }
-            ToolbarItem(placement: .navigationBarTrailing) {
-                Button("Sign out") { session.signOut() }
-            }
-            ToolbarItem(placement: .primaryAction) {
-                Button {
-                    showAddChild = true
-                } label: {
-                    Image(systemName: "plus")
-                }
+    }
+
+    @ToolbarContentBuilder
+    private var toolbarContent: some ToolbarContent {
+        ToolbarItem(placement: .navigationBarTrailing) {
+            NavigationLink("Passcode") {
+                PasscodeSettingsView(repository: repository, parentUid: parentUid)
             }
         }
-        .sheet(isPresented: $showAddChild) {
-            AddChildSheet { name in
-                Task { await createChild(name: name) }
+        ToolbarItem(placement: .navigationBarTrailing) {
+            Button("Sign out") { session.signOut() }
+        }
+        ToolbarItem(placement: .primaryAction) {
+            Button {
+                showAddChild = true
+            } label: {
+                Image(systemName: "plus")
             }
         }
-        .sheet(item: Binding(get: { newChildCode.map(PairingCodeItem.init) }, set: { newChildCode = $0?.code })) { item in
-            PairingCodeSheet(code: item.code) { newChildCode = nil }
+    }
+
+    private var addChildSheet: some View {
+        AddChildSheet { name in
+            Task { await createChild(name: name) }
         }
-        .alert("Something went wrong", isPresented: Binding(get: { errorMessage != nil }, set: { _ in errorMessage = nil })) {
-            Button("OK", role: .cancel) {}
-        } message: {
-            Text(errorMessage ?? "")
-        }
-        .onAppear {
-            listener = repository.listenChildren(parentUid: parentUid) { children = $0 }
-        }
-        .onDisappear {
-            listener?.remove()
-        }
+    }
+
+    private var newChildCodeBinding: Binding<PairingCodeItem?> {
+        Binding(get: { newChildCode.map(PairingCodeItem.init) }, set: { newChildCode = $0?.code })
+    }
+
+    private var errorMessageBinding: Binding<Bool> {
+        Binding(get: { errorMessage != nil }, set: { _ in errorMessage = nil })
+    }
+
+    private func startListening() {
+        listener = repository.listenChildren(parentUid: parentUid) { children = $0 }
     }
 
     private func createChild(name: String) async {

@@ -3,6 +3,12 @@ import FirebaseFirestore
 
 /// Mirrors the Android parent app's ChildDetailScreen.kt (v1 subset). Full stats, the
 /// daily-limit progress, and per-app limit editing.
+///
+/// Broken into several small extracted subviews rather than one large `body` - Swift's
+/// type-checker times out ("unable to type-check this expression in reasonable time") on
+/// a single view-builder expression this size once it mixes List/Section nesting with
+/// ternaries and numeric-literal inference; splitting it up is the standard fix, not
+/// just a style preference.
 struct ChildDetailView: View {
     let repository: FamilyRepository
     let parentUid: String
@@ -19,117 +25,196 @@ struct ChildDetailView: View {
     @Environment(\.dismiss) private var dismiss
 
     var body: some View {
-        Group {
-            if let child {
-                List {
-                    Section {
-                        Button(child.locked ? "Resume screen time" : "End screen time now") {
-                            if child.locked {
-                                Task { try? await repository.setLocked(parentUid: parentUid, childId: childId, locked: false) }
-                            } else {
-                                showLockConfirm = true
-                            }
-                        }
-                        .foregroundStyle(child.locked ? .primary : .red)
-                    }
+        content
+            .navigationTitle(child?.name ?? "")
+            .onAppear(perform: startListening)
+            .onDisappear(perform: stopListening)
+            .confirmationDialog("End screen time now?", isPresented: $showLockConfirm, titleVisibility: .visible) {
+                lockConfirmActions
+            } message: {
+                Text("This blocks every app on \(child?.name ?? "their")'s device until you resume it.")
+            }
+            .confirmationDialog("Remove \(child?.name ?? "")?", isPresented: $showDeleteConfirm, titleVisibility: .visible) {
+                deleteConfirmActions
+            } message: {
+                Text("This deletes \(child?.name ?? "")'s profile and all of their screen time history. This can't be undone.")
+            }
+            .sheet(isPresented: $showLimitDialog) { limitDialogSheet }
+            .sheet(item: editingAppBinding) { item in appLimitSheet(for: item) }
+    }
 
-                    Section("Today") {
-                        HStack(spacing: 24) {
-                            StatBlock(label: "Screen time", value: formatDuration(stats.totalScreenTimeMs))
-                            StatBlock(label: "Unlocks", value: "\(stats.unlockCount)")
-                        }
-                        ProgressView(value: min(1, Double(stats.totalScreenTimeMs) / 60_000 / Double(max(1, child.dailyLimitMinutes))))
-                        Text("Daily limit: \(child.dailyLimitMinutes) min").font(.caption)
-                        Button("Change daily limit") { showLimitDialog = true }
-                    }
-
-                    Section("App usage today") {
-                        if stats.appUsage.isEmpty {
-                            Text("No app usage synced yet.").foregroundStyle(.secondary)
-                        }
-                        ForEach(stats.appUsage.sorted(by: { $0.foregroundTimeMs > $1.foregroundTimeMs })) { app in
-                            Button {
-                                editingApp = app.packageName
-                            } label: {
-                                HStack {
-                                    VStack(alignment: .leading) {
-                                        Text(app.appName)
-                                        if let limit = child.appLimits[app.packageName] {
-                                            Text("\(formatDuration(app.foregroundTimeMs)) of \(limit)m limit").font(.caption).foregroundStyle(.secondary)
-                                        } else {
-                                            Text(formatDuration(app.foregroundTimeMs)).font(.caption).foregroundStyle(.secondary)
-                                        }
-                                    }
-                                    Spacer()
-                                    Text("Limit").font(.caption).foregroundStyle(.blue)
-                                }
-                            }
-                            .foregroundStyle(.primary)
-                        }
-                    }
-
-                    Section {
-                        Button("Remove \(child.name)", role: .destructive) { showDeleteConfirm = true }
-                    }
-                }
-            } else {
-                ProgressView()
-            }
-        }
-        .navigationTitle(child?.name ?? "")
-        .onAppear {
-            childListener = repository.listenChildren(parentUid: parentUid) { list in
-                child = list.first { $0.id == childId }
-            }
-            statsListener = repository.listenDailyStats(parentUid: parentUid, childId: childId, date: todayDateString()) {
-                stats = $0
-            }
-        }
-        .onDisappear {
-            childListener?.remove()
-            statsListener?.remove()
-        }
-        .confirmationDialog("End screen time now?", isPresented: $showLockConfirm, titleVisibility: .visible) {
-            Button("End now", role: .destructive) {
-                Task { try? await repository.setLocked(parentUid: parentUid, childId: childId, locked: true) }
-            }
-            Button("Cancel", role: .cancel) {}
-        } message: {
-            Text("This blocks every app on \(child?.name ?? "their")'s device until you resume it.")
-        }
-        .confirmationDialog("Remove \(child?.name ?? "")?", isPresented: $showDeleteConfirm, titleVisibility: .visible) {
-            Button("Remove", role: .destructive) {
-                Task {
-                    try? await repository.deleteChild(parentUid: parentUid, childId: childId)
-                    dismiss()
+    @ViewBuilder
+    private var content: some View {
+        if let child {
+            List {
+                LockSection(repository: repository, parentUid: parentUid, childId: childId, child: child, showLockConfirm: $showLockConfirm)
+                TodaySection(stats: stats, child: child, showLimitDialog: $showLimitDialog)
+                AppUsageSection(stats: stats, child: child, editingApp: $editingApp)
+                Section {
+                    Button("Remove \(child.name)", role: .destructive) { showDeleteConfirm = true }
                 }
             }
-            Button("Cancel", role: .cancel) {}
-        } message: {
-            Text("This deletes \(child?.name ?? "")'s profile and all of their screen time history. This can't be undone.")
+        } else {
+            ProgressView()
         }
-        .sheet(isPresented: $showLimitDialog) {
-            MinutesInputSheet(title: "Daily screen time limit", initialMinutes: child?.dailyLimitMinutes ?? 120) { minutes in
-                Task { try? await repository.updateDailyLimit(parentUid: parentUid, childId: childId, minutes: minutes) }
-                showLimitDialog = false
-            } onCancel: {
-                showLimitDialog = false
+    }
+
+    @ViewBuilder
+    private var lockConfirmActions: some View {
+        Button("End now", role: .destructive) {
+            Task { try? await repository.setLocked(parentUid: parentUid, childId: childId, locked: true) }
+        }
+        Button("Cancel", role: .cancel) {}
+    }
+
+    @ViewBuilder
+    private var deleteConfirmActions: some View {
+        Button("Remove", role: .destructive) {
+            Task {
+                try? await repository.deleteChild(parentUid: parentUid, childId: childId)
+                dismiss()
             }
         }
-        .sheet(item: Binding(get: { editingApp.map(EditingApp.init) }, set: { editingApp = $0?.packageName })) { item in
-            let appName = stats.appUsage.first { $0.packageName == item.packageName }?.appName ?? item.packageName
-            MinutesInputSheet(
-                title: "Daily limit for \(appName)",
-                initialMinutes: child?.appLimits[item.packageName] ?? 60
-            ) { minutes in
-                if var updated = child?.appLimits { updated[item.packageName] = minutes
-                    Task { try? await repository.updateAppLimits(parentUid: parentUid, childId: childId, appLimits: updated) }
+        Button("Cancel", role: .cancel) {}
+    }
+
+    private var limitDialogSheet: some View {
+        MinutesInputSheet(title: "Daily screen time limit", initialMinutes: child?.dailyLimitMinutes ?? 120) { minutes in
+            Task { try? await repository.updateDailyLimit(parentUid: parentUid, childId: childId, minutes: minutes) }
+            showLimitDialog = false
+        } onCancel: {
+            showLimitDialog = false
+        }
+    }
+
+    private var editingAppBinding: Binding<EditingApp?> {
+        Binding(get: { editingApp.map(EditingApp.init) }, set: { editingApp = $0?.packageName })
+    }
+
+    private func appLimitSheet(for item: EditingApp) -> some View {
+        let appName = stats.appUsage.first { $0.packageName == item.packageName }?.appName ?? item.packageName
+        let initialMinutes = child?.appLimits[item.packageName] ?? 60
+        return MinutesInputSheet(title: "Daily limit for \(appName)", initialMinutes: initialMinutes) { minutes in
+            saveAppLimit(packageName: item.packageName, minutes: minutes)
+            editingApp = nil
+        } onCancel: {
+            editingApp = nil
+        }
+    }
+
+    private func saveAppLimit(packageName: String, minutes: Int) {
+        guard var updated = child?.appLimits else { return }
+        updated[packageName] = minutes
+        Task { try? await repository.updateAppLimits(parentUid: parentUid, childId: childId, appLimits: updated) }
+    }
+
+    private func startListening() {
+        childListener = repository.listenChildren(parentUid: parentUid) { list in
+            child = list.first { $0.id == childId }
+        }
+        statsListener = repository.listenDailyStats(parentUid: parentUid, childId: childId, date: todayDateString()) {
+            stats = $0
+        }
+    }
+
+    private func stopListening() {
+        childListener?.remove()
+        statsListener?.remove()
+    }
+}
+
+private struct LockSection: View {
+    let repository: FamilyRepository
+    let parentUid: String
+    let childId: String
+    let child: ChildProfile
+    @Binding var showLockConfirm: Bool
+
+    var body: some View {
+        Section {
+            Button(child.locked ? "Resume screen time" : "End screen time now") {
+                if child.locked {
+                    Task { try? await repository.setLocked(parentUid: parentUid, childId: childId, locked: false) }
+                } else {
+                    showLockConfirm = true
                 }
-                editingApp = nil
-            } onCancel: {
-                editingApp = nil
+            }
+            .foregroundStyle(child.locked ? .primary : .red)
+        }
+    }
+}
+
+private struct TodaySection: View {
+    let stats: DailyStats
+    let child: ChildProfile
+    @Binding var showLimitDialog: Bool
+
+    private var progress: Double {
+        let usedMinutes = Double(stats.totalScreenTimeMs) / 60_000
+        let limitMinutes = Double(max(1, child.dailyLimitMinutes))
+        return min(1, usedMinutes / limitMinutes)
+    }
+
+    var body: some View {
+        Section("Today") {
+            HStack(spacing: 24) {
+                StatBlock(label: "Screen time", value: formatDuration(stats.totalScreenTimeMs))
+                StatBlock(label: "Unlocks", value: "\(stats.unlockCount)")
+            }
+            ProgressView(value: progress)
+            Text("Daily limit: \(child.dailyLimitMinutes) min").font(.caption)
+            Button("Change daily limit") { showLimitDialog = true }
+        }
+    }
+}
+
+private struct AppUsageSection: View {
+    let stats: DailyStats
+    let child: ChildProfile
+    @Binding var editingApp: String?
+
+    private var sortedUsage: [AppUsage] {
+        stats.appUsage.sorted { $0.foregroundTimeMs > $1.foregroundTimeMs }
+    }
+
+    var body: some View {
+        Section("App usage today") {
+            if stats.appUsage.isEmpty {
+                Text("No app usage synced yet.").foregroundStyle(.secondary)
+            }
+            ForEach(sortedUsage) { app in
+                AppUsageRow(app: app, limitMinutes: child.appLimits[app.packageName]) {
+                    editingApp = app.packageName
+                }
             }
         }
+    }
+}
+
+private struct AppUsageRow: View {
+    let app: AppUsage
+    let limitMinutes: Int?
+    let onTap: () -> Void
+
+    private var subtitle: String {
+        if let limitMinutes {
+            return "\(formatDuration(app.foregroundTimeMs)) of \(limitMinutes)m limit"
+        }
+        return formatDuration(app.foregroundTimeMs)
+    }
+
+    var body: some View {
+        Button(action: onTap) {
+            HStack {
+                VStack(alignment: .leading) {
+                    Text(app.appName)
+                    Text(subtitle).font(.caption).foregroundStyle(.secondary)
+                }
+                Spacer()
+                Text("Limit").font(.caption).foregroundStyle(.blue)
+            }
+        }
+        .foregroundStyle(.primary)
     }
 }
 
