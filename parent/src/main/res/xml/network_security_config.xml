@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Permits cleartext HTTP only to 10.0.2.2 - the Android emulator's alias for
+  its host machine, used only when BuildConfig.USE_FIREBASE_EMULATOR points
+  this app at the Firebase Local Emulator Suite for the E2E workflow (see
+  ParentApp.onCreate() and .github/workflows/e2e.yml). Not routable outside
+  an emulator, so this is safe to ship in every build rather than gate
+  behind a build flag - a real device never has anything reachable at this
+  address. Every other host still requires HTTPS.
+-->
+<network-security-config>
+    <domain-config cleartextTrafficPermitted="true">
+        <domain includeSubdomains="false">10.0.2.2</domain>
+    </domain-config>
+</network-security-config>
