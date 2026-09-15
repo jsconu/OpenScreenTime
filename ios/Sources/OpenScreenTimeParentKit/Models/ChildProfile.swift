@@ -1,0 +1,76 @@
+import Foundation
+
+/// Mirrors `shared/model/ChildProfile.kt` on the Android side field-for-field, since both
+/// platforms read and write the same Firestore documents at
+/// `parents/{parentUid}/children/{childId}`. Every field the Android apps can write is
+/// represented here too, even where this app's v1 UI doesn't yet expose editing it (unlock
+/// goals, bedtime, negotiated-limit proposals, streaks) - so a document synced from an
+/// Android device round-trips through this app without data loss.
+struct ChildProfile: Identifiable, Equatable {
+    var id: String = ""
+    var name: String = ""
+    var pairingCode: String = ""
+    var paired: Bool = false
+    var deviceUid: String?
+    var dailyLimitMinutes: Int = 120
+    var appLimits: [String: Int] = [:]
+    /// True while a parent has hit "Lock now" - blocks all apps on the kid device immediately.
+    var locked: Bool = false
+    /// A copy of the parent's passcode hash/salt, denormalized onto every child so a paired
+    /// kid device can verify a passcode entered locally without reading the parent's account doc.
+    var parentPasscodeHash: String?
+    var parentPasscodeSalt: String?
+    /// True for the one special child doc, per parent, that represents the parent's own
+    /// device rather than a paired kid's (see #8). Always has the fixed id "self".
+    var isSelf: Bool = false
+    /// Informational only - never enforced/blocked (see #10).
+    var dailyUnlockGoal: Int?
+    /// A kid-proposed daily limit awaiting parent approval, or nil (see #14).
+    var proposedDailyLimitMinutes: Int?
+    var proposedAppLimits: [String: Int]?
+    /// Minutes since local midnight (0-1439); either nil = no bedtime window set (see #15).
+    var bedtimeStartMinutes: Int?
+    var bedtimeEndMinutes: Int?
+
+    func toMap() -> [String: Any] {
+        var map: [String: Any] = [
+            "name": name,
+            "pairingCode": pairingCode,
+            "paired": paired,
+            "dailyLimitMinutes": dailyLimitMinutes,
+            "appLimits": appLimits,
+            "locked": locked,
+            "isSelf": isSelf
+        ]
+        map["deviceUid"] = deviceUid
+        map["parentPasscodeHash"] = parentPasscodeHash
+        map["parentPasscodeSalt"] = parentPasscodeSalt
+        map["dailyUnlockGoal"] = dailyUnlockGoal
+        map["proposedDailyLimitMinutes"] = proposedDailyLimitMinutes
+        map["proposedAppLimits"] = proposedAppLimits
+        map["bedtimeStartMinutes"] = bedtimeStartMinutes
+        map["bedtimeEndMinutes"] = bedtimeEndMinutes
+        return map
+    }
+
+    static func from(id: String, map: [String: Any]) -> ChildProfile {
+        ChildProfile(
+            id: id,
+            name: map["name"] as? String ?? "",
+            pairingCode: map["pairingCode"] as? String ?? "",
+            paired: map["paired"] as? Bool ?? false,
+            deviceUid: map["deviceUid"] as? String,
+            dailyLimitMinutes: (map["dailyLimitMinutes"] as? Int) ?? 120,
+            appLimits: (map["appLimits"] as? [String: Int]) ?? [:],
+            locked: map["locked"] as? Bool ?? false,
+            parentPasscodeHash: map["parentPasscodeHash"] as? String,
+            parentPasscodeSalt: map["parentPasscodeSalt"] as? String,
+            isSelf: map["isSelf"] as? Bool ?? false,
+            dailyUnlockGoal: map["dailyUnlockGoal"] as? Int,
+            proposedDailyLimitMinutes: map["proposedDailyLimitMinutes"] as? Int,
+            proposedAppLimits: map["proposedAppLimits"] as? [String: Int],
+            bedtimeStartMinutes: map["bedtimeStartMinutes"] as? Int,
+            bedtimeEndMinutes: map["bedtimeEndMinutes"] as? Int
+        )
+    }
+}

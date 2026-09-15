@@ -26,6 +26,11 @@ OpenScreenTime is MIT licensed so families and developers can inspect it, modify
   paired child and lets the parent change the daily limit or a per-app limit
   at any time.
 - **`shared`** — the data models and Firestore access code both apps use.
+- **`ios`** — an iOS build of the parent app (Swift/SwiftUI), for a parent on
+  an iPhone pairing with an Android kid device. See [`ios/README.md`](ios/README.md)
+  for setup and current scope; there is no iOS kid app yet (see
+  [issue #7](https://github.com/jsconu/OpenScreenTime/issues/7) for why that's a
+  much bigger, separate undertaking).
 
 Sync between the two apps runs on [Firebase](https://firebase.google.com)
 (Firestore + Authentication). There is no custom server to host — each

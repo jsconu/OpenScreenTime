@@ -13,3 +13,10 @@ captures/
 # Firebase config is per-developer/per-fork; never commit real credentials.
 kid/google-services.json
 parent/google-services.json
+ios/**/GoogleService-Info.plist
+
+# Swift Package Manager / Xcode build artifacts.
+ios/.build/
+ios/.swiftpm/
+*.xcodeproj/xcuserdata/
+*.xcworkspace/xcuserdata/
