@@ -1,14 +1,21 @@
 # OpenScreenTime
 
-A free, open-source, no-nonsense screen time app for parents. Two small Android
-apps — one for the kid's phone, one for the parent's — showing exactly what
-existing apps bury behind subscriptions and clutter: **total screen time,
-total unlocks, an overall daily limit, and per-app limits.** Plus a passcode,
-an immediate "lock now" button, and a heads-up before a limit hits. Nothing
-else.
+OpenScreenTime is a free, open-source, no-nonsense screen time platform for families. The project is designed to work across Android and iOS, starting with a functional Android implementation for parents and kids.
 
 No account fees, no ads, no dark patterns. MIT licensed — fork it, self-host
 your own backend, send patches back.
+
+Project status: Early functional prototype
+
+Android pairing, screen-time tracking, limits, locking, and parent controls are implemented. Cross-platform support and real-device testing are ongoing.
+
+**Why OpenScreenTime?**
+
+Most screen-time tools are built around subscriptions, engagement, and increasingly complex feature sets. OpenScreenTime takes a different approach: give parents a small set of useful controls, make the software transparent, and get out of the way.
+
+The goal isn't to maximize time spent in an app. It's to help families use technology intentionally.
+
+OpenScreenTime is MIT licensed so families and developers can inspect it, modify it, self-host it, and contribute improvements.
 
 ## How it works
 
