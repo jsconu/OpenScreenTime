@@ -31,6 +31,11 @@ struct ChildProfile: Identifiable, Equatable {
     /// Minutes since local midnight (0-1439); either nil = no bedtime window set (see #15).
     var bedtimeStartMinutes: Int?
     var bedtimeEndMinutes: Int?
+    /// Domains blocked device-wide, in any browser, via the kid device's local DNS-sinkhole
+    /// VPN (Android only for now - see #19). Suffix-matched: "tiktok.com" also blocks
+    /// "m.tiktok.com". This app can view/edit the list even though enforcement only runs
+    /// on the Android kid app today.
+    var blockedDomains: [String] = []
 
     func toMap() -> [String: Any] {
         var map: [String: Any] = [
@@ -40,7 +45,8 @@ struct ChildProfile: Identifiable, Equatable {
             "dailyLimitMinutes": dailyLimitMinutes,
             "appLimits": appLimits,
             "locked": locked,
-            "isSelf": isSelf
+            "isSelf": isSelf,
+            "blockedDomains": blockedDomains
         ]
         map["deviceUid"] = deviceUid
         map["parentPasscodeHash"] = parentPasscodeHash
@@ -70,7 +76,8 @@ struct ChildProfile: Identifiable, Equatable {
             proposedDailyLimitMinutes: map["proposedDailyLimitMinutes"] as? Int,
             proposedAppLimits: map["proposedAppLimits"] as? [String: Int],
             bedtimeStartMinutes: map["bedtimeStartMinutes"] as? Int,
-            bedtimeEndMinutes: map["bedtimeEndMinutes"] as? Int
+            bedtimeEndMinutes: map["bedtimeEndMinutes"] as? Int,
+            blockedDomains: (map["blockedDomains"] as? [String]) ?? []
         )
     }
 }

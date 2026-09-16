@@ -115,6 +115,13 @@ public final class FamilyRepository {
         try await db.document(FirestorePaths.childDoc(parentUid, childId)).updateData(["appLimits": appLimits])
     }
 
+    /// Replaces the whole blocked-domains list (see #19, `ChildProfile.blockedDomains`).
+    /// Enforcement only runs on the Android kid app today - this lets a parent on iOS
+    /// manage the same list.
+    func updateBlockedDomains(parentUid: String, childId: String, domains: [String]) async throws {
+        try await db.document(FirestorePaths.childDoc(parentUid, childId)).updateData(["blockedDomains": domains])
+    }
+
     /// Deletes a child and its usage history. Firestore doesn't cascade-delete
     /// subcollections, so dailyStats docs are removed explicitly first.
     func deleteChild(parentUid: String, childId: String) async throws {

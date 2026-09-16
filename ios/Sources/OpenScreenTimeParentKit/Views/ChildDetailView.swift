@@ -22,6 +22,7 @@ struct ChildDetailView: View {
     @State private var editingApp: String?
     @State private var showLockConfirm = false
     @State private var showDeleteConfirm = false
+    @State private var newBlockedDomain = ""
     @Environment(\.dismiss) private var dismiss
 
     var body: some View {
@@ -49,6 +50,13 @@ struct ChildDetailView: View {
             List {
                 LockSection(repository: repository, parentUid: parentUid, childId: childId, child: child, showLockConfirm: $showLockConfirm)
                 TodaySection(stats: stats, child: child, showLimitDialog: $showLimitDialog)
+                WebsiteBlockingSection(
+                    repository: repository,
+                    parentUid: parentUid,
+                    childId: childId,
+                    child: child,
+                    newDomain: $newBlockedDomain
+                )
                 AppUsageSection(stats: stats, child: child, editingApp: $editingApp)
                 Section {
                     Button("Remove \(child.name)", role: .destructive) { showDeleteConfirm = true }
@@ -168,6 +176,59 @@ private struct TodaySection: View {
             Text("Daily limit: \(child.dailyLimitMinutes) min").font(.caption)
             Button("Change daily limit") { showLimitDialog = true }
         }
+    }
+}
+
+/// Domains blocked device-wide, in any browser, via the kid device's local DNS-sinkhole
+/// VPN (see #19). Suffix-matched, so one entry covers every subdomain. Enforcement only
+/// runs on the Android kid app today; this lets a parent on iOS manage the same list.
+private struct WebsiteBlockingSection: View {
+    let repository: FamilyRepository
+    let parentUid: String
+    let childId: String
+    let child: ChildProfile
+    @Binding var newDomain: String
+
+    var body: some View {
+        Section("Blocked websites") {
+            Text("Blocks a domain and its subdomains in any browser on the Android kid app.")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+            HStack {
+                TextField("e.g. tiktok.com", text: $newDomain)
+                    .textInputAutocapitalization(.never)
+                    .autocorrectionDisabled()
+                Button("Block", action: addDomain)
+                    .disabled(newDomain.trimmingCharacters(in: .whitespaces).isEmpty)
+            }
+            if child.blockedDomains.isEmpty {
+                Text("No websites blocked.").foregroundStyle(.secondary)
+            }
+            ForEach(child.blockedDomains.sorted(), id: \.self) { domain in
+                HStack {
+                    Text(domain)
+                    Spacer()
+                    Button("Remove", role: .destructive) { removeDomain(domain) }
+                }
+            }
+        }
+    }
+
+    private func addDomain() {
+        let domain = newDomain
+            .trimmingCharacters(in: .whitespaces)
+            .trimmingCharacters(in: CharacterSet(charactersIn: "."))
+            .lowercased()
+        if !domain.isEmpty && !child.blockedDomains.contains(domain) {
+            let updated = child.blockedDomains + [domain]
+            Task { try? await repository.updateBlockedDomains(parentUid: parentUid, childId: childId, domains: updated) }
+        }
+        newDomain = ""
+    }
+
+    private func removeDomain(_ domain: String) {
+        let updated = child.blockedDomains.filter { $0 != domain }
+        Task { try? await repository.updateBlockedDomains(parentUid: parentUid, childId: childId, domains: updated) }
     }
 }
 
