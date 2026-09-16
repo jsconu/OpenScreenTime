@@ -13,8 +13,10 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.ListItem
+import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -205,7 +207,7 @@ private fun TipOfTheDayCard() {
 
     Card(modifier = Modifier.fillMaxWidth().testTag("status_tip_card")) {
         Column(Modifier.padding(12.dp)) {
-            Text("Today's idea", style = MaterialTheme.typography.labelMedium)
+            Text("Off-screen idea", style = MaterialTheme.typography.labelMedium)
             Spacer(Modifier.height(2.dp))
             Text(currentDayKidTip(), style = MaterialTheme.typography.bodyMedium)
             Spacer(Modifier.height(6.dp))
@@ -275,15 +277,23 @@ private fun NotificationDigestCard(
 
 @Composable
 private fun PermissionRow(title: String, description: String, granted: Boolean, onClick: () -> Unit) {
-    ListItem(
-        headlineContent = { Text(title) },
-        supportingContent = { Text(description) },
-        trailingContent = {
-            if (granted) {
-                Text("Granted", color = Color(0xFF2E7D32), style = MaterialTheme.typography.labelMedium)
-            } else {
-                TextButton(onClick = onClick) { Text("Fix") }
-            }
-        }
-    )
+    // Ungranted rows are the thing that needs attention - a tinted background makes them
+    // stand out in the checklist instead of blending in with everything already fixed.
+    Surface(
+        color = if (granted) MaterialTheme.colorScheme.surface else MaterialTheme.colorScheme.errorContainer,
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        ListItem(
+            headlineContent = { Text(title) },
+            supportingContent = { Text(description) },
+            trailingContent = {
+                if (granted) {
+                    Text("Granted", color = Color(0xFF2E7D32), style = MaterialTheme.typography.labelMedium)
+                } else {
+                    Button(onClick = onClick) { Text("Fix") }
+                }
+            },
+            colors = ListItemDefaults.colors(containerColor = Color.Transparent)
+        )
+    }
 }

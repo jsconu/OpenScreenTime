@@ -28,6 +28,7 @@ class FamilyRepository(
     private val limits = LimitsRepository(db)
     private val stats = StatsRepository(db)
     private val pairing = PairingRepository(db, session)
+    private val feedback = FeedbackRepository(db)
 
     val currentUid: String? get() = session.currentUid
 
@@ -148,6 +149,10 @@ class FamilyRepository(
 
     suspend fun pushDailyStats(parentUid: String, childId: String, stats: DailyStats) =
         this.stats.pushDailyStats(parentUid, childId, stats)
+
+    /** See #22 - write-only; nobody can read feedback back through the app. */
+    suspend fun submitFeedback(parentUid: String, text: String, appVersion: String, device: String) =
+        feedback.submit(parentUid, text, appVersion, device)
 
     companion object {
         /** Must match the `duration.value(30, 'm')` window enforced in firestore.rules. */

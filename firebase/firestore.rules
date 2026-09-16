@@ -29,6 +29,14 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
+    // In-app feedback (#22): write-only. Nobody, not even the submitter, can read it back
+    // through the app - it's reviewed via the Firebase console, which has admin access
+    // that bypasses these rules entirely.
+    match /feedback/{feedbackId} {
+      allow create: if request.auth != null && request.auth.uid == request.resource.data.parentUid;
+      allow read, update, delete: if false;
+    }
+
     match /pairingCodes/{code} {
       allow get: if request.auth != null;
       allow list: if false;

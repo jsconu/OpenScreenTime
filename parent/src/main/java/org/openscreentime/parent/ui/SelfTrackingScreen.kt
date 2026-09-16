@@ -10,9 +10,11 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ListItem
+import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
@@ -133,15 +135,21 @@ fun SelfTrackingScreen(
 
 @Composable
 private fun PermissionRow(title: String, description: String, granted: Boolean, onClick: () -> Unit) {
-    ListItem(
-        headlineContent = { Text(title) },
-        supportingContent = { Text(description) },
-        trailingContent = {
-            if (granted) {
-                Text("Granted", color = Color(0xFF2E7D32), style = MaterialTheme.typography.labelMedium)
-            } else {
-                TextButton(onClick = onClick) { Text("Fix") }
-            }
-        }
-    )
+    Surface(
+        color = if (granted) MaterialTheme.colorScheme.surface else MaterialTheme.colorScheme.errorContainer,
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        ListItem(
+            headlineContent = { Text(title) },
+            supportingContent = { Text(description) },
+            trailingContent = {
+                if (granted) {
+                    Text("Granted", color = Color(0xFF2E7D32), style = MaterialTheme.typography.labelMedium)
+                } else {
+                    Button(onClick = onClick) { Text("Fix") }
+                }
+            },
+            colors = ListItemDefaults.colors(containerColor = Color.Transparent)
+        )
+    }
 }

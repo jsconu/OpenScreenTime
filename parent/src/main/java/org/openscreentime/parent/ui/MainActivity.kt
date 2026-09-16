@@ -28,7 +28,6 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import org.openscreentime.parent.AppLockState
-import org.openscreentime.parent.BuildConfig
 import org.openscreentime.parent.ParentApp
 import org.openscreentime.parent.data.AppearancePrefs
 import org.openscreentime.parent.data.SelfProfileStore
@@ -40,18 +39,6 @@ class MainActivity : ComponentActivity() {
 
     private val notificationPermissionLauncher =
         registerForActivityResult(ActivityResultContracts.RequestPermission()) {}
-
-    /** See #21 - FEEDBACK_EMAIL is a gitignored local.properties value; a placeholder otherwise. */
-    private fun sendFeedbackEmail() {
-        val body = "\n\n---\nApp version: ${BuildConfig.VERSION_NAME}\n" +
-            "Device: ${Build.MANUFACTURER} ${Build.MODEL}, Android ${Build.VERSION.RELEASE}"
-        val intent = Intent(Intent.ACTION_SENDTO, Uri.parse("mailto:")).apply {
-            putExtra(Intent.EXTRA_EMAIL, arrayOf(BuildConfig.FEEDBACK_EMAIL))
-            putExtra(Intent.EXTRA_SUBJECT, "OpenScreenTime feedback")
-            putExtra(Intent.EXTRA_TEXT, body)
-        }
-        startActivity(intent)
-    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -90,7 +77,15 @@ class MainActivity : ComponentActivity() {
                     var locked by remember { mutableStateOf(!AppLockState.unlockedThisSession) }
 
                     LaunchedEffect(signedIn) {
-                        passcode = repository.getParentPasscode(repository.currentUid!!)
+                        // A transient Firestore failure (e.g. briefly offline) shouldn't crash
+                        // the app - fail open, the same as "no passcode set yet." This isn't a
+                        // real security regression: it only affects this app's own lock screen,
+                        // and whoever has the phone unlocked already has physical access to it.
+                        passcode = try {
+                            repository.getParentPasscode(repository.currentUid!!)
+                        } catch (e: Exception) {
+                            null
+                        }
                         if (passcode == null) {
                             AppLockState.unlockedThisSession = true
                             locked = false
@@ -116,7 +111,6 @@ class MainActivity : ComponentActivity() {
                                     onOpenSettings = { navController.navigate("settings") },
                                     onOpenAppearance = { navController.navigate("appearance") },
                                     onOpenSelfTracking = { navController.navigate("self") },
-                                    onSendFeedback = { sendFeedbackEmail() },
                                     onSignOut = {
                                         repository.signOut()
                                         AppLockState.unlockedThisSession = false

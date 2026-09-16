@@ -5,6 +5,8 @@ object FirestorePaths {
     const val CHILDREN = "children"
     const val DAILY_STATS = "dailyStats"
     const val PAIRING_CODES = "pairingCodes"
+    /** See #22 - in-app feedback. Write-only from the client; reviewed via the Firebase console. */
+    const val FEEDBACK = "feedback"
     /**
      * Fixed document id for the parent's own self-tracking profile (see #8), rather
      * than the auto-generated id every other child gets. A linked kid device has no

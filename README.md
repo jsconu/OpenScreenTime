@@ -115,10 +115,6 @@ You'll need [Android Studio](https://developer.android.com/studio)
 6. Open the project root in Android Studio and let it sync. Run the `kid`
    configuration on one device/emulator and `parent` on another (or the
    same emulator with two profiles) to test pairing end-to-end.
-7. Optional: the parent app's "Feedback" button sends a `mailto:` email. To
-   set the destination address, add a `feedbackEmail=you@example.com` line
-   to `local.properties` (already gitignored) — the repo ships a clearly
-   fake placeholder so it still builds without this.
 
 > **Note on the Gradle wrapper:** this repo doesn't check in the
 > `gradle-wrapper.jar` binary. Android Studio doesn't need it to sync or

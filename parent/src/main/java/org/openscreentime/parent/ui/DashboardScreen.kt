@@ -1,5 +1,6 @@
 package org.openscreentime.parent.ui
 
+import android.os.Build
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -16,6 +17,8 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.Checkbox
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
@@ -42,6 +45,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.testTagsAsResourceId
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
+import org.openscreentime.parent.BuildConfig
 import org.openscreentime.parent.data.TipsStore
 import org.openscreentime.shared.model.ChildProfile
 import org.openscreentime.shared.model.DailyStats
@@ -60,7 +64,6 @@ fun DashboardScreen(
     onOpenSettings: () -> Unit,
     onOpenAppearance: () -> Unit,
     onOpenSelfTracking: () -> Unit,
-    onSendFeedback: () -> Unit,
     onSignOut: () -> Unit
 ) {
     val parentUid = repository.currentUid ?: return
@@ -68,6 +71,7 @@ fun DashboardScreen(
     var children by remember { mutableStateOf<List<ChildProfile>>(emptyList()) }
     var showAddDialog by remember { mutableStateOf(false) }
     var newChildCode by remember { mutableStateOf<String?>(null) }
+    var showFeedbackDialog by remember { mutableStateOf(false) }
 
     DisposableEffect(parentUid) {
         // Excludes the parent's own self-tracking profile (see #8) - that one gets its
@@ -81,10 +85,29 @@ fun DashboardScreen(
             TopAppBar(
                 title = { Text("Your children") },
                 actions = {
-                    TextButton(onClick = onOpenAppearance) { Text("Style") }
-                    TextButton(onClick = onOpenSettings) { Text("Passcode") }
-                    TextButton(onClick = onSendFeedback) { Text("Feedback") }
-                    TextButton(onClick = onSignOut) { Text("Sign out") }
+                    var showMenu by remember { mutableStateOf(false) }
+                    TextButton(
+                        onClick = { showMenu = true },
+                        modifier = Modifier.semantics { contentDescription = "More options" }
+                    ) { Text("⋮") }
+                    DropdownMenu(expanded = showMenu, onDismissRequest = { showMenu = false }) {
+                        DropdownMenuItem(
+                            text = { Text("Style") },
+                            onClick = { showMenu = false; onOpenAppearance() }
+                        )
+                        DropdownMenuItem(
+                            text = { Text("Passcode") },
+                            onClick = { showMenu = false; onOpenSettings() }
+                        )
+                        DropdownMenuItem(
+                            text = { Text("Feedback") },
+                            onClick = { showMenu = false; showFeedbackDialog = true }
+                        )
+                        DropdownMenuItem(
+                            text = { Text("Sign out") },
+                            onClick = { showMenu = false; onSignOut() }
+                        )
+                    }
                 }
             )
         },
@@ -173,6 +196,27 @@ fun DashboardScreen(
                         onClick = { newChildCode = null },
                         modifier = Modifier.testTag("pairing_code_done")
                     ) { Text("Done") }
+                }
+            }
+        )
+    }
+
+    if (showFeedbackDialog) {
+        FeedbackDialog(
+            onDismiss = { showFeedbackDialog = false },
+            onSubmit = { text, onError ->
+                scope.launch {
+                    try {
+                        repository.submitFeedback(
+                            parentUid = parentUid,
+                            text = text,
+                            appVersion = BuildConfig.VERSION_NAME,
+                            device = "${Build.MANUFACTURER} ${Build.MODEL}, Android ${Build.VERSION.RELEASE}"
+                        )
+                        showFeedbackDialog = false
+                    } catch (e: Exception) {
+                        onError()
+                    }
                 }
             }
         )
@@ -319,7 +363,7 @@ private fun TipOfTheDayCard(modifier: Modifier = Modifier) {
 
     Card(modifier = modifier) {
         Column(Modifier.padding(12.dp)) {
-            Text("Today's idea", style = MaterialTheme.typography.labelMedium)
+            Text("Off-screen idea", style = MaterialTheme.typography.labelMedium)
             Spacer(Modifier.height(2.dp))
             Text(currentDayParentTip(), style = MaterialTheme.typography.bodyMedium)
             Spacer(Modifier.height(6.dp))
@@ -372,6 +416,57 @@ private fun AddChildDialog(onDismiss: () -> Unit, onCreate: (String) -> Unit) {
                     onClick = { onCreate(name) },
                     modifier = Modifier.testTag("add_child_create")
                 ) { Text("Create") }
+            }
+        },
+        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } }
+    )
+}
+
+/**
+ * Writes to a write-only Firestore collection rather than opening a mailto: link (see #22) -
+ * a mailto: link would show the destination address to every user who taps "Feedback,"
+ * defeating the point of keeping it out of the public repo (#21).
+ */
+@Composable
+private fun FeedbackDialog(onDismiss: () -> Unit, onSubmit: (text: String, onError: () -> Unit) -> Unit) {
+    var text by remember { mutableStateOf("") }
+    var sending by remember { mutableStateOf(false) }
+    var error by remember { mutableStateOf(false) }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Send feedback") },
+        text = {
+            DialogTestTagRoot {
+                Column {
+                    OutlinedTextField(
+                        value = text,
+                        onValueChange = { text = it },
+                        label = { Text("What's on your mind?") },
+                        minLines = 3,
+                        modifier = Modifier.testTag("feedback_text")
+                    )
+                    if (error) {
+                        Spacer(Modifier.height(8.dp))
+                        Text("Couldn't send - check your connection and try again.", color = MaterialTheme.colorScheme.error)
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            DialogTestTagRoot {
+                TextButton(
+                    enabled = text.isNotBlank() && !sending,
+                    onClick = {
+                        sending = true
+                        error = false
+                        onSubmit(text) {
+                            sending = false
+                            error = true
+                        }
+                    },
+                    modifier = Modifier.testTag("feedback_send")
+                ) { Text(if (sending) "Sending..." else "Send") }
             }
         },
         dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } }

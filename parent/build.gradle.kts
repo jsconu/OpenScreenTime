@@ -1,5 +1,3 @@
-import java.util.Properties
-
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
@@ -7,16 +5,6 @@ plugins {
     alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.google.services)
     alias(libs.plugins.firebase.crashlytics)
-}
-
-// Local, gitignored developer settings (see local.properties, already gitignored for the
-// Android-Studio-managed sdk.dir) - keeps the feedback destination email out of this public,
-// MIT-licensed repo's git history entirely. Falls back to a clearly-fake placeholder so CI
-// and other contributors can still build without it; the feedback button just wouldn't
-// address anywhere useful until this is set. See #21 and the README for the one-line setup.
-val localProperties = Properties().apply {
-    val file = rootProject.file("local.properties")
-    if (file.exists()) file.inputStream().use { load(it) }
 }
 
 android {
@@ -36,11 +24,6 @@ android {
             "boolean",
             "USE_FIREBASE_EMULATOR",
             (project.findProperty("useFirebaseEmulator") == "true").toString()
-        )
-        buildConfigField(
-            "String",
-            "FEEDBACK_EMAIL",
-            "\"${localProperties.getProperty("feedbackEmail", "configure-feedbackEmail-in-local.properties@example.com")}\""
         )
     }
 
