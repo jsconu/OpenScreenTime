@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.AlertDialog
@@ -34,6 +35,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
+import org.openscreentime.shared.model.AppUsage
 import org.openscreentime.shared.model.ChildProfile
 import org.openscreentime.shared.model.DailyStats
 import org.openscreentime.shared.model.computeStreak
@@ -46,6 +48,12 @@ import org.openscreentime.sharedui.UnlockGoalInputDialog
 
 private const val STREAK_LOOKBACK_DAYS = 14
 
+/**
+ * Broken into named sections (mirroring the iOS ChildDetailView's LockSection/TodaySection/
+ * AppUsageSection split) rather than one large LazyColumn body - each section owns its own
+ * slice of the child/stats state and the callbacks it needs, so a change to (say) the bedtime
+ * copy doesn't require rereading the app-usage list logic next to it.
+ */
 @Composable
 fun ChildDetailScreen(
     repository: FamilyRepository,
@@ -92,155 +100,27 @@ fun ChildDetailScreen(
         }
     ) { padding ->
         LazyColumn(modifier = Modifier.fillMaxSize().padding(padding)) {
-            val hasPendingProposal = currentChild.proposedDailyLimitMinutes != null || currentChild.proposedAppLimits != null
-            if (hasPendingProposal) {
-                item {
-                    Card(modifier = Modifier.fillMaxWidth().padding(16.dp)) {
-                        Column(Modifier.padding(16.dp)) {
-                            Text("${currentChild.name} suggested a change", style = MaterialTheme.typography.titleMedium)
-                            Spacer(Modifier.height(8.dp))
-                            currentChild.proposedDailyLimitMinutes?.let {
-                                Text(
-                                    "New daily limit: $it min (currently ${currentChild.dailyLimitMinutes} min)",
-                                    style = MaterialTheme.typography.bodyMedium
-                                )
-                            }
-                            currentChild.proposedAppLimits?.let {
-                                Spacer(Modifier.height(4.dp))
-                                Text("Suggested app limits included", style = MaterialTheme.typography.bodyMedium)
-                            }
-                            Spacer(Modifier.height(12.dp))
-                            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                Button(onClick = {
-                                    scope.launch { repository.approveProposal(parentUid, childId, currentChild) }
-                                }) { Text("Approve") }
-                                OutlinedButton(onClick = {
-                                    scope.launch { repository.declineProposal(parentUid, childId) }
-                                }) { Text("Decline") }
-                            }
-                        }
-                    }
-                }
-            }
-            item {
-                Column(Modifier.padding(16.dp)) {
-                    Button(
-                        onClick = {
-                            if (currentChild.locked) {
-                                scope.launch { repository.setLocked(parentUid, childId, false) }
-                            } else {
-                                showLockConfirm = true
-                            }
-                        },
-                        colors = if (!currentChild.locked) {
-                            ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
-                        } else {
-                            ButtonDefaults.buttonColors()
-                        },
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Text(if (currentChild.locked) "Resume screen time" else "End screen time now")
-                    }
-                    Spacer(Modifier.height(16.dp))
-                    Text("Today", style = MaterialTheme.typography.labelLarge)
-                    Spacer(Modifier.height(8.dp))
-                    Row(horizontalArrangement = Arrangement.spacedBy(24.dp)) {
-                        StatBlock("Screen time", formatDuration(stats.totalScreenTimeMs))
-                        StatBlock("Unlocks", stats.unlockCount.toString())
-                    }
-                    if (streakDays > 0) {
-                        Spacer(Modifier.height(8.dp))
-                        Text(
-                            "$streakDays day${if (streakDays == 1) "" else "s"} in a row under goal",
-                            style = MaterialTheme.typography.bodyMedium
-                        )
-                    }
-                    Spacer(Modifier.height(16.dp))
-                    val progress = (stats.totalScreenTimeMs / 60000f) / currentChild.dailyLimitMinutes.coerceAtLeast(1)
-                    LinearProgressIndicator(
-                        progress = { progress.coerceIn(0f, 1f) },
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                    Spacer(Modifier.height(4.dp))
-                    Text("Daily limit: ${currentChild.dailyLimitMinutes} min", style = MaterialTheme.typography.bodySmall)
-                    Spacer(Modifier.height(8.dp))
-                    OutlinedButton(onClick = { showLimitDialog = true }) { Text("Change daily limit") }
-                    Spacer(Modifier.height(16.dp))
-                    Text(
-                        currentChild.dailyUnlockGoal?.let { "Unlock goal: $it a day" } ?: "No unlock goal set",
-                        style = MaterialTheme.typography.bodySmall
-                    )
-                    Text(
-                        "Informational only - never blocks. Today's unlocks: ${stats.unlockCount}.",
-                        style = MaterialTheme.typography.bodySmall
-                    )
-                    Spacer(Modifier.height(8.dp))
-                    OutlinedButton(onClick = { showUnlockGoalDialog = true }) { Text("Change unlock goal") }
-                    Spacer(Modifier.height(16.dp))
-                    val bedtimeStart = currentChild.bedtimeStartMinutes
-                    val bedtimeEnd = currentChild.bedtimeEndMinutes
-                    Text(
-                        if (bedtimeStart != null && bedtimeEnd != null) {
-                            "Bedtime: ${formatMinutesOfDay(bedtimeStart)} - ${formatMinutesOfDay(bedtimeEnd)}"
-                        } else {
-                            "No bedtime set"
-                        },
-                        style = MaterialTheme.typography.bodySmall
-                    )
-                    Text(
-                        "Blocks every app during this window, independent of the daily limit.",
-                        style = MaterialTheme.typography.bodySmall
-                    )
-                    Spacer(Modifier.height(8.dp))
-                    OutlinedButton(onClick = { showBedtimeDialog = true }) { Text("Change bedtime") }
-                }
-            }
-            item {
-                Text(
-                    "App usage today",
-                    style = MaterialTheme.typography.labelLarge,
-                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
-                )
-            }
-            if (stats.appUsage.isEmpty()) {
-                item {
-                    Text(
-                        "No app usage synced yet.",
-                        style = MaterialTheme.typography.bodySmall,
-                        modifier = Modifier.padding(horizontal = 16.dp)
-                    )
-                }
-            }
-            items(stats.appUsage.sortedByDescending { it.foregroundTimeMs }, key = { it.packageName }) { app ->
-                ListItem(
-                    headlineContent = { Text(app.appName) },
-                    supportingContent = {
-                        val limit = currentChild.appLimits[app.packageName]
-                        Text(
-                            if (limit != null) {
-                                "${formatDuration(app.foregroundTimeMs)} of ${limit}m limit"
-                            } else {
-                                formatDuration(app.foregroundTimeMs)
-                            }
-                        )
-                    },
-                    trailingContent = {
-                        TextButton(onClick = { editingApp = app.packageName }) { Text("Limit") }
-                    }
-                )
-            }
-            item {
-                Column(Modifier.padding(16.dp)) {
-                    Spacer(Modifier.height(16.dp))
-                    OutlinedButton(
-                        onClick = { showDeleteConfirm = true },
-                        colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error),
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Text("Remove ${currentChild.name}")
-                    }
-                }
-            }
+            pendingProposalSection(
+                child = currentChild,
+                onApprove = { scope.launch { repository.approveProposal(parentUid, childId, currentChild) } },
+                onDecline = { scope.launch { repository.declineProposal(parentUid, childId) } }
+            )
+            lockAndLimitsSection(
+                child = currentChild,
+                stats = stats,
+                streakDays = streakDays,
+                onToggleLock = { scope.launch { repository.setLocked(parentUid, childId, false) } },
+                onRequestLockConfirm = { showLockConfirm = true },
+                onChangeLimit = { showLimitDialog = true },
+                onChangeUnlockGoal = { showUnlockGoalDialog = true },
+                onChangeBedtime = { showBedtimeDialog = true }
+            )
+            appUsageSection(
+                appUsage = stats.appUsage,
+                appLimits = currentChild.appLimits,
+                onEditApp = { editingApp = it }
+            )
+            removeChildSection(childName = currentChild.name, onRequestDelete = { showDeleteConfirm = true })
         }
     }
 
@@ -334,6 +214,177 @@ fun ChildDetailScreen(
     }
 }
 
+private fun LazyListScope.pendingProposalSection(
+    child: ChildProfile,
+    onApprove: () -> Unit,
+    onDecline: () -> Unit
+) {
+    val hasPendingProposal = child.proposedDailyLimitMinutes != null || child.proposedAppLimits != null
+    if (!hasPendingProposal) return
+    item {
+        Card(modifier = Modifier.fillMaxWidth().padding(16.dp)) {
+            Column(Modifier.padding(16.dp)) {
+                Text("${child.name} suggested a change", style = MaterialTheme.typography.titleMedium)
+                Spacer(Modifier.height(8.dp))
+                child.proposedDailyLimitMinutes?.let {
+                    Text(
+                        "New daily limit: $it min (currently ${child.dailyLimitMinutes} min)",
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                }
+                child.proposedAppLimits?.let {
+                    Spacer(Modifier.height(4.dp))
+                    Text("Suggested app limits included", style = MaterialTheme.typography.bodyMedium)
+                }
+                Spacer(Modifier.height(12.dp))
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Button(onClick = onApprove) { Text("Approve") }
+                    OutlinedButton(onClick = onDecline) { Text("Decline") }
+                }
+            }
+        }
+    }
+}
+
+private fun LazyListScope.lockAndLimitsSection(
+    child: ChildProfile,
+    stats: DailyStats,
+    streakDays: Int,
+    onToggleLock: () -> Unit,
+    onRequestLockConfirm: () -> Unit,
+    onChangeLimit: () -> Unit,
+    onChangeUnlockGoal: () -> Unit,
+    onChangeBedtime: () -> Unit
+) {
+    item {
+        Column(Modifier.padding(16.dp)) {
+            Button(
+                onClick = { if (child.locked) onToggleLock() else onRequestLockConfirm() },
+                colors = if (!child.locked) {
+                    ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
+                } else {
+                    ButtonDefaults.buttonColors()
+                },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(if (child.locked) "Resume screen time" else "End screen time now")
+            }
+            Spacer(Modifier.height(16.dp))
+            Text("Today", style = MaterialTheme.typography.labelLarge)
+            Spacer(Modifier.height(8.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(24.dp)) {
+                StatBlock("Screen time", formatDuration(stats.totalScreenTimeMs))
+                StatBlock("Unlocks", stats.unlockCount.toString())
+            }
+            if (streakDays > 0) {
+                Spacer(Modifier.height(8.dp))
+                Text(
+                    "$streakDays day${if (streakDays == 1) "" else "s"} in a row under goal",
+                    style = MaterialTheme.typography.bodyMedium
+                )
+            }
+            Spacer(Modifier.height(16.dp))
+            val progress = (stats.totalScreenTimeMs / 60000f) / child.dailyLimitMinutes.coerceAtLeast(1)
+            LinearProgressIndicator(
+                progress = { progress.coerceIn(0f, 1f) },
+                modifier = Modifier.fillMaxWidth()
+            )
+            Spacer(Modifier.height(4.dp))
+            Text("Daily limit: ${child.dailyLimitMinutes} min", style = MaterialTheme.typography.bodySmall)
+            Spacer(Modifier.height(8.dp))
+            OutlinedButton(onClick = onChangeLimit) { Text("Change daily limit") }
+            Spacer(Modifier.height(16.dp))
+            Text(
+                child.dailyUnlockGoal?.let { "Unlock goal: $it a day" } ?: "No unlock goal set",
+                style = MaterialTheme.typography.bodySmall
+            )
+            Text(
+                "Informational only - never blocks. Today's unlocks: ${stats.unlockCount}.",
+                style = MaterialTheme.typography.bodySmall
+            )
+            Spacer(Modifier.height(8.dp))
+            OutlinedButton(onClick = onChangeUnlockGoal) { Text("Change unlock goal") }
+            Spacer(Modifier.height(16.dp))
+            val bedtimeStart = child.bedtimeStartMinutes
+            val bedtimeEnd = child.bedtimeEndMinutes
+            Text(
+                if (bedtimeStart != null && bedtimeEnd != null) {
+                    "Bedtime: ${formatMinutesOfDay(bedtimeStart)} - ${formatMinutesOfDay(bedtimeEnd)}"
+                } else {
+                    "No bedtime set"
+                },
+                style = MaterialTheme.typography.bodySmall
+            )
+            Text(
+                "Blocks every app during this window, independent of the daily limit.",
+                style = MaterialTheme.typography.bodySmall
+            )
+            Spacer(Modifier.height(8.dp))
+            OutlinedButton(onClick = onChangeBedtime) { Text("Change bedtime") }
+        }
+    }
+}
+
+private fun LazyListScope.appUsageSection(
+    appUsage: List<AppUsage>,
+    appLimits: Map<String, Int>,
+    onEditApp: (String) -> Unit
+) {
+    item {
+        Text(
+            "App usage today",
+            style = MaterialTheme.typography.labelLarge,
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+        )
+    }
+    if (appUsage.isEmpty()) {
+        item {
+            Text(
+                "No app usage synced yet.",
+                style = MaterialTheme.typography.bodySmall,
+                modifier = Modifier.padding(horizontal = 16.dp)
+            )
+        }
+    }
+    items(appUsage.sortedByDescending { it.foregroundTimeMs }, key = { it.packageName }) { app ->
+        AppUsageRow(app = app, limitMinutes = appLimits[app.packageName], onEdit = { onEditApp(app.packageName) })
+    }
+}
+
+@Composable
+private fun AppUsageRow(app: AppUsage, limitMinutes: Int?, onEdit: () -> Unit) {
+    ListItem(
+        headlineContent = { Text(app.appName) },
+        supportingContent = {
+            Text(
+                if (limitMinutes != null) {
+                    "${formatDuration(app.foregroundTimeMs)} of ${limitMinutes}m limit"
+                } else {
+                    formatDuration(app.foregroundTimeMs)
+                }
+            )
+        },
+        trailingContent = {
+            TextButton(onClick = onEdit) { Text("Limit") }
+        }
+    )
+}
+
+private fun LazyListScope.removeChildSection(childName: String, onRequestDelete: () -> Unit) {
+    item {
+        Column(Modifier.padding(16.dp)) {
+            Spacer(Modifier.height(16.dp))
+            OutlinedButton(
+                onClick = onRequestDelete,
+                colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("Remove $childName")
+            }
+        }
+    }
+}
+
 @Composable
 private fun StatBlock(label: String, value: String) {
     Column {
@@ -341,4 +392,3 @@ private fun StatBlock(label: String, value: String) {
         Text(label, style = MaterialTheme.typography.bodySmall)
     }
 }
-
