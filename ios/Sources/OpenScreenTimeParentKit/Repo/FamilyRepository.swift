@@ -122,6 +122,22 @@ public final class FamilyRepository {
         try await db.document(FirestorePaths.childDoc(parentUid, childId)).updateData(["blockedDomains": domains])
     }
 
+    /// Grants `minutes` of temporary unlock starting now, and clears the pending request. See #23.
+    func grantExtraTime(parentUid: String, childId: String, minutes: Int) async throws {
+        let untilMs = Int64(Date().timeIntervalSince1970 * 1000) + Int64(minutes) * 60_000
+        try await db.document(FirestorePaths.childDoc(parentUid, childId)).updateData([
+            "temporaryUnlockUntilMs": untilMs,
+            "requestedExtraMinutes": NSNull()
+        ])
+    }
+
+    /// Clears a pending "more time" request without granting it. See #23.
+    func declineExtraTimeRequest(parentUid: String, childId: String) async throws {
+        try await db.document(FirestorePaths.childDoc(parentUid, childId)).updateData([
+            "requestedExtraMinutes": NSNull()
+        ])
+    }
+
     /// Deletes a child and its usage history. Firestore doesn't cascade-delete
     /// subcollections, so dailyStats docs are removed explicitly first.
     func deleteChild(parentUid: String, childId: String) async throws {

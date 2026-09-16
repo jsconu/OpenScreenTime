@@ -48,6 +48,7 @@ struct ChildDetailView: View {
     private var content: some View {
         if let child {
             List {
+                ExtraTimeRequestSection(repository: repository, parentUid: parentUid, childId: childId, child: child)
                 LockSection(repository: repository, parentUid: parentUid, childId: childId, child: child, showLockConfirm: $showLockConfirm)
                 TodaySection(stats: stats, child: child, showLimitDialog: $showLimitDialog)
                 WebsiteBlockingSection(
@@ -128,6 +129,32 @@ struct ChildDetailView: View {
     private func stopListening() {
         childListener?.remove()
         statsListener?.remove()
+    }
+}
+
+/// A kid-requested "more time" extension, awaiting a Grant or Decline (see #23). Requested
+/// from the Android kid app's block screen only, but either parent should be able to grant
+/// it from either platform.
+private struct ExtraTimeRequestSection: View {
+    let repository: FamilyRepository
+    let parentUid: String
+    let childId: String
+    let child: ChildProfile
+
+    var body: some View {
+        if let requested = child.requestedExtraMinutes {
+            Section {
+                Text("\(child.name) is asking for \(requested) more minutes")
+                HStack {
+                    Button("Grant \(requested) min") {
+                        Task { try? await repository.grantExtraTime(parentUid: parentUid, childId: childId, minutes: requested) }
+                    }
+                    Button("Decline", role: .cancel) {
+                        Task { try? await repository.declineExtraTimeRequest(parentUid: parentUid, childId: childId) }
+                    }
+                }
+            }
+        }
     }
 }
 
