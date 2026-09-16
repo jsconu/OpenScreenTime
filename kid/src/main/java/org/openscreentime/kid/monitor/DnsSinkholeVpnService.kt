@@ -105,7 +105,7 @@ class DnsSinkholeVpnService : VpnService() {
         if (udp.destinationPort != DNS_PORT) return
         val query = parseDnsQuery(udp.payload) ?: return
 
-        val response = if (isDomainBlocked(query.questionName, blockedDomainsCache)) {
+        val response = if (isDomainBlocked(query.questionName, LiveChildState.blockedDomains)) {
             buildDnsNxDomainResponse(udp.payload, query)
         } else {
             forwardToUpstreamResolver(udp.payload) ?: return
@@ -165,8 +165,5 @@ class DnsSinkholeVpnService : VpnService() {
         private const val TUN_ADDRESS = "10.233.0.2"
         private const val FAKE_DNS_ADDRESS = "10.233.0.1"
         private const val UPSTREAM_DNS_ADDRESS = "1.1.1.1"
-
-        /** Updated live from Firestore by [org.openscreentime.kid.KidApp]. */
-        @Volatile var blockedDomainsCache: List<String> = emptyList()
     }
 }

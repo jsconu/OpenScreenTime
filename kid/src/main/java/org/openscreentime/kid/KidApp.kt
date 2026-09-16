@@ -12,8 +12,7 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.crashlytics.FirebaseCrashlytics
 import com.google.firebase.firestore.FirebaseFirestore
 import org.openscreentime.kid.data.PairingStore
-import org.openscreentime.kid.monitor.AppLimitAccessibilityService
-import org.openscreentime.kid.monitor.DnsSinkholeVpnService
+import org.openscreentime.kid.monitor.LiveChildState
 import org.openscreentime.kid.monitor.SyncWorker
 import org.openscreentime.kid.ui.BlockOverlayActivity
 import org.openscreentime.shared.model.BlockReason
@@ -59,9 +58,10 @@ class KidApp : Application() {
     }
 
     /**
-     * Keeps the in-memory limits/lock state used by the accessibility service up to date with
-     * Firestore. Safe to call more than once (e.g. right after pairing completes, so the
-     * listener starts without needing an app restart) - each call just attaches a fresh listener.
+     * Keeps [LiveChildState] - the in-memory limits/lock state AppLimitAccessibilityService
+     * and DnsSinkholeVpnService both read - up to date with Firestore. Safe to call more than
+     * once (e.g. right after pairing completes, so the listener starts without needing an app
+     * restart) - each call just attaches a fresh listener.
      */
     fun startLimitsListener() {
         val pairingStore = PairingStore(this)
@@ -70,15 +70,15 @@ class KidApp : Application() {
         if (parentUid == null || childId == null) return
 
         repository.listenChild(parentUid, childId) { child ->
-            AppLimitAccessibilityService.limitsCache = child.appLimits
-            AppLimitAccessibilityService.dailyLimitMinutes = child.dailyLimitMinutes
-            AppLimitAccessibilityService.dailyUnlockGoal = child.dailyUnlockGoal
-            AppLimitAccessibilityService.bedtimeStartMinutes = child.bedtimeStartMinutes
-            AppLimitAccessibilityService.bedtimeEndMinutes = child.bedtimeEndMinutes
-            DnsSinkholeVpnService.blockedDomainsCache = child.blockedDomains
+            LiveChildState.limitsCache = child.appLimits
+            LiveChildState.dailyLimitMinutes = child.dailyLimitMinutes
+            LiveChildState.dailyUnlockGoal = child.dailyUnlockGoal
+            LiveChildState.bedtimeStartMinutes = child.bedtimeStartMinutes
+            LiveChildState.bedtimeEndMinutes = child.bedtimeEndMinutes
+            LiveChildState.blockedDomains = child.blockedDomains
 
-            val wasLocked = AppLimitAccessibilityService.lockedCache
-            AppLimitAccessibilityService.lockedCache = child.locked
+            val wasLocked = LiveChildState.lockedCache
+            LiveChildState.lockedCache = child.locked
             if (child.locked && !wasLocked) {
                 // Don't wait for the next app switch or tick - interrupt right away.
                 startActivity(

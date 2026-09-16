@@ -20,7 +20,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import org.openscreentime.kid.monitor.AppLimitAccessibilityService
+import org.openscreentime.kid.monitor.LiveChildState
 import org.openscreentime.shared.model.BlockReason
 import org.openscreentime.shared.model.blockScreenCopy
 import org.openscreentime.shared.model.randomAlternativeActivity
@@ -32,7 +32,7 @@ class BlockOverlayActivity : ComponentActivity() {
         val reason = BlockReason.fromWireValue(intent.getStringExtra(EXTRA_REASON))
         val copy = blockScreenCopy(
             reason = reason,
-            bedtimeEndMinutes = AppLimitAccessibilityService.bedtimeEndMinutes,
+            bedtimeEndMinutes = LiveChildState.bedtimeEndMinutes,
             lockMessage = "A parent has paused screen time. Ask them to resume it.",
             defaultMessage = "Ask a parent if you need more time."
         )

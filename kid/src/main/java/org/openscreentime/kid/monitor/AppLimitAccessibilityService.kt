@@ -99,13 +99,13 @@ class AppLimitAccessibilityService : AccessibilityService() {
     }
 
     private fun buildInput(pkg: String?): EnforcementInput {
-        val appLimitMinutes = pkg?.let { limitsCache[it] }
+        val appLimitMinutes = pkg?.let { LiveChildState.limitsCache[it] }
         return EnforcementInput(
-            locked = lockedCache,
-            bedtimeStartMinutes = bedtimeStartMinutes,
-            bedtimeEndMinutes = bedtimeEndMinutes,
+            locked = LiveChildState.lockedCache,
+            bedtimeStartMinutes = LiveChildState.bedtimeStartMinutes,
+            bedtimeEndMinutes = LiveChildState.bedtimeEndMinutes,
             nowMinutesOfDay = nowMinutesOfDay(),
-            dailyLimitMinutes = dailyLimitMinutes,
+            dailyLimitMinutes = LiveChildState.dailyLimitMinutes,
             liveTotalScreenTimeMs = usageStore.liveTotalScreenTimeMs,
             dailyWarned = usageStore.dailyWarned,
             foregroundPackage = pkg,
@@ -184,13 +184,15 @@ class AppLimitAccessibilityService : AccessibilityService() {
      * just reflects current state whenever it's glanced at.
      */
     private fun updateStatusNotification() {
-        val isInBedtime = isInBedtimeWindow(nowMinutesOfDay(), bedtimeStartMinutes, bedtimeEndMinutes)
+        val isInBedtime = isInBedtimeWindow(
+            nowMinutesOfDay(), LiveChildState.bedtimeStartMinutes, LiveChildState.bedtimeEndMinutes
+        )
         val tier = computeStatusTier(
-            locked = lockedCache,
+            locked = LiveChildState.lockedCache,
             isInBedtime = isInBedtime,
-            dailyLimitMinutes = dailyLimitMinutes,
+            dailyLimitMinutes = LiveChildState.dailyLimitMinutes,
             liveTotalScreenTimeMs = usageStore.liveTotalScreenTimeMs,
-            dailyUnlockGoal = dailyUnlockGoal,
+            dailyUnlockGoal = LiveChildState.dailyUnlockGoal,
             unlockCount = usageStore.unlockCount
         )
         val iconRes = when (tier) {
@@ -220,15 +222,5 @@ class AppLimitAccessibilityService : AccessibilityService() {
     companion object {
         private const val TICK_INTERVAL_MS = 30_000L
         private const val WARNING_NOTIFICATION_ID = 1002
-
-        /** Updated live from Firestore by [org.openscreentime.kid.KidApp]. */
-        @Volatile var limitsCache: Map<String, Int> = emptyMap()
-        @Volatile var dailyLimitMinutes: Int = Int.MAX_VALUE
-        @Volatile var lockedCache: Boolean = false
-        /** Informational only (see #10) - factors into the status icon, never blocks. */
-        @Volatile var dailyUnlockGoal: Int? = null
-        /** Minutes since local midnight; either null = no bedtime window set. See #15. */
-        @Volatile var bedtimeStartMinutes: Int? = null
-        @Volatile var bedtimeEndMinutes: Int? = null
     }
 }
