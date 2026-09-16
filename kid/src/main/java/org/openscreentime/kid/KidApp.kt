@@ -14,6 +14,7 @@ import org.openscreentime.kid.data.PairingStore
 import org.openscreentime.kid.monitor.AppLimitAccessibilityService
 import org.openscreentime.kid.monitor.SyncWorker
 import org.openscreentime.kid.ui.BlockOverlayActivity
+import org.openscreentime.shared.model.BlockReason
 import org.openscreentime.shared.repo.FamilyRepository
 import java.util.concurrent.TimeUnit
 
@@ -77,7 +78,7 @@ class KidApp : Application() {
                 startActivity(
                     Intent(this, BlockOverlayActivity::class.java)
                         .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                        .putExtra(BlockOverlayActivity.EXTRA_REASON, "parent_lock")
+                        .putExtra(BlockOverlayActivity.EXTRA_REASON, BlockReason.PARENT_LOCK.wireValue)
                 )
             }
         }

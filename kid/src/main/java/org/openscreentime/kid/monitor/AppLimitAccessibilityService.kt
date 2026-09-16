@@ -14,6 +14,14 @@ import org.openscreentime.kid.data.UsageStore
 import org.openscreentime.kid.ui.BlockOverlayActivity
 import org.openscreentime.kid.ui.MainActivity
 import org.openscreentime.kid.ui.PauseOverlayActivity
+import org.openscreentime.shared.model.BlockReason
+import org.openscreentime.shared.model.EnforcementEvent
+import org.openscreentime.shared.model.EnforcementInput
+import org.openscreentime.shared.model.StatusTier
+import org.openscreentime.shared.model.WARNING_THRESHOLD_MINUTES
+import org.openscreentime.shared.model.WarnKind
+import org.openscreentime.shared.model.computeStatusTier
+import org.openscreentime.shared.model.decideEnforcement
 import org.openscreentime.shared.model.isInBedtimeWindow
 import org.openscreentime.shared.model.nowMinutesOfDay
 
@@ -23,6 +31,11 @@ import org.openscreentime.shared.model.nowMinutesOfDay
  * and (c) warn once when a limit is close. A periodic tick re-checks limits
  * even while the kid stays inside a single app for a long stretch, since
  * foreground-change events alone wouldn't catch that case.
+ *
+ * The actual decision logic lives in `shared/model/Enforcement.kt` - this class is a
+ * thin adapter: it builds a snapshot for decideEnforcement() and acts on the events it
+ * returns (launch an overlay Activity, post a notification, record what was shown so
+ * it isn't repeated). See the architecture review's Candidate 2.
  *
  * Accessibility services are exempt from Android's package-visibility restrictions,
  * so this can resolve any app's label without extra <queries> declarations.
@@ -38,7 +51,7 @@ class AppLimitAccessibilityService : AccessibilityService() {
     private val tick = object : Runnable {
         override fun run() {
             flushCurrent(restart = true)
-            currentPackage?.let { checkLimits(it) } ?: checkLockOnly()
+            checkLimits(currentPackage)
             updateStatusNotification()
             handler.postDelayed(this, TICK_INTERVAL_MS)
         }
@@ -85,65 +98,59 @@ class AppLimitAccessibilityService : AccessibilityService() {
         usageStore.cacheAppName(pkg, label)
     }
 
-    private fun checkLockOnly() {
-        if (isInBedtime()) {
-            showBlockOverlay("bedtime")
-            return
-        }
-        if (lockedCache) showBlockOverlay("parent_lock")
+    private fun buildInput(pkg: String?): EnforcementInput {
+        val appLimitMinutes = pkg?.let { limitsCache[it] }
+        return EnforcementInput(
+            locked = lockedCache,
+            bedtimeStartMinutes = bedtimeStartMinutes,
+            bedtimeEndMinutes = bedtimeEndMinutes,
+            nowMinutesOfDay = nowMinutesOfDay(),
+            dailyLimitMinutes = dailyLimitMinutes,
+            liveTotalScreenTimeMs = usageStore.liveTotalScreenTimeMs,
+            dailyWarned = usageStore.dailyWarned,
+            foregroundPackage = pkg,
+            appLimitMinutes = appLimitMinutes,
+            appUsedMs = pkg?.let { usageStore.appUsageMs[it] } ?: 0,
+            appWarned = pkg?.let { it in usageStore.warnedApps } ?: false,
+            // This app supports the friction-pause feature (#12) - unlike the parent's
+            // self-tracking equivalent, which never supplies this.
+            appAlreadyPaused = pkg?.let { it in usageStore.pausedApps }
+        )
     }
 
-    private fun checkLimits(pkg: String) {
-        // Bedtime is a hard block independent of the minute-count limit (see #15) -
-        // checked before the parent lock and daily/app limits, same as those checks
-        // aren't gated on each other.
-        if (isInBedtime()) {
-            showBlockOverlay("bedtime")
-            return
-        }
-        if (lockedCache) {
-            showBlockOverlay("parent_lock")
-            return
-        }
-
-        val dailyLimitMs = dailyLimitMinutes * 60_000L
-        val liveTotal = usageStore.liveTotalScreenTimeMs
-        when {
-            liveTotal >= dailyLimitMs -> {
-                showBlockOverlay("daily_limit")
-                return
+    private fun checkLimits(pkg: String?) {
+        for (event in decideEnforcement(buildInput(pkg))) {
+            when (event) {
+                is EnforcementEvent.Block -> showBlockOverlay(event.reason)
+                is EnforcementEvent.Pause -> {
+                    usageStore.markAppPaused(event.packageName)
+                    showPauseOverlay(usageStore.appNames[event.packageName] ?: event.packageName)
+                }
+                is EnforcementEvent.Warn -> handleWarn(event.kind, pkg)
             }
-            dailyLimitMs - liveTotal <= WARNING_THRESHOLD_MS && !usageStore.dailyWarned -> {
+        }
+    }
+
+    private fun handleWarn(kind: WarnKind, pkg: String?) {
+        when (kind) {
+            WarnKind.DAILY -> {
                 usageStore.markDailyWarned()
                 notifyWarning(
                     "Screen time is almost up",
-                    "Less than ${WARNING_THRESHOLD_MS / 60_000} minutes left for today."
+                    "Less than $WARNING_THRESHOLD_MINUTES minutes left for today."
                 )
             }
-        }
-
-        val limitMinutes = limitsCache[pkg] ?: return
-        val limitMs = limitMinutes * 60_000L
-        val usedMs = usageStore.appUsageMs[pkg] ?: 0
-        val appName = usageStore.appNames[pkg] ?: pkg
-        when {
-            usedMs >= limitMs -> showBlockOverlay("app_limit")
-            usedMs >= limitMs / 2 && pkg !in usageStore.pausedApps -> {
-                usageStore.markAppPaused(pkg)
-                showPauseOverlay(appName)
-            }
-            limitMs - usedMs <= WARNING_THRESHOLD_MS && pkg !in usageStore.warnedApps -> {
-                usageStore.markAppWarned(pkg)
+            WarnKind.APP -> {
+                val appPkg = pkg ?: return
+                val appName = usageStore.appNames[appPkg] ?: appPkg
+                usageStore.markAppWarned(appPkg)
                 notifyWarning(
                     "$appName time is almost up",
-                    "Less than ${WARNING_THRESHOLD_MS / 60_000} minutes left for $appName today."
+                    "Less than $WARNING_THRESHOLD_MINUTES minutes left for $appName today."
                 )
             }
         }
     }
-
-    private fun isInBedtime(): Boolean =
-        isInBedtimeWindow(nowMinutesOfDay(), bedtimeStartMinutes, bedtimeEndMinutes)
 
     private fun notifyWarning(title: String, text: String) {
         val notification = NotificationCompat.Builder(this, KidApp.WARNING_CHANNEL_ID)
@@ -156,10 +163,10 @@ class AppLimitAccessibilityService : AccessibilityService() {
         getSystemService(NotificationManager::class.java).notify(WARNING_NOTIFICATION_ID, notification)
     }
 
-    private fun showBlockOverlay(reason: String) {
+    private fun showBlockOverlay(reason: BlockReason) {
         val overlay = Intent(this, BlockOverlayActivity::class.java)
             .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-            .putExtra(BlockOverlayActivity.EXTRA_REASON, reason)
+            .putExtra(BlockOverlayActivity.EXTRA_REASON, reason.wireValue)
         startActivity(overlay)
     }
 
@@ -177,20 +184,19 @@ class AppLimitAccessibilityService : AccessibilityService() {
      * just reflects current state whenever it's glanced at.
      */
     private fun updateStatusNotification() {
-        val dailyLimitMs = dailyLimitMinutes * 60_000L
-        val timeRatio = if (dailyLimitMs in 1..Long.MAX_VALUE) {
-            usageStore.liveTotalScreenTimeMs.toFloat() / dailyLimitMs
-        } else 0f
-        val unlockGoal = dailyUnlockGoal
-        val unlockRatio = if (unlockGoal != null && unlockGoal > 0) {
-            usageStore.unlockCount.toFloat() / unlockGoal
-        } else 0f
-        val ratio = maxOf(timeRatio, unlockRatio)
-
-        val iconRes = when {
-            lockedCache || isInBedtime() || ratio >= 1f -> R.drawable.ic_status_stop
-            ratio >= 0.7f -> R.drawable.ic_status_caution
-            else -> R.drawable.ic_status_good
+        val isInBedtime = isInBedtimeWindow(nowMinutesOfDay(), bedtimeStartMinutes, bedtimeEndMinutes)
+        val tier = computeStatusTier(
+            locked = lockedCache,
+            isInBedtime = isInBedtime,
+            dailyLimitMinutes = dailyLimitMinutes,
+            liveTotalScreenTimeMs = usageStore.liveTotalScreenTimeMs,
+            dailyUnlockGoal = dailyUnlockGoal,
+            unlockCount = usageStore.unlockCount
+        )
+        val iconRes = when (tier) {
+            StatusTier.STOP -> R.drawable.ic_status_stop
+            StatusTier.CAUTION -> R.drawable.ic_status_caution
+            StatusTier.GOOD -> R.drawable.ic_status_good
         }
 
         val openIntent = PendingIntent.getActivity(
@@ -213,7 +219,6 @@ class AppLimitAccessibilityService : AccessibilityService() {
 
     companion object {
         private const val TICK_INTERVAL_MS = 30_000L
-        private const val WARNING_THRESHOLD_MS = 5 * 60_000L
         private const val WARNING_NOTIFICATION_ID = 1002
 
         /** Updated live from Firestore by [org.openscreentime.kid.KidApp]. */

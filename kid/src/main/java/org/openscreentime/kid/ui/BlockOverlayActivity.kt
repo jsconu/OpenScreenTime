@@ -21,14 +21,21 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import org.openscreentime.kid.monitor.AppLimitAccessibilityService
-import org.openscreentime.shared.model.formatMinutesOfDay
+import org.openscreentime.shared.model.BlockReason
+import org.openscreentime.shared.model.blockScreenCopy
 import org.openscreentime.shared.model.randomAlternativeActivity
 
 /** Full-screen interruption shown when a daily or per-app limit is reached. */
 class BlockOverlayActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        val reason = intent.getStringExtra(EXTRA_REASON) ?: "app_limit"
+        val reason = BlockReason.fromWireValue(intent.getStringExtra(EXTRA_REASON))
+        val copy = blockScreenCopy(
+            reason = reason,
+            bedtimeEndMinutes = AppLimitAccessibilityService.bedtimeEndMinutes,
+            lockMessage = "A parent has paused screen time. Ask them to resume it.",
+            defaultMessage = "Ask a parent if you need more time."
+        )
 
         setContent {
             OpenScreenTimeTheme {
@@ -39,32 +46,19 @@ class BlockOverlayActivity : ComponentActivity() {
                         verticalArrangement = Arrangement.Center
                     ) {
                         Text(
-                            when (reason) {
-                                "daily_limit" -> "Screen time is up for today"
-                                "parent_lock" -> "Screen time has been paused"
-                                "bedtime" -> "It's bedtime"
-                                else -> "This app's time limit is reached"
-                            },
+                            copy.title,
                             style = MaterialTheme.typography.headlineSmall,
                             textAlign = TextAlign.Center
                         )
                         Spacer(Modifier.height(16.dp))
                         Text(
-                            when (reason) {
-                                "parent_lock" -> "A parent has paused screen time. Ask them to resume it."
-                                "bedtime" -> {
-                                    val end = AppLimitAccessibilityService.bedtimeEndMinutes
-                                    if (end != null) "Screen time starts again at ${formatMinutesOfDay(end)}."
-                                    else "Screen time starts again in the morning."
-                                }
-                                else -> "Ask a parent if you need more time."
-                            },
+                            copy.message,
                             textAlign = TextAlign.Center,
                             style = MaterialTheme.typography.bodyMedium
                         )
                         // Winding down for bedtime is the point there, not finding something
                         // else active to do - see #16's design-principle note.
-                        if (reason != "bedtime") {
+                        if (reason != BlockReason.BEDTIME) {
                             Spacer(Modifier.height(20.dp))
                             val suggestion = remember { randomAlternativeActivity() }
                             Text(
