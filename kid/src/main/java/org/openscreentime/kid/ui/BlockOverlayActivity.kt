@@ -6,20 +6,30 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.launch
+import org.openscreentime.kid.KidApp
+import org.openscreentime.kid.data.PairingStore
 import org.openscreentime.kid.monitor.LiveChildState
 import org.openscreentime.shared.model.BlockReason
 import org.openscreentime.shared.model.blockScreenCopy
@@ -36,9 +46,31 @@ class BlockOverlayActivity : ComponentActivity() {
             lockMessage = "A parent has paused screen time. Ask them to resume it.",
             defaultMessage = "Ask a parent if you need more time."
         )
+        val repository = (application as KidApp).repository
+        val pairingStore = PairingStore(this)
+        val parentUid = pairingStore.parentUid
+        val childId = pairingStore.childId
 
         setContent {
             OpenScreenTimeTheme {
+                val scope = rememberCoroutineScope()
+                var requestedExtraMinutes by remember { mutableStateOf<Int?>(null) }
+
+                // See #23: a parent granting the request lands here live - dismiss the block
+                // screen right away instead of leaving the kid staring at a screen they've
+                // already been given more time for.
+                DisposableEffect(parentUid, childId) {
+                    if (parentUid == null || childId == null) return@DisposableEffect onDispose {}
+                    val reg = repository.listenChild(parentUid, childId) { child ->
+                        requestedExtraMinutes = child.requestedExtraMinutes
+                        val until = child.temporaryUnlockUntilMs
+                        if (until != null && until > System.currentTimeMillis()) {
+                            finish()
+                        }
+                    }
+                    onDispose { reg.remove() }
+                }
+
                 Surface(modifier = Modifier.fillMaxSize()) {
                     Column(
                         modifier = Modifier.fillMaxSize().padding(32.dp),
@@ -68,6 +100,18 @@ class BlockOverlayActivity : ComponentActivity() {
                                 color = MaterialTheme.colorScheme.primary
                             )
                         }
+                        // A parent lock is a deliberate, direct action - not something a
+                        // time-limit exception should be negotiable against (see #23).
+                        if (reason != BlockReason.PARENT_LOCK && parentUid != null && childId != null) {
+                            Spacer(Modifier.height(24.dp))
+                            RequestMoreTimeSection(
+                                requestedExtraMinutes = requestedExtraMinutes,
+                                onRequest = { minutes ->
+                                    requestedExtraMinutes = minutes
+                                    scope.launch { repository.requestExtraTime(parentUid, childId, minutes) }
+                                }
+                            )
+                        }
                         Spacer(Modifier.height(32.dp))
                         Button(onClick = {
                             startActivity(
@@ -88,5 +132,21 @@ class BlockOverlayActivity : ComponentActivity() {
 
     companion object {
         const val EXTRA_REASON = "reason"
+    }
+}
+
+@Composable
+private fun RequestMoreTimeSection(requestedExtraMinutes: Int?, onRequest: (Int) -> Unit) {
+    if (requestedExtraMinutes != null) {
+        Text(
+            "Asked a parent for $requestedExtraMinutes more minutes - waiting to hear back.",
+            textAlign = TextAlign.Center,
+            style = MaterialTheme.typography.bodyMedium
+        )
+    } else {
+        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            OutlinedButton(onClick = { onRequest(5) }) { Text("+5 min") }
+            OutlinedButton(onClick = { onRequest(15) }) { Text("+15 min") }
+        }
     }
 }

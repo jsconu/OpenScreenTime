@@ -24,4 +24,6 @@ object LiveChildState {
     @Volatile var bedtimeEndMinutes: Int? = null
     /** See #19. */
     @Volatile var blockedDomains: List<String> = emptyList()
+    /** See #23 - a parent-granted "more time" window; null or in the past means no active grant. */
+    @Volatile var temporaryUnlockUntilMs: Long? = null
 }

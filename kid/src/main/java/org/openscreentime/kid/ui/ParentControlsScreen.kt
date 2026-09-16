@@ -1,5 +1,6 @@
 package org.openscreentime.kid.ui
 
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -11,6 +12,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.width
 import androidx.compose.material3.ListItem
@@ -82,6 +84,26 @@ fun ParentControlsScreen(
         }
     ) { padding ->
         LazyColumn(modifier = Modifier.fillMaxSize().padding(padding)) {
+            child.requestedExtraMinutes?.let { requested ->
+                item {
+                    Card(modifier = Modifier.fillMaxWidth().padding(16.dp)) {
+                        Column(Modifier.padding(16.dp)) {
+                            Text("Asking for more time", style = MaterialTheme.typography.titleMedium)
+                            Spacer(Modifier.height(8.dp))
+                            Text("Requested: $requested more minutes", style = MaterialTheme.typography.bodyMedium)
+                            Spacer(Modifier.height(12.dp))
+                            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                Button(onClick = {
+                                    scope.launch { repository.grantExtraTime(parentUid, childId, requested) }
+                                }) { Text("Grant $requested min") }
+                                OutlinedButton(onClick = {
+                                    scope.launch { repository.declineExtraTimeRequest(parentUid, childId) }
+                                }) { Text("Decline") }
+                            }
+                        }
+                    }
+                }
+            }
             item {
                 Column(Modifier.padding(16.dp)) {
                     Button(

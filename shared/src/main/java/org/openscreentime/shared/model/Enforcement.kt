@@ -60,7 +60,17 @@ data class EnforcementInput(
      * this, and the engine never returns [EnforcementEvent.Pause]. A non-null value means
      * "was this app already paused today" - Pause fires only when this is false.
      */
-    val appAlreadyPaused: Boolean? = null
+    val appAlreadyPaused: Boolean? = null,
+    /** Wall-clock now, in epoch milliseconds - only needed to compare against [temporaryUnlockUntilMs]. */
+    val nowMs: Long = 0,
+    /**
+     * See #23 - a parent-granted "more time" window, requested by the kid and granted by a
+     * parent (never self-served). Non-null and in the future means bedtime and the daily/
+     * app-limit checks are all skipped for this tick - a parent lock is deliberately NOT
+     * bypassed: it's a separate, stronger signal the parent controls directly, not something
+     * a time-limit exception should ever override.
+     */
+    val temporaryUnlockUntilMs: Long? = null
 )
 
 private const val WARNING_THRESHOLD_MS = 5 * 60_000L
@@ -76,18 +86,31 @@ val WARNING_THRESHOLD_MINUTES = WARNING_THRESHOLD_MS / 60_000L
  * behavior is carried over unchanged from the code this was extracted from, not a new
  * behavior introduced by this refactor - see EnforcementTest for the cases that pin it.
  *
- * One deliberate exception: the daily-limit check runs even when [EnforcementInput
- * .foregroundPackage] is null (e.g. the kid is on the home screen, not inside any app).
- * The previous, duplicated implementation skipped the daily limit entirely whenever no
- * app was in the foreground - a real gap, confirmed worth closing when this was unified,
- * not an accidental behavior change.
+ * Two deliberate exceptions to that:
+ *
+ * An active [EnforcementInput.temporaryUnlockUntilMs] (see #23) skips bedtime and every
+ * daily/app-level check for this tick - but never a parent lock, which stays absolute
+ * regardless.
+ *
+ * The daily-limit check runs even when [EnforcementInput.foregroundPackage] is null (e.g.
+ * the kid is on the home screen, not inside any app). The previous, duplicated
+ * implementation skipped the daily limit entirely whenever no app was in the foreground -
+ * a real gap, confirmed worth closing when this was unified, not an accidental behavior
+ * change.
  */
 fun decideEnforcement(input: EnforcementInput): List<EnforcementEvent> {
-    if (isInBedtimeWindow(input.nowMinutesOfDay, input.bedtimeStartMinutes, input.bedtimeEndMinutes)) {
+    val temporarilyUnlocked = input.temporaryUnlockUntilMs?.let { it > input.nowMs } ?: false
+
+    if (isInBedtimeWindow(input.nowMinutesOfDay, input.bedtimeStartMinutes, input.bedtimeEndMinutes) &&
+        !temporarilyUnlocked
+    ) {
         return listOf(EnforcementEvent.Block(BlockReason.BEDTIME))
     }
     if (input.locked) {
         return listOf(EnforcementEvent.Block(BlockReason.PARENT_LOCK))
+    }
+    if (temporarilyUnlocked) {
+        return emptyList()
     }
 
     val events = mutableListOf<EnforcementEvent>()

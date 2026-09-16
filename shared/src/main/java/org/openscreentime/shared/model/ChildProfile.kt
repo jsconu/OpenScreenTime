@@ -54,7 +54,22 @@ data class ChildProfile(
      * VPN (see #19). Suffix-matched - blocking "tiktok.com" also blocks "m.tiktok.com" (see
      * [isDomainBlocked]). Shown read-only in the kid app; only a parent can edit it.
      */
-    val blockedDomains: List<String> = emptyList()
+    val blockedDomains: List<String> = emptyList(),
+    /**
+     * A kid-requested "more time" amount in minutes (5 or 15), awaiting parent approval, or
+     * null when there's no pending request - see #23. Requested from the block screen, so
+     * it only makes sense while the kid is actually blocked; the kid app writes this with no
+     * passcode required, same autonomy-supportive pattern as [proposedDailyLimitMinutes].
+     * Granting sets [temporaryUnlockUntilMs] and clears this; declining just clears it.
+     */
+    val requestedExtraMinutes: Int? = null,
+    /**
+     * Epoch milliseconds until which the kid is temporarily let through bedtime and any
+     * daily/app-limit block - never a parent lock, which stays absolute. Set only by a
+     * parent granting a [requestedExtraMinutes] request, never by the kid device itself.
+     * See #23 and [decideEnforcement].
+     */
+    val temporaryUnlockUntilMs: Long? = null
 ) {
     fun toMap(): Map<String, Any?> = mapOf(
         "name" to name,
@@ -72,7 +87,9 @@ data class ChildProfile(
         "proposedAppLimits" to proposedAppLimits,
         "bedtimeStartMinutes" to bedtimeStartMinutes,
         "bedtimeEndMinutes" to bedtimeEndMinutes,
-        "blockedDomains" to blockedDomains
+        "blockedDomains" to blockedDomains,
+        "requestedExtraMinutes" to requestedExtraMinutes,
+        "temporaryUnlockUntilMs" to temporaryUnlockUntilMs
     )
 
     companion object {
@@ -94,7 +111,9 @@ data class ChildProfile(
             proposedAppLimits = (map["proposedAppLimits"] as? Map<String, Long>)?.mapValues { it.value.toInt() },
             bedtimeStartMinutes = (map["bedtimeStartMinutes"] as? Long)?.toInt(),
             bedtimeEndMinutes = (map["bedtimeEndMinutes"] as? Long)?.toInt(),
-            blockedDomains = (map["blockedDomains"] as? List<String>) ?: emptyList()
+            blockedDomains = (map["blockedDomains"] as? List<String>) ?: emptyList(),
+            requestedExtraMinutes = (map["requestedExtraMinutes"] as? Long)?.toInt(),
+            temporaryUnlockUntilMs = map["temporaryUnlockUntilMs"] as? Long
         )
     }
 }

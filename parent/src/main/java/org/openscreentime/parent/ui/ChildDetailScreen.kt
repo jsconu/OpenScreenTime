@@ -111,6 +111,11 @@ fun ChildDetailScreen(
                 onApprove = { scope.launch { repository.approveProposal(parentUid, childId, currentChild) } },
                 onDecline = { scope.launch { repository.declineProposal(parentUid, childId) } }
             )
+            extraTimeRequestSection(
+                child = currentChild,
+                onGrant = { minutes -> scope.launch { repository.grantExtraTime(parentUid, childId, minutes) } },
+                onDecline = { scope.launch { repository.declineExtraTimeRequest(parentUid, childId) } }
+            )
             lockAndLimitsSection(
                 child = currentChild,
                 stats = stats,
@@ -264,6 +269,29 @@ private fun LazyListScope.pendingProposalSection(
                 Spacer(Modifier.height(12.dp))
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     Button(onClick = onApprove) { Text("Approve") }
+                    OutlinedButton(onClick = onDecline) { Text("Decline") }
+                }
+            }
+        }
+    }
+}
+
+/** See #23 - a kid-requested "more time" extension, awaiting a Grant or Decline. */
+private fun LazyListScope.extraTimeRequestSection(
+    child: ChildProfile,
+    onGrant: (Int) -> Unit,
+    onDecline: () -> Unit
+) {
+    val requested = child.requestedExtraMinutes ?: return
+    item {
+        Card(modifier = Modifier.fillMaxWidth().padding(16.dp)) {
+            Column(Modifier.padding(16.dp)) {
+                Text("${child.name} is asking for more time", style = MaterialTheme.typography.titleMedium)
+                Spacer(Modifier.height(8.dp))
+                Text("Requested: $requested more minutes", style = MaterialTheme.typography.bodyMedium)
+                Spacer(Modifier.height(12.dp))
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Button(onClick = { onGrant(requested) }) { Text("Grant $requested min") }
                     OutlinedButton(onClick = onDecline) { Text("Decline") }
                 }
             }

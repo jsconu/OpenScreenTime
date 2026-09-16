@@ -61,4 +61,28 @@ internal class LimitsRepository(private val db: FirebaseFirestore) {
             .update(mapOf("proposedDailyLimitMinutes" to null, "proposedAppLimits" to null))
             .await()
     }
+
+    /** See #23 - kid-initiated, no passcode required, same autonomy-supportive pattern as [proposeLimits]. */
+    suspend fun requestExtraTime(parentUid: String, childId: String, minutes: Int) {
+        db.document(FirestorePaths.childDoc(parentUid, childId))
+            .update("requestedExtraMinutes", minutes).await()
+    }
+
+    /** Grants [minutes] of temporary unlock starting now, and clears the pending request. */
+    suspend fun grantExtraTime(parentUid: String, childId: String, minutes: Int) {
+        db.document(FirestorePaths.childDoc(parentUid, childId))
+            .update(
+                mapOf(
+                    "temporaryUnlockUntilMs" to System.currentTimeMillis() + minutes * 60_000L,
+                    "requestedExtraMinutes" to null
+                )
+            )
+            .await()
+    }
+
+    /** Clears a pending request without granting it. */
+    suspend fun declineExtraTimeRequest(parentUid: String, childId: String) {
+        db.document(FirestorePaths.childDoc(parentUid, childId))
+            .update("requestedExtraMinutes", null).await()
+    }
 }

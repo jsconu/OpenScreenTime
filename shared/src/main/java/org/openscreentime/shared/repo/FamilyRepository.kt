@@ -115,6 +115,21 @@ class FamilyRepository(
     suspend fun declineProposal(parentUid: String, childId: String) = limits.declineProposal(parentUid, childId)
 
     /**
+     * Kid-initiated, passcode-free "more time" request (see #23) - requested from the block
+     * screen while the kid is actually blocked. Overwrites any previous pending request.
+     */
+    suspend fun requestExtraTime(parentUid: String, childId: String, minutes: Int) =
+        limits.requestExtraTime(parentUid, childId, minutes)
+
+    /** Grants [minutes] of temporary unlock starting now, and clears the pending request. See #23. */
+    suspend fun grantExtraTime(parentUid: String, childId: String, minutes: Int) =
+        limits.grantExtraTime(parentUid, childId, minutes)
+
+    /** Clears a pending "more time" request without granting it. See #23. */
+    suspend fun declineExtraTimeRequest(parentUid: String, childId: String) =
+        limits.declineExtraTimeRequest(parentUid, childId)
+
+    /**
      * Returns the parent's own tracked profile (see [ChildProfile.isSelf]), creating it on
      * first use. Unlike [createChild], this is claimed immediately - the parent app is
      * already signed in as parentUid, which already has full read/write on its own

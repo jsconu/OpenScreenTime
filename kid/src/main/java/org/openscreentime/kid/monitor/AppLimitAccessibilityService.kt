@@ -114,7 +114,9 @@ class AppLimitAccessibilityService : AccessibilityService() {
             appWarned = pkg?.let { it in usageStore.warnedApps } ?: false,
             // This app supports the friction-pause feature (#12) - unlike the parent's
             // self-tracking equivalent, which never supplies this.
-            appAlreadyPaused = pkg?.let { it in usageStore.pausedApps }
+            appAlreadyPaused = pkg?.let { it in usageStore.pausedApps },
+            nowMs = System.currentTimeMillis(),
+            temporaryUnlockUntilMs = LiveChildState.temporaryUnlockUntilMs
         )
     }
 

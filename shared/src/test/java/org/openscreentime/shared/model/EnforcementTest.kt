@@ -246,4 +246,66 @@ class EnforcementTest {
         assertEquals(BlockReason.APP_LIMIT, BlockReason.fromWireValue(null))
         assertEquals(BlockReason.APP_LIMIT, BlockReason.fromWireValue("something_else"))
     }
+
+    // --- Temporary unlock (see #23) ---
+
+    @Test
+    fun `an active temporary unlock skips a reached daily limit`() {
+        val input = baseline.copy(
+            liveTotalScreenTimeMs = 999 * 60_000L,
+            nowMs = 1_000,
+            temporaryUnlockUntilMs = 2_000
+        )
+        assertEquals(emptyList<EnforcementEvent>(), decideEnforcement(input))
+    }
+
+    @Test
+    fun `an active temporary unlock skips bedtime too`() {
+        val input = baseline.copy(
+            bedtimeStartMinutes = 1260,
+            bedtimeEndMinutes = 420,
+            nowMinutesOfDay = 0,
+            nowMs = 1_000,
+            temporaryUnlockUntilMs = 2_000
+        )
+        assertEquals(emptyList<EnforcementEvent>(), decideEnforcement(input))
+    }
+
+    @Test
+    fun `an active temporary unlock skips an app-level block too`() {
+        val input = baseline.copy(
+            foregroundPackage = "com.example",
+            appLimitMinutes = 30,
+            appUsedMs = 999 * 60_000L,
+            nowMs = 1_000,
+            temporaryUnlockUntilMs = 2_000
+        )
+        assertEquals(emptyList<EnforcementEvent>(), decideEnforcement(input))
+    }
+
+    @Test
+    fun `a temporary unlock never overrides a parent lock`() {
+        val input = baseline.copy(
+            locked = true,
+            nowMs = 1_000,
+            temporaryUnlockUntilMs = 2_000
+        )
+        assertEquals(listOf(EnforcementEvent.Block(BlockReason.PARENT_LOCK)), decideEnforcement(input))
+    }
+
+    @Test
+    fun `an expired temporary unlock no longer applies`() {
+        val input = baseline.copy(
+            liveTotalScreenTimeMs = 999 * 60_000L,
+            nowMs = 5_000,
+            temporaryUnlockUntilMs = 2_000 // already in the past
+        )
+        assertEquals(listOf(EnforcementEvent.Block(BlockReason.DAILY_LIMIT)), decideEnforcement(input))
+    }
+
+    @Test
+    fun `no temporary unlock set behaves exactly as before`() {
+        val input = baseline.copy(liveTotalScreenTimeMs = 999 * 60_000L)
+        assertEquals(listOf(EnforcementEvent.Block(BlockReason.DAILY_LIMIT)), decideEnforcement(input))
+    }
 }

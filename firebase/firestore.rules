@@ -107,17 +107,19 @@ service cloud.firestore {
           && resource.data.deviceUid == request.auth.uid
           && request.resource.data.diff(resource.data).affectedKeys()
                .hasOnly(['dailyLimitMinutes', 'appLimits', 'locked', 'dailyUnlockGoal',
-                         'bedtimeStartMinutes', 'bedtimeEndMinutes', 'blockedDomains']);
+                         'bedtimeStartMinutes', 'bedtimeEndMinutes', 'blockedDomains',
+                         'temporaryUnlockUntilMs', 'requestedExtraMinutes']);
 
-        // Negotiated limits (#14): the linked device may propose new limits with no
-        // passcode/parent-mode gate at all - deliberately separate from the rule above,
-        // since a proposal is never applied on its own. Only the parent (the top-level
-        // "read, write" rule) can turn a proposal into a real dailyLimitMinutes/appLimits
-        // change.
+        // Negotiated limits (#14) and "more time" requests (#23): the linked device may
+        // write these with no passcode/parent-mode gate at all - deliberately separate from
+        // the rule above, since neither is ever applied on its own. Only the parent (the
+        // top-level "read, write" rule, or "parent mode" above) can turn a proposal into a
+        // real dailyLimitMinutes/appLimits change, or a time request into a granted
+        // temporaryUnlockUntilMs.
         allow update: if request.auth != null
           && resource.data.deviceUid == request.auth.uid
           && request.resource.data.diff(resource.data).affectedKeys()
-               .hasOnly(['proposedDailyLimitMinutes', 'proposedAppLimits']);
+               .hasOnly(['proposedDailyLimitMinutes', 'proposedAppLimits', 'requestedExtraMinutes']);
 
         match /dailyStats/{date} {
           allow read, write: if request.auth != null && request.auth.uid == parentUid;
