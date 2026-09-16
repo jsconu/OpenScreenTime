@@ -2,6 +2,7 @@ package org.openscreentime.kid.ui
 
 import android.content.Intent
 import android.net.Uri
+import android.net.VpnService
 import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
@@ -26,6 +27,7 @@ import androidx.lifecycle.LifecycleEventObserver
 import org.openscreentime.kid.KidApp
 import org.openscreentime.kid.data.AppearancePrefs
 import org.openscreentime.kid.data.PairingStore
+import org.openscreentime.kid.monitor.DnsSinkholeVpnService
 import org.openscreentime.kid.monitor.ScreenMonitorService
 import org.openscreentime.kid.util.checkPermissions
 import org.openscreentime.shared.model.ChildProfile
@@ -43,6 +45,15 @@ class MainActivity : ComponentActivity() {
 
     private val notificationPermissionLauncher =
         registerForActivityResult(ActivityResultContracts.RequestPermission()) {}
+
+    private val vpnPermissionLauncher =
+        registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+            if (result.resultCode == RESULT_OK) startWebsiteFilterService()
+        }
+
+    private fun startWebsiteFilterService() {
+        ContextCompat.startForegroundService(this, Intent(this, DnsSinkholeVpnService::class.java))
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -102,6 +113,14 @@ class MainActivity : ComponentActivity() {
                     onDispose { lifecycle.removeObserver(observer) }
                 }
 
+                // Starting an already-running foreground service is a harmless no-op (the
+                // service itself guards against restarting its tunnel loop), so this just
+                // re-asserts "the filter should be running" whenever consent is already in
+                // place - covers the service having been killed and needing to come back.
+                LaunchedEffect(paired, permissions.vpn) {
+                    if (paired && permissions.vpn) startWebsiteFilterService()
+                }
+
                 DisposableEffect(paired) {
                     val parentUid = pairingStore.parentUid
                     val childId = pairingStore.childId
@@ -156,6 +175,14 @@ class MainActivity : ComponentActivity() {
                                         Uri.parse("package:$packageName")
                                     )
                                 )
+                            },
+                            onRequestVpn = {
+                                val consentIntent = VpnService.prepare(this@MainActivity)
+                                if (consentIntent != null) {
+                                    vpnPermissionLauncher.launch(consentIntent)
+                                } else {
+                                    startWebsiteFilterService()
+                                }
                             },
                             onCycleTheme = { themeMode = appearancePrefs.cycleThemeMode() },
                             onCycleTextSize = { textSize = appearancePrefs.cycleTextSize() },

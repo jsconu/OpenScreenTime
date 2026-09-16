@@ -89,6 +89,10 @@ class FamilyRepository(
     suspend fun updateBedtimeWindow(parentUid: String, childId: String, startMinutes: Int?, endMinutes: Int?) =
         limits.updateBedtimeWindow(parentUid, childId, startMinutes, endMinutes)
 
+    /** Replaces the whole blocked-domains list (see #19, [ChildProfile.blockedDomains]). */
+    suspend fun updateBlockedDomains(parentUid: String, childId: String, domains: List<String>) =
+        limits.updateBlockedDomains(parentUid, childId, domains)
+
     /**
      * Kid-initiated, passcode-free suggestion (see #14) - writes only the two proposal
      * fields, never the real limits. Either parameter may be left null to leave that

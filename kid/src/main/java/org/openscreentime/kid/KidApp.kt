@@ -12,6 +12,7 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import org.openscreentime.kid.data.PairingStore
 import org.openscreentime.kid.monitor.AppLimitAccessibilityService
+import org.openscreentime.kid.monitor.DnsSinkholeVpnService
 import org.openscreentime.kid.monitor.SyncWorker
 import org.openscreentime.kid.ui.BlockOverlayActivity
 import org.openscreentime.shared.model.BlockReason
@@ -70,6 +71,7 @@ class KidApp : Application() {
             AppLimitAccessibilityService.dailyUnlockGoal = child.dailyUnlockGoal
             AppLimitAccessibilityService.bedtimeStartMinutes = child.bedtimeStartMinutes
             AppLimitAccessibilityService.bedtimeEndMinutes = child.bedtimeEndMinutes
+            DnsSinkholeVpnService.blockedDomainsCache = child.blockedDomains
 
             val wasLocked = AppLimitAccessibilityService.lockedCache
             AppLimitAccessibilityService.lockedCache = child.locked

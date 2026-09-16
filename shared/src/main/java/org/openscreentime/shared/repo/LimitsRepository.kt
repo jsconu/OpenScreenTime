@@ -28,6 +28,11 @@ internal class LimitsRepository(private val db: FirebaseFirestore) {
             .await()
     }
 
+    suspend fun updateBlockedDomains(parentUid: String, childId: String, domains: List<String>) {
+        db.document(FirestorePaths.childDoc(parentUid, childId))
+            .update("blockedDomains", domains).await()
+    }
+
     suspend fun proposeLimits(
         parentUid: String,
         childId: String,

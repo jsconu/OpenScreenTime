@@ -3,4 +3,6 @@
     <string name="monitor_notification_title">Screen time monitoring is on</string>
     <string name="monitor_notification_text">OpenScreenTime is tracking screen time for parental controls.</string>
     <string name="accessibility_service_description">Lets OpenScreenTime see which app is in the foreground, so it can track per-app time and show a reminder when a limit is reached. No screen content is read or recorded.</string>
+    <string name="website_filter_notification_title">Website filter is on</string>
+    <string name="website_filter_notification_text">Blocking sites a parent has restricted, in any browser.</string>
 </resources>

@@ -48,7 +48,13 @@ data class ChildProfile(
      * 21:00-07:00 is 1260-420); see [isInBedtimeWindow] for the wraparound-safe check.
      */
     val bedtimeStartMinutes: Int? = null,
-    val bedtimeEndMinutes: Int? = null
+    val bedtimeEndMinutes: Int? = null,
+    /**
+     * Domains blocked device-wide, in any browser, via the kid device's local DNS-sinkhole
+     * VPN (see #19). Suffix-matched - blocking "tiktok.com" also blocks "m.tiktok.com" (see
+     * [isDomainBlocked]). Shown read-only in the kid app; only a parent can edit it.
+     */
+    val blockedDomains: List<String> = emptyList()
 ) {
     fun toMap(): Map<String, Any?> = mapOf(
         "name" to name,
@@ -65,7 +71,8 @@ data class ChildProfile(
         "proposedDailyLimitMinutes" to proposedDailyLimitMinutes,
         "proposedAppLimits" to proposedAppLimits,
         "bedtimeStartMinutes" to bedtimeStartMinutes,
-        "bedtimeEndMinutes" to bedtimeEndMinutes
+        "bedtimeEndMinutes" to bedtimeEndMinutes,
+        "blockedDomains" to blockedDomains
     )
 
     companion object {
@@ -86,7 +93,8 @@ data class ChildProfile(
             proposedDailyLimitMinutes = (map["proposedDailyLimitMinutes"] as? Long)?.toInt(),
             proposedAppLimits = (map["proposedAppLimits"] as? Map<String, Long>)?.mapValues { it.value.toInt() },
             bedtimeStartMinutes = (map["bedtimeStartMinutes"] as? Long)?.toInt(),
-            bedtimeEndMinutes = (map["bedtimeEndMinutes"] as? Long)?.toInt()
+            bedtimeEndMinutes = (map["bedtimeEndMinutes"] as? Long)?.toInt(),
+            blockedDomains = (map["blockedDomains"] as? List<String>) ?: emptyList()
         )
     }
 }

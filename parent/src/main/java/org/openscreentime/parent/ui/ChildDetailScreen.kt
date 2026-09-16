@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -19,6 +20,7 @@ import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -32,6 +34,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
@@ -72,6 +75,7 @@ fun ChildDetailScreen(
     var editingApp by remember { mutableStateOf<String?>(null) }
     var showLockConfirm by remember { mutableStateOf(false) }
     var showDeleteConfirm by remember { mutableStateOf(false) }
+    var newBlockedDomain by remember { mutableStateOf("") }
 
     DisposableEffect(childId) {
         val reg1 = repository.listenChildren(parentUid) { list ->
@@ -114,6 +118,25 @@ fun ChildDetailScreen(
                 onChangeLimit = { showLimitDialog = true },
                 onChangeUnlockGoal = { showUnlockGoalDialog = true },
                 onChangeBedtime = { showBedtimeDialog = true }
+            )
+            websiteBlockingSection(
+                blockedDomains = currentChild.blockedDomains,
+                newDomainText = newBlockedDomain,
+                onNewDomainTextChange = { newBlockedDomain = it },
+                onAddDomain = {
+                    val domain = newBlockedDomain.trim().trimEnd('.').lowercase()
+                    if (domain.isNotEmpty() && domain !in currentChild.blockedDomains) {
+                        scope.launch {
+                            repository.updateBlockedDomains(parentUid, childId, currentChild.blockedDomains + domain)
+                        }
+                    }
+                    newBlockedDomain = ""
+                },
+                onRemoveDomain = { domain ->
+                    scope.launch {
+                        repository.updateBlockedDomains(parentUid, childId, currentChild.blockedDomains - domain)
+                    }
+                }
             )
             appUsageSection(
                 appUsage = stats.appUsage,
@@ -322,6 +345,58 @@ private fun LazyListScope.lockAndLimitsSection(
             Spacer(Modifier.height(8.dp))
             OutlinedButton(onClick = onChangeBedtime) { Text("Change bedtime") }
         }
+    }
+}
+
+/**
+ * Domains blocked device-wide, in any browser, via the kid device's local DNS-sinkhole
+ * VPN (see #19). Suffix-matched, so one entry covers every subdomain.
+ */
+private fun LazyListScope.websiteBlockingSection(
+    blockedDomains: List<String>,
+    newDomainText: String,
+    onNewDomainTextChange: (String) -> Unit,
+    onAddDomain: () -> Unit,
+    onRemoveDomain: (String) -> Unit
+) {
+    item {
+        Column(Modifier.padding(16.dp)) {
+            Text("Blocked websites", style = MaterialTheme.typography.labelLarge)
+            Spacer(Modifier.height(4.dp))
+            Text(
+                "Blocks a domain and its subdomains in any browser on this device.",
+                style = MaterialTheme.typography.bodySmall
+            )
+            Spacer(Modifier.height(8.dp))
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                OutlinedTextField(
+                    value = newDomainText,
+                    onValueChange = onNewDomainTextChange,
+                    label = { Text("e.g. tiktok.com") },
+                    singleLine = true,
+                    modifier = Modifier.weight(1f)
+                )
+                Spacer(Modifier.width(8.dp))
+                Button(onClick = onAddDomain, enabled = newDomainText.isNotBlank()) { Text("Block") }
+            }
+        }
+    }
+    if (blockedDomains.isEmpty()) {
+        item {
+            Text(
+                "No websites blocked.",
+                style = MaterialTheme.typography.bodySmall,
+                modifier = Modifier.padding(horizontal = 16.dp)
+            )
+        }
+    }
+    items(blockedDomains.sorted(), key = { it }) { domain ->
+        ListItem(
+            headlineContent = { Text(domain) },
+            trailingContent = {
+                TextButton(onClick = { onRemoveDomain(domain) }) { Text("Remove") }
+            }
+        )
     }
 }
 

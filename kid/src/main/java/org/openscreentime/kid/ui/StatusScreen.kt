@@ -49,6 +49,7 @@ fun StatusScreen(
     onRequestAccessibility: () -> Unit,
     onRequestNotifications: () -> Unit,
     onRequestBatteryExemption: () -> Unit,
+    onRequestVpn: () -> Unit,
     onCycleTheme: () -> Unit,
     onCycleTextSize: () -> Unit,
     onOpenColorSettings: () -> Unit,
@@ -115,6 +116,12 @@ fun StatusScreen(
             "Stops the system from killing tracking in the background",
             permissions.ignoringBatteryOptimizations,
             onRequestBatteryExemption
+        )
+        PermissionRow(
+            "Website filter",
+            "Blocks sites a parent has restricted, in any browser",
+            permissions.vpn,
+            onRequestVpn
         )
         Spacer(Modifier.height(8.dp))
         Text(
