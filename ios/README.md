@@ -46,6 +46,9 @@ That's a one-time, roughly 10-minute step:
    struct OpenScreenTimeParentApp: App {
        init() {
            FirebaseApp.configure() // import FirebaseCore
+           // Real feedback destination - keeps it out of the OpenScreenTime repo
+           // entirely, since this app target isn't part of that repo (see #21).
+           FeedbackConfig.feedbackEmail = "you@example.com"
        }
        var body: some Scene {
            WindowGroup { RootView() }
@@ -58,7 +61,13 @@ That's a one-time, roughly 10-minute step:
 5. Get a `GoogleService-Info.plist` for this app from the Firebase console (the same
    Firebase project the Android apps use - see `firebase.json` at the repo root) and drag
    it into the Xcode project, making sure it's added to the app target.
-6. Build and run on a simulator or device.
+6. For crash reporting (Crashlytics, see #21): add the "Upload Crashlytics Symbols" Run
+   Script build phase described in
+   [Firebase's Crashlytics setup docs](https://firebase.google.com/docs/crashlytics/get-started?platform=ios)
+   to the app target - this actually uploads dSYMs so a crash's stack trace is
+   symbolicated in the Firebase console. `FirebaseCrashlytics` is already a dependency of
+   `OpenScreenTimeParentKit`, so no separate package addition is needed here.
+7. Build and run on a simulator or device.
 
 ## Local development
 

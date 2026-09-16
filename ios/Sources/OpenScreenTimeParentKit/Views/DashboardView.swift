@@ -1,5 +1,6 @@
 import SwiftUI
 import FirebaseFirestore
+import UIKit
 
 /// Mirrors the Android parent app's DashboardScreen.kt (v1 subset - see FamilyRepository's
 /// header comment for what's not yet ported). One row per child, live from Firestore; an
@@ -14,6 +15,7 @@ struct DashboardView: View {
     @State private var showAddChild = false
     @State private var newChildCode: String?
     @State private var errorMessage: String?
+    @Environment(\.openURL) private var openURL
 
     var body: some View {
         childList
@@ -57,6 +59,9 @@ struct DashboardView: View {
             }
         }
         ToolbarItem(placement: .navigationBarTrailing) {
+            Button("Feedback", action: sendFeedbackEmail)
+        }
+        ToolbarItem(placement: .navigationBarTrailing) {
             Button("Sign out") { session.signOut() }
         }
         ToolbarItem(placement: .primaryAction) {
@@ -84,6 +89,25 @@ struct DashboardView: View {
 
     private func startListening() {
         listener = repository.listenChildren(parentUid: parentUid) { children = $0 }
+    }
+
+    /// See #21 - FeedbackConfig.feedbackEmail is set once by the outer app target's own
+    /// init code, next to FirebaseApp.configure(); this package never holds the real address.
+    private func sendFeedbackEmail() {
+        let appVersion = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "unknown"
+        let device = UIDevice.current
+        let body = "\n\n---\nApp version: \(appVersion)\nDevice: \(device.model), iOS \(device.systemVersion)"
+
+        var components = URLComponents()
+        components.scheme = "mailto"
+        components.path = FeedbackConfig.feedbackEmail
+        components.queryItems = [
+            URLQueryItem(name: "subject", value: "OpenScreenTime feedback"),
+            URLQueryItem(name: "body", value: body)
+        ]
+        if let url = components.url {
+            openURL(url)
+        }
     }
 
     private func createChild(name: String) async {
