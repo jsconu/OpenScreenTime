@@ -38,6 +38,10 @@ Sync between the two apps runs on [Firebase](https://firebase.google.com)
 person running their own copy of this app points it at their own free
 Firebase project.
 
+**Multiple parents:** two parents (any mix of Android and iOS) see and
+control the same child by signing into the same parent account
+(email/password) on each of their own devices — nothing extra to set up.
+
 ```
 parent app  <---sync--->  Firebase (Firestore + Auth)  <---sync--->  kid app
 ```
