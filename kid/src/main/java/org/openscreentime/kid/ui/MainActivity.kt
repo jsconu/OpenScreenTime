@@ -29,6 +29,7 @@ import org.openscreentime.kid.data.AppearancePrefs
 import org.openscreentime.kid.data.PairingStore
 import org.openscreentime.kid.monitor.DnsSinkholeVpnService
 import org.openscreentime.kid.monitor.ScreenMonitorService
+import org.openscreentime.kid.util.PermissionActions
 import org.openscreentime.kid.util.checkPermissions
 import org.openscreentime.shared.model.ChildProfile
 import org.openscreentime.shared.model.DailyStats
@@ -152,38 +153,40 @@ class MainActivity : ComponentActivity() {
                             textSize = textSize,
                             streakDays = streakDays,
                             parentStatusLabel = parentSelfProfile?.let { calmParentStatusLabel(it, parentSelfStats) },
-                            onRequestOverlay = {
-                                startActivity(
-                                    Intent(
-                                        Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
-                                        Uri.parse("package:$packageName")
+                            permissionActions = PermissionActions(
+                                onRequestOverlay = {
+                                    startActivity(
+                                        Intent(
+                                            Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
+                                            Uri.parse("package:$packageName")
+                                        )
                                     )
-                                )
-                            },
-                            onRequestAccessibility = {
-                                startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
-                            },
-                            onRequestNotifications = {
-                                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                                    notificationPermissionLauncher.launch(android.Manifest.permission.POST_NOTIFICATIONS)
-                                }
-                            },
-                            onRequestBatteryExemption = {
-                                startActivity(
-                                    Intent(
-                                        Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS,
-                                        Uri.parse("package:$packageName")
+                                },
+                                onRequestAccessibility = {
+                                    startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
+                                },
+                                onRequestNotifications = {
+                                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                                        notificationPermissionLauncher.launch(android.Manifest.permission.POST_NOTIFICATIONS)
+                                    }
+                                },
+                                onRequestBatteryExemption = {
+                                    startActivity(
+                                        Intent(
+                                            Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS,
+                                            Uri.parse("package:$packageName")
+                                        )
                                     )
-                                )
-                            },
-                            onRequestVpn = {
-                                val consentIntent = VpnService.prepare(this@MainActivity)
-                                if (consentIntent != null) {
-                                    vpnPermissionLauncher.launch(consentIntent)
-                                } else {
-                                    startWebsiteFilterService()
+                                },
+                                onRequestVpn = {
+                                    val consentIntent = VpnService.prepare(this@MainActivity)
+                                    if (consentIntent != null) {
+                                        vpnPermissionLauncher.launch(consentIntent)
+                                    } else {
+                                        startWebsiteFilterService()
+                                    }
                                 }
-                            },
+                            ),
                             onCycleTheme = { themeMode = appearancePrefs.cycleThemeMode() },
                             onCycleTextSize = { textSize = appearancePrefs.cycleTextSize() },
                             onOpenColorSettings = {

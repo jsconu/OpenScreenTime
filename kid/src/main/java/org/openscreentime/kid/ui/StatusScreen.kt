@@ -35,6 +35,7 @@ import org.openscreentime.kid.data.TextSize
 import org.openscreentime.kid.data.ThemeMode
 import org.openscreentime.kid.data.TipsStore
 import org.openscreentime.kid.data.label
+import org.openscreentime.kid.util.PermissionActions
 import org.openscreentime.kid.util.PermissionState
 import org.openscreentime.kid.util.isNotificationListenerEnabled
 import org.openscreentime.shared.model.currentDayIndex
@@ -48,11 +49,7 @@ fun StatusScreen(
     textSize: TextSize,
     streakDays: Int,
     parentStatusLabel: String?,
-    onRequestOverlay: () -> Unit,
-    onRequestAccessibility: () -> Unit,
-    onRequestNotifications: () -> Unit,
-    onRequestBatteryExemption: () -> Unit,
-    onRequestVpn: () -> Unit,
+    permissionActions: PermissionActions,
     onCycleTheme: () -> Unit,
     onCycleTextSize: () -> Unit,
     onOpenColorSettings: () -> Unit,
@@ -102,31 +99,31 @@ fun StatusScreen(
             "Display over other apps",
             "Needed to show a screen when a limit is reached",
             permissions.overlay,
-            onRequestOverlay
+            permissionActions.onRequestOverlay
         )
         PermissionRow(
             "Accessibility service",
             "Needed to detect which app is open",
             permissions.accessibility,
-            onRequestAccessibility
+            permissionActions.onRequestAccessibility
         )
         PermissionRow(
             "Notifications",
             "Shows the ongoing monitoring notification",
             permissions.notifications,
-            onRequestNotifications
+            permissionActions.onRequestNotifications
         )
         PermissionRow(
             "Battery optimization",
             "Stops the system from killing tracking in the background",
             permissions.ignoringBatteryOptimizations,
-            onRequestBatteryExemption
+            permissionActions.onRequestBatteryExemption
         )
         PermissionRow(
             "Website filter",
             "Blocks sites a parent has restricted, in any browser",
             permissions.vpn,
-            onRequestVpn
+            permissionActions.onRequestVpn
         )
         Spacer(Modifier.height(8.dp))
         Text(

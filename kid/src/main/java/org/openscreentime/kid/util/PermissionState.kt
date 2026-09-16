@@ -20,6 +20,21 @@ data class PermissionState(
         get() = overlay && accessibility && notifications && ignoringBatteryOptimizations && vpn
 }
 
+/**
+ * One callback per [PermissionState] field, in the same order - the request-side mirror of
+ * that read-side bundle. Deliberately doesn't include the notification-digest listener
+ * request: that permission is optional and separate from [PermissionState.allGranted] on
+ * purpose (see #20), so it stays a standalone parameter on StatusScreen rather than being
+ * folded into "the permissions this screen requests to finish core setup."
+ */
+data class PermissionActions(
+    val onRequestOverlay: () -> Unit,
+    val onRequestAccessibility: () -> Unit,
+    val onRequestNotifications: () -> Unit,
+    val onRequestBatteryExemption: () -> Unit,
+    val onRequestVpn: () -> Unit
+)
+
 /** Separate from [PermissionState.allGranted] - the digest is optional (see #20). */
 fun isNotificationListenerEnabled(context: Context): Boolean =
     NotificationManagerCompat.getEnabledListenerPackages(context).contains(context.packageName)
