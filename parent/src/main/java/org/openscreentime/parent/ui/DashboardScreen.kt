@@ -16,6 +16,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -50,6 +51,7 @@ import org.openscreentime.parent.data.TipsStore
 import org.openscreentime.shared.model.ChildProfile
 import org.openscreentime.shared.model.DailyStats
 import org.openscreentime.shared.model.computeStreak
+import org.openscreentime.shared.model.formatDuration
 import org.openscreentime.shared.model.currentDayIndex
 import org.openscreentime.shared.model.currentDayParentTip
 import org.openscreentime.shared.model.todayDateString
@@ -361,12 +363,23 @@ private fun TipOfTheDayCard(modifier: Modifier = Modifier) {
     val dayIndex = remember { currentDayIndex() }
     var acknowledged by remember { mutableStateOf(tipsStore.acknowledgedDayIndex == dayIndex) }
 
-    Card(modifier = modifier) {
-        Column(Modifier.padding(12.dp)) {
-            Text("Off-screen idea", style = MaterialTheme.typography.labelMedium)
-            Spacer(Modifier.height(2.dp))
-            Text(currentDayParentTip(), style = MaterialTheme.typography.bodyMedium)
-            Spacer(Modifier.height(6.dp))
+    Card(
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
+        modifier = modifier
+    ) {
+        Column(Modifier.padding(16.dp)) {
+            Text(
+                "Off-screen idea",
+                style = MaterialTheme.typography.labelLarge,
+                color = MaterialTheme.colorScheme.onPrimaryContainer
+            )
+            Spacer(Modifier.height(4.dp))
+            Text(
+                currentDayParentTip(),
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.onPrimaryContainer
+            )
+            Spacer(Modifier.height(8.dp))
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Checkbox(
                     checked = acknowledged,
@@ -377,7 +390,8 @@ private fun TipOfTheDayCard(modifier: Modifier = Modifier) {
                 )
                 Text(
                     if (acknowledged) "Nice job! You're practicing great screen time management!" else "I did this",
-                    style = MaterialTheme.typography.bodyMedium
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onPrimaryContainer
                 )
             }
         }
@@ -471,11 +485,4 @@ private fun FeedbackDialog(onDismiss: () -> Unit, onSubmit: (text: String, onErr
         },
         dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } }
     )
-}
-
-fun formatDuration(ms: Long): String {
-    val totalMinutes = ms / 60000
-    val h = totalMinutes / 60
-    val m = totalMinutes % 60
-    return if (h > 0) "${h}h ${m}m" else "${m}m"
 }

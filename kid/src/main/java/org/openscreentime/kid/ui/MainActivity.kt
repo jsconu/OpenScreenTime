@@ -153,6 +153,7 @@ class MainActivity : ComponentActivity() {
                             textSize = textSize,
                             streakDays = streakDays,
                             parentStatusLabel = parentSelfProfile?.let { calmParentStatusLabel(it, parentSelfStats) },
+                            parentStats = parentSelfProfile?.let { parentSelfStats },
                             permissionActions = PermissionActions(
                                 onRequestOverlay = {
                                     startActivity(

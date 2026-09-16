@@ -43,6 +43,7 @@ import org.openscreentime.shared.model.ChildProfile
 import org.openscreentime.shared.model.DailyStats
 import org.openscreentime.shared.model.addBlockedDomain
 import org.openscreentime.shared.model.computeStreak
+import org.openscreentime.shared.model.formatDuration
 import org.openscreentime.shared.model.removeBlockedDomain
 import org.openscreentime.shared.model.formatMinutesOfDay
 import org.openscreentime.shared.model.todayDateString

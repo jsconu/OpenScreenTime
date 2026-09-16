@@ -11,7 +11,9 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Checkbox
+import androidx.compose.material3.Icon
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
@@ -30,8 +32,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import org.openscreentime.kid.R
 import org.openscreentime.kid.data.NotificationDigestStore
 import org.openscreentime.kid.data.TextSize
 import org.openscreentime.kid.data.ThemeMode
@@ -40,8 +44,10 @@ import org.openscreentime.kid.data.label
 import org.openscreentime.kid.util.PermissionActions
 import org.openscreentime.kid.util.PermissionState
 import org.openscreentime.kid.util.isNotificationListenerEnabled
+import org.openscreentime.shared.model.DailyStats
 import org.openscreentime.shared.model.currentDayIndex
 import org.openscreentime.shared.model.currentDayKidTip
+import org.openscreentime.shared.model.formatDuration
 
 @Composable
 fun StatusScreen(
@@ -51,6 +57,7 @@ fun StatusScreen(
     textSize: TextSize,
     streakDays: Int,
     parentStatusLabel: String?,
+    parentStats: DailyStats?,
     permissionActions: PermissionActions,
     onCycleTheme: () -> Unit,
     onCycleTextSize: () -> Unit,
@@ -78,6 +85,8 @@ fun StatusScreen(
             style = MaterialTheme.typography.bodyMedium
         )
         Spacer(Modifier.height(12.dp))
+        StatusIconLegend()
+        Spacer(Modifier.height(12.dp))
         TipOfTheDayCard()
         if (streakDays > 0) {
             Spacer(Modifier.height(8.dp))
@@ -87,13 +96,23 @@ fun StatusScreen(
                 modifier = Modifier.testTag("status_streak")
             )
         }
-        if (parentStatusLabel != null) {
+        if (parentStatusLabel != null && parentStats != null) {
             Spacer(Modifier.height(8.dp))
-            Text(
-                "Parent's screen time today: $parentStatusLabel",
-                style = MaterialTheme.typography.bodyMedium,
-                modifier = Modifier.testTag("status_parent_status")
-            )
+            Card(modifier = Modifier.fillMaxWidth().testTag("status_parent_status")) {
+                Column(Modifier.padding(12.dp)) {
+                    Text("Parent's screen time today", style = MaterialTheme.typography.labelMedium)
+                    Spacer(Modifier.height(2.dp))
+                    Text(parentStatusLabel, style = MaterialTheme.typography.bodyMedium)
+                    Spacer(Modifier.height(4.dp))
+                    Text(
+                        "${formatDuration(parentStats.totalScreenTimeMs)} - " +
+                            "${parentStats.unlockCount} unlock${if (parentStats.unlockCount == 1) "" else "s"}",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.testTag("status_parent_numbers")
+                    )
+                }
+            }
         }
         Spacer(Modifier.height(24.dp))
 
@@ -190,6 +209,37 @@ fun StatusScreen(
 }
 
 /**
+ * Explains the ongoing notification's status icon (see #9's calm status indicator) - the
+ * icon itself only ever appears in the system notification, so this is the one place in
+ * the app that says what it actually means, for whenever it's glanced at without opening
+ * the app.
+ */
+@Composable
+private fun StatusIconLegend() {
+    Column(modifier = Modifier.testTag("status_icon_legend")) {
+        Text("What the status icon means", style = MaterialTheme.typography.labelLarge)
+        Spacer(Modifier.height(6.dp))
+        StatusIconLegendRow(R.drawable.ic_status_good, "Comfortably under today's goal")
+        StatusIconLegendRow(R.drawable.ic_status_caution, "Approaching today's goal")
+        StatusIconLegendRow(R.drawable.ic_status_stop, "At or over today's goal")
+    }
+}
+
+@Composable
+private fun StatusIconLegendRow(iconRes: Int, label: String) {
+    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(vertical = 2.dp)) {
+        Icon(
+            painter = painterResource(iconRes),
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.size(18.dp)
+        )
+        Spacer(Modifier.width(8.dp))
+        Text(label, style = MaterialTheme.typography.bodySmall)
+    }
+}
+
+/**
  * A single tip for the day, not a fresh one per app open - see #17. Checking it off just
  * shows a one-line "Nice job!" in place of the checkbox label; nothing is counted or
  * remembered beyond "was *today's* tip checked" - when the day turns over, a new tip
@@ -205,12 +255,23 @@ private fun TipOfTheDayCard() {
     val dayIndex = remember { currentDayIndex() }
     var acknowledged by remember { mutableStateOf(tipsStore.acknowledgedDayIndex == dayIndex) }
 
-    Card(modifier = Modifier.fillMaxWidth().testTag("status_tip_card")) {
-        Column(Modifier.padding(12.dp)) {
-            Text("Off-screen idea", style = MaterialTheme.typography.labelMedium)
-            Spacer(Modifier.height(2.dp))
-            Text(currentDayKidTip(), style = MaterialTheme.typography.bodyMedium)
-            Spacer(Modifier.height(6.dp))
+    Card(
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
+        modifier = Modifier.fillMaxWidth().testTag("status_tip_card")
+    ) {
+        Column(Modifier.padding(16.dp)) {
+            Text(
+                "Off-screen idea",
+                style = MaterialTheme.typography.labelLarge,
+                color = MaterialTheme.colorScheme.onPrimaryContainer
+            )
+            Spacer(Modifier.height(4.dp))
+            Text(
+                currentDayKidTip(),
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.onPrimaryContainer
+            )
+            Spacer(Modifier.height(8.dp))
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Checkbox(
                     checked = acknowledged,
@@ -222,7 +283,8 @@ private fun TipOfTheDayCard() {
                 )
                 Text(
                     if (acknowledged) "Nice job! You're practicing great screen time management!" else "I did this",
-                    style = MaterialTheme.typography.bodyMedium
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onPrimaryContainer
                 )
             }
         }

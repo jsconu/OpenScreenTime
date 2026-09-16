@@ -1,14 +1,16 @@
-<!-- Open hand: approaching today's goals. See ic_status_good.xml for why this is
-     deliberately simple/blocky rather than an anatomically precise hand. -->
+<!-- Open hand ("hold on"): approaching today's goals. Google's Material Symbols
+     "front_hand" glyph (Apache 2.0) - the previous hand-drawn placeholder was five
+     plain rectangles that blurred together with ic_status_good's at status-bar size;
+     this one has a distinct, recognizable palm-and-fingers silhouette. -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="24dp"
     android:height="24dp"
-    android:viewportWidth="24"
-    android:viewportHeight="24"
+    android:viewportWidth="960"
+    android:viewportHeight="960"
     android:tint="#FFFFFF">
-    <path android:fillColor="#FF000000" android:pathData="M4,12 L20,12 L20,22 L4,22 Z" />
-    <path android:fillColor="#FF000000" android:pathData="M5,2 L8,2 L8,13 L5,13 Z" />
-    <path android:fillColor="#FF000000" android:pathData="M9,1 L12,1 L12,13 L9,13 Z" />
-    <path android:fillColor="#FF000000" android:pathData="M13,1 L16,1 L16,13 L13,13 Z" />
-    <path android:fillColor="#FF000000" android:pathData="M17,3 L20,3 L20,13 L17,13 Z" />
+    <group android:translateY="960">
+        <path
+            android:fillColor="#FF000000"
+            android:pathData="M480,-480v-400q0,-17 11.5,-28.5T520,-920q17,0 28.5,11.5T560,-880v400h-80Zm-160,0v-360q0,-17 11.5,-28.5T360,-880q17,0 28.5,11.5T400,-840v360h-80ZM500,-40q-142,0 -241,-99t-99,-241v-380q0,-17 11.5,-28.5T200,-800q17,0 28.5,11.5T240,-760v380q0,109 75.5,184.5T500,-120q109,0 184.5,-75.5T760,-380v-140q-17,0 -28.5,11.5T720,-480v160H600q-33,0 -56.5,23.5T520,-240v40h-80v-40q0,-66 47,-113t113,-47h40v-400q0,-17 11.5,-28.5T680,-840q17,0 28.5,11.5T720,-800v207q10,-3 19.5,-5t20.5,-2h80v220q0,142 -99,241T500,-40Zm40,-320Z" />
+    </group>
 </vector>
