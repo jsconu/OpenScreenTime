@@ -1,18 +1,15 @@
 package org.openscreentime.kid.monitor
 
 import android.app.Notification
-import android.app.PendingIntent
 import android.app.Service
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.os.IBinder
-import androidx.core.app.NotificationCompat
 import org.openscreentime.kid.KidApp
 import org.openscreentime.kid.R
 import org.openscreentime.kid.data.UsageStore
-import org.openscreentime.kid.ui.MainActivity
 
 /**
  * Long-running foreground service that measures "screen time" as time spent
@@ -59,20 +56,13 @@ class ScreenMonitorService : Service() {
 
     override fun onBind(intent: Intent?): IBinder? = null
 
-    private fun buildNotification(): Notification {
-        val openIntent = PendingIntent.getActivity(
-            this, 0, Intent(this, MainActivity::class.java),
-            PendingIntent.FLAG_IMMUTABLE
-        )
-        return NotificationCompat.Builder(this, KidApp.MONITOR_CHANNEL_ID)
-            .setSmallIcon(R.drawable.ic_monitor)
-            .setContentTitle(getString(R.string.monitor_notification_title))
-            .setContentText(getString(R.string.monitor_notification_text))
-            .setContentIntent(openIntent)
-            .setOngoing(true)
-            .setPriority(NotificationCompat.PRIORITY_MIN)
-            .build()
-    }
+    private fun buildNotification(): Notification = buildOngoingNotification(
+        context = this,
+        channelId = KidApp.MONITOR_CHANNEL_ID,
+        iconRes = R.drawable.ic_monitor,
+        title = getString(R.string.monitor_notification_title),
+        text = getString(R.string.monitor_notification_text)
+    )
 
     companion object {
         /** Also used by AppLimitAccessibilityService to update this same notification's icon. */

@@ -1,14 +1,11 @@
 package org.openscreentime.kid.monitor
 
 import android.app.Notification
-import android.app.PendingIntent
 import android.content.Intent
 import android.net.VpnService
 import android.os.ParcelFileDescriptor
-import androidx.core.app.NotificationCompat
 import org.openscreentime.kid.KidApp
 import org.openscreentime.kid.R
-import org.openscreentime.kid.ui.MainActivity
 import org.openscreentime.shared.model.isDomainBlocked
 import org.openscreentime.shared.net.buildDnsNxDomainResponse
 import org.openscreentime.shared.net.buildIpv4UdpPacket
@@ -142,20 +139,13 @@ class DnsSinkholeVpnService : VpnService() {
         }
     }
 
-    private fun buildNotification(): Notification {
-        val openIntent = PendingIntent.getActivity(
-            this, 0, Intent(this, MainActivity::class.java),
-            PendingIntent.FLAG_IMMUTABLE
-        )
-        return NotificationCompat.Builder(this, KidApp.MONITOR_CHANNEL_ID)
-            .setSmallIcon(R.drawable.ic_monitor)
-            .setContentTitle(getString(R.string.website_filter_notification_title))
-            .setContentText(getString(R.string.website_filter_notification_text))
-            .setContentIntent(openIntent)
-            .setOngoing(true)
-            .setPriority(NotificationCompat.PRIORITY_MIN)
-            .build()
-    }
+    private fun buildNotification(): Notification = buildOngoingNotification(
+        context = this,
+        channelId = KidApp.MONITOR_CHANNEL_ID,
+        iconRes = R.drawable.ic_monitor,
+        title = getString(R.string.website_filter_notification_title),
+        text = getString(R.string.website_filter_notification_text)
+    )
 
     companion object {
         private const val NOTIFICATION_ID = 1003
