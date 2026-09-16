@@ -60,6 +60,7 @@ fun DashboardScreen(
     onOpenSettings: () -> Unit,
     onOpenAppearance: () -> Unit,
     onOpenSelfTracking: () -> Unit,
+    onSendFeedback: () -> Unit,
     onSignOut: () -> Unit
 ) {
     val parentUid = repository.currentUid ?: return
@@ -82,6 +83,7 @@ fun DashboardScreen(
                 actions = {
                     TextButton(onClick = onOpenAppearance) { Text("Style") }
                     TextButton(onClick = onOpenSettings) { Text("Passcode") }
+                    TextButton(onClick = onSendFeedback) { Text("Feedback") }
                     TextButton(onClick = onSignOut) { Text("Sign out") }
                 }
             )

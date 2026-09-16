@@ -9,6 +9,7 @@ import androidx.work.ExistingPeriodicWorkPolicy
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.crashlytics.FirebaseCrashlytics
 import com.google.firebase.firestore.FirebaseFirestore
 import org.openscreentime.parent.data.SelfProfileStore
 import org.openscreentime.parent.monitor.AppLimitAccessibilityService
@@ -28,6 +29,9 @@ class ParentApp : Application() {
             FirebaseFirestore.getInstance().useEmulator("10.0.2.2", 8080)
             FirebaseAuth.getInstance().useEmulator("10.0.2.2", 9099)
         }
+        // Never report CI/E2E-emulator crashes to the real Crashlytics dashboard (see #21) -
+        // same flag that already points Firebase itself at the local emulator suite.
+        FirebaseCrashlytics.getInstance().setCrashlyticsCollectionEnabled(!BuildConfig.USE_FIREBASE_EMULATOR)
         createNotificationChannels()
         scheduleSelfSync()
         startSelfTrackingListener()

@@ -115,6 +115,10 @@ You'll need [Android Studio](https://developer.android.com/studio)
 6. Open the project root in Android Studio and let it sync. Run the `kid`
    configuration on one device/emulator and `parent` on another (or the
    same emulator with two profiles) to test pairing end-to-end.
+7. Optional: the parent app's "Feedback" button sends a `mailto:` email. To
+   set the destination address, add a `feedbackEmail=you@example.com` line
+   to `local.properties` (already gitignored) — the repo ships a clearly
+   fake placeholder so it still builds without this.
 
 > **Note on the Gradle wrapper:** this repo doesn't check in the
 > `gradle-wrapper.jar` binary. Android Studio doesn't need it to sync or
@@ -143,6 +147,9 @@ not part of that core checklist.
   apps). Use it thoughtfully and talk to your kid about it — it's meant to
   support a conversation about healthy screen time, not to be sprung on
   someone unannounced.
+- All three apps report crashes to Firebase Crashlytics (same Firebase
+  project as everything else): stack traces plus device model/OS/app
+  version, never any family data. CI/emulator builds never report.
 
 ## Contributing
 
