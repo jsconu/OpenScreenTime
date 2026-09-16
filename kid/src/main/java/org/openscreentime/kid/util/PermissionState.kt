@@ -20,6 +20,10 @@ data class PermissionState(
         get() = overlay && accessibility && notifications && ignoringBatteryOptimizations && vpn
 }
 
+/** Separate from [PermissionState.allGranted] - the digest is optional (see #20). */
+fun isNotificationListenerEnabled(context: Context): Boolean =
+    NotificationManagerCompat.getEnabledListenerPackages(context).contains(context.packageName)
+
 fun checkPermissions(context: Context): PermissionState = PermissionState(
     overlay = Settings.canDrawOverlays(context),
     accessibility = isAccessibilityServiceEnabled(context),

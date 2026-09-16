@@ -15,6 +15,7 @@ import androidx.compose.material3.Checkbox
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -29,11 +30,13 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import org.openscreentime.kid.data.NotificationDigestStore
 import org.openscreentime.kid.data.TextSize
 import org.openscreentime.kid.data.ThemeMode
 import org.openscreentime.kid.data.TipsStore
 import org.openscreentime.kid.data.label
 import org.openscreentime.kid.util.PermissionState
+import org.openscreentime.kid.util.isNotificationListenerEnabled
 import org.openscreentime.shared.model.currentDayIndex
 import org.openscreentime.shared.model.currentDayKidTip
 
@@ -55,6 +58,8 @@ fun StatusScreen(
     onOpenColorSettings: () -> Unit,
     onOpenParentMode: () -> Unit,
     onProposeChange: () -> Unit,
+    onOpenNotificationDigest: () -> Unit,
+    onRequestNotificationListener: () -> Unit,
     onUnpair: () -> Unit
 ) {
     Column(
@@ -131,6 +136,13 @@ fun StatusScreen(
                 "\"auto-start,\" \"protected apps,\" or \"sleeping apps.\"",
             style = MaterialTheme.typography.bodySmall,
             textAlign = TextAlign.Start
+        )
+
+        Spacer(Modifier.height(24.dp))
+        NotificationDigestCard(
+            listenerGranted = isNotificationListenerEnabled(LocalContext.current),
+            onOpen = onOpenNotificationDigest,
+            onRequestListener = onRequestNotificationListener
         )
 
         Spacer(Modifier.height(24.dp))
@@ -214,6 +226,52 @@ private fun TipOfTheDayCard() {
                     style = MaterialTheme.typography.bodyMedium
                 )
             }
+        }
+    }
+}
+
+@Composable
+private fun NotificationDigestCard(
+    listenerGranted: Boolean,
+    onOpen: () -> Unit,
+    onRequestListener: () -> Unit
+) {
+    val context = LocalContext.current
+    val store = remember { NotificationDigestStore(context) }
+    var optedIn by remember { mutableStateOf(store.optedIn) }
+
+    Text("Optional", style = MaterialTheme.typography.labelLarge)
+    ListItem(
+        headlineContent = { Text("Calm notification list") },
+        supportingContent = {
+            Text("A plain, read-only digest of today's notifications on this phone, grouped by app. Nothing is sent to a parent.")
+        },
+        trailingContent = {
+            Switch(
+                checked = optedIn,
+                onCheckedChange = { checked ->
+                    optedIn = checked
+                    store.optedIn = checked
+                    if (checked && !listenerGranted) onRequestListener()
+                },
+                modifier = Modifier.testTag("status_digest_toggle")
+            )
+        }
+    )
+    if (optedIn && !listenerGranted) {
+        PermissionRow(
+            "Notification access",
+            "Needed to build the local digest. Off until you turn it on in system settings.",
+            granted = false,
+            onClick = onRequestListener
+        )
+    }
+    if (optedIn && listenerGranted) {
+        OutlinedButton(
+            onClick = onOpen,
+            modifier = Modifier.fillMaxWidth().testTag("status_open_digest")
+        ) {
+            Text("Today's notifications")
         }
     }
 }

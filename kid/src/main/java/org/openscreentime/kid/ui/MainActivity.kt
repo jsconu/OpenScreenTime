@@ -37,7 +37,7 @@ import org.openscreentime.shared.model.computeStreak
 import org.openscreentime.shared.model.todayDateString
 import org.openscreentime.shared.repo.FirestorePaths
 
-private enum class KidScreen { STATUS, PARENT_UNLOCK, PARENT_CONTROLS, PROPOSE_CHANGE }
+private enum class KidScreen { STATUS, PARENT_UNLOCK, PARENT_CONTROLS, PROPOSE_CHANGE, NOTIFICATION_DIGEST }
 
 class MainActivity : ComponentActivity() {
 
@@ -191,6 +191,10 @@ class MainActivity : ComponentActivity() {
                             },
                             onOpenParentMode = { screen = KidScreen.PARENT_UNLOCK },
                             onProposeChange = { screen = KidScreen.PROPOSE_CHANGE },
+                            onOpenNotificationDigest = { screen = KidScreen.NOTIFICATION_DIGEST },
+                            onRequestNotificationListener = {
+                                startActivity(Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS))
+                            },
                             onUnpair = {
                                 pairingStore.clear()
                                 paired = false
@@ -229,6 +233,9 @@ class MainActivity : ComponentActivity() {
                                 )
                             }
                         }
+                        KidScreen.NOTIFICATION_DIGEST -> NotificationDigestScreen(
+                            onDone = { screen = KidScreen.STATUS }
+                        )
                     }
                 }
               }

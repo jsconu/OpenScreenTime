@@ -21,7 +21,8 @@ OpenScreenTime is MIT licensed so families and developers can inspect it, modify
 
 - **`kid`** — installed on the child's phone. Runs quietly in the background,
   measures screen time and unlocks, enforces the limits a parent has set, and
-  syncs a daily summary to the cloud.
+  syncs a daily summary to the cloud. Optionally, the kid can turn on a local
+  notification digest (plain text, grouped by app, never synced to a parent).
 - **`parent`** — installed on the parent's phone. Shows live stats for each
   paired child and lets the parent change the daily limit or a per-app limit
   at any time.
@@ -121,10 +122,12 @@ You'll need [Android Studio](https://developer.android.com/studio)
 > once with `gradle wrapper --gradle-version 8.9` (requires a local Gradle
 > install), after which `./gradlew` will work normally.
 
-On the kid's device, after installing, the app will ask you to grant three
+On the kid's device, after installing, the app will ask you to grant a few
 things from its status screen: **Accessibility service**, **display over
-other apps**, and **notifications**. All three are required for tracking
-and limit enforcement to work.
+other apps**, **notifications**, **battery optimization**, and the
+**website filter**. Those are required for tracking and limit enforcement.
+An optional **calm notification list** can be turned on separately; it is
+not part of that core checklist.
 
 ## Security & privacy notes for anyone deploying this
 
