@@ -51,6 +51,7 @@ android {
 
 dependencies {
     implementation(project(":shared"))
+    implementation(project(":shared-ui"))
 
     implementation(libs.core.ktx)
     implementation(libs.lifecycle.runtime.ktx)

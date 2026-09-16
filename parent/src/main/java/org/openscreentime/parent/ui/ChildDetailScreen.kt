@@ -18,7 +18,6 @@ import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -41,6 +40,9 @@ import org.openscreentime.shared.model.computeStreak
 import org.openscreentime.shared.model.formatMinutesOfDay
 import org.openscreentime.shared.model.todayDateString
 import org.openscreentime.shared.repo.FamilyRepository
+import org.openscreentime.sharedui.BedtimeWindowDialog
+import org.openscreentime.sharedui.MinutesInputDialog
+import org.openscreentime.sharedui.UnlockGoalInputDialog
 
 private const val STREAK_LOOKBACK_DAYS = 14
 
@@ -340,118 +342,3 @@ private fun StatBlock(label: String, value: String) {
     }
 }
 
-@Composable
-private fun MinutesInputDialog(
-    title: String,
-    initialMinutes: Int,
-    onDismiss: () -> Unit,
-    onConfirm: (Int) -> Unit
-) {
-    var text by remember { mutableStateOf(initialMinutes.toString()) }
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text(title) },
-        text = {
-            OutlinedTextField(
-                value = text,
-                onValueChange = { text = it.filter(Char::isDigit) },
-                label = { Text("Minutes per day") },
-                singleLine = true
-            )
-        },
-        confirmButton = {
-            TextButton(onClick = { text.toIntOrNull()?.let(onConfirm) }) { Text("Save") }
-        },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } }
-    )
-}
-
-@Composable
-private fun UnlockGoalInputDialog(
-    initialGoal: Int?,
-    onDismiss: () -> Unit,
-    onConfirm: (Int?) -> Unit
-) {
-    var text by remember { mutableStateOf(initialGoal?.toString() ?: "") }
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text("Daily unlock goal") },
-        text = {
-            Column {
-                Text(
-                    "Informational only - this is never enforced or blocked, just shown alongside actual unlocks.",
-                    style = MaterialTheme.typography.bodySmall
-                )
-                Spacer(Modifier.height(8.dp))
-                OutlinedTextField(
-                    value = text,
-                    onValueChange = { text = it.filter(Char::isDigit) },
-                    label = { Text("Unlocks per day (blank = no goal)") },
-                    singleLine = true
-                )
-            }
-        },
-        confirmButton = {
-            TextButton(onClick = { onConfirm(text.toIntOrNull()) }) { Text("Save") }
-        },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } }
-    )
-}
-
-@Composable
-private fun BedtimeWindowDialog(
-    initialStartMinutes: Int?,
-    initialEndMinutes: Int?,
-    onDismiss: () -> Unit,
-    onConfirm: (Int?, Int?) -> Unit
-) {
-    var startText by remember { mutableStateOf(initialStartMinutes?.let(::formatHHmm) ?: "") }
-    var endText by remember { mutableStateOf(initialEndMinutes?.let(::formatHHmm) ?: "") }
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text("Bedtime") },
-        text = {
-            Column {
-                Text(
-                    "Blocks every app during this window, independent of the daily limit. " +
-                        "Leave both blank to turn it off.",
-                    style = MaterialTheme.typography.bodySmall
-                )
-                Spacer(Modifier.height(8.dp))
-                OutlinedTextField(
-                    value = startText,
-                    onValueChange = { startText = it },
-                    label = { Text("Start (24h, e.g. 21:00)") },
-                    singleLine = true
-                )
-                Spacer(Modifier.height(8.dp))
-                OutlinedTextField(
-                    value = endText,
-                    onValueChange = { endText = it },
-                    label = { Text("End (24h, e.g. 07:00)") },
-                    singleLine = true
-                )
-            }
-        },
-        confirmButton = {
-            TextButton(onClick = {
-                val start = parseHHmm(startText)
-                val end = parseHHmm(endText)
-                if (start != null && end != null) onConfirm(start, end) else onConfirm(null, null)
-            }) { Text("Save") }
-        },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } }
-    )
-}
-
-/** Parses a "HH:MM" 24-hour string into minutes since midnight, or null if it's not valid. */
-private fun parseHHmm(text: String): Int? {
-    val parts = text.trim().split(":")
-    if (parts.size != 2) return null
-    val h = parts[0].toIntOrNull() ?: return null
-    val m = parts[1].toIntOrNull() ?: return null
-    if (h !in 0..23 || m !in 0..59) return null
-    return h * 60 + m
-}
-
-private fun formatHHmm(minutes: Int): String = "%02d:%02d".format(minutes / 60, minutes % 60)

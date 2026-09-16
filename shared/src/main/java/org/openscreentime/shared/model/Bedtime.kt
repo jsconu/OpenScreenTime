@@ -33,3 +33,20 @@ fun formatMinutesOfDay(minutes: Int): String {
     val hour12 = when (val h = hour24 % 12) { 0 -> 12; else -> h }
     return "$hour12:${minute.toString().padStart(2, '0')} $period"
 }
+
+/**
+ * Parses a "HH:MM" 24-hour string (the bedtime-picker's edit format) into minutes since
+ * midnight, or null if it's not valid. Distinct from [formatMinutesOfDay]'s 12-hour AM/PM
+ * display format - this pair is for editing a value, that one for showing it back.
+ */
+fun parseHHmm(text: String): Int? {
+    val parts = text.trim().split(":")
+    if (parts.size != 2) return null
+    val h = parts[0].toIntOrNull() ?: return null
+    val m = parts[1].toIntOrNull() ?: return null
+    if (h !in 0..23 || m !in 0..59) return null
+    return h * 60 + m
+}
+
+/** Formats minutes-since-midnight as a 24-hour "HH:MM" string, e.g. 420 -> "07:00". */
+fun formatHHmm(minutes: Int): String = "%02d:%02d".format(minutes / 60, minutes % 60)

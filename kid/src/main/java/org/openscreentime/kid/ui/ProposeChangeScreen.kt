@@ -8,12 +8,10 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -32,6 +30,7 @@ import org.openscreentime.kid.data.UsageStore
 import org.openscreentime.shared.model.AppUsage
 import org.openscreentime.shared.model.ChildProfile
 import org.openscreentime.shared.repo.FamilyRepository
+import org.openscreentime.sharedui.MinutesInputDialog
 
 /**
  * Reachable directly from the Status screen with no passcode - unlike [ParentControlsScreen],
@@ -136,7 +135,8 @@ fun ProposeChangeScreen(
             onConfirm = { minutes ->
                 scope.launch { repository.proposeLimits(parentUid, childId, proposedDailyLimitMinutes = minutes) }
                 showLimitDialog = false
-            }
+            },
+            confirmLabel = "Send suggestion"
         )
     }
 
@@ -153,33 +153,8 @@ fun ProposeChangeScreen(
                     repository.proposeLimits(parentUid, childId, proposedAppLimits = updated)
                 }
                 editingApp = null
-            }
+            },
+            confirmLabel = "Send suggestion"
         )
     }
-}
-
-@Composable
-private fun MinutesInputDialog(
-    title: String,
-    initialMinutes: Int,
-    onDismiss: () -> Unit,
-    onConfirm: (Int) -> Unit
-) {
-    var text by remember { mutableStateOf(initialMinutes.toString()) }
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text(title) },
-        text = {
-            OutlinedTextField(
-                value = text,
-                onValueChange = { text = it.filter(Char::isDigit) },
-                label = { Text("Minutes per day") },
-                singleLine = true
-            )
-        },
-        confirmButton = {
-            TextButton(onClick = { text.toIntOrNull()?.let(onConfirm) }) { Text("Send suggestion") }
-        },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } }
-    )
 }
