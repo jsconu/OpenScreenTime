@@ -35,7 +35,9 @@ import kotlinx.coroutines.launch
 import org.openscreentime.kid.data.UsageStore
 import org.openscreentime.shared.model.AppUsage
 import org.openscreentime.shared.model.ChildProfile
+import org.openscreentime.shared.model.addBlockedDomain
 import org.openscreentime.shared.model.formatMinutesOfDay
+import org.openscreentime.shared.model.removeBlockedDomain
 import org.openscreentime.shared.repo.FamilyRepository
 import org.openscreentime.sharedui.BedtimeWindowDialog
 import org.openscreentime.sharedui.MinutesInputDialog
@@ -146,11 +148,9 @@ fun ParentControlsScreen(
                         Button(
                             enabled = newBlockedDomain.isNotBlank(),
                             onClick = {
-                                val domain = newBlockedDomain.trim().trimEnd('.').lowercase()
-                                if (domain.isNotEmpty() && domain !in child.blockedDomains) {
-                                    scope.launch {
-                                        repository.updateBlockedDomains(parentUid, childId, child.blockedDomains + domain)
-                                    }
+                                val updated = addBlockedDomain(child.blockedDomains, newBlockedDomain)
+                                if (updated != child.blockedDomains) {
+                                    scope.launch { repository.updateBlockedDomains(parentUid, childId, updated) }
                                 }
                                 newBlockedDomain = ""
                             }
@@ -173,7 +173,9 @@ fun ParentControlsScreen(
                     trailingContent = {
                         TextButton(onClick = {
                             scope.launch {
-                                repository.updateBlockedDomains(parentUid, childId, child.blockedDomains - domain)
+                                repository.updateBlockedDomains(
+                                    parentUid, childId, removeBlockedDomain(child.blockedDomains, domain)
+                                )
                             }
                         }) { Text("Remove") }
                     }

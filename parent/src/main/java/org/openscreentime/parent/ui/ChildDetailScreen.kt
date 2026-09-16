@@ -41,7 +41,9 @@ import kotlinx.coroutines.launch
 import org.openscreentime.shared.model.AppUsage
 import org.openscreentime.shared.model.ChildProfile
 import org.openscreentime.shared.model.DailyStats
+import org.openscreentime.shared.model.addBlockedDomain
 import org.openscreentime.shared.model.computeStreak
+import org.openscreentime.shared.model.removeBlockedDomain
 import org.openscreentime.shared.model.formatMinutesOfDay
 import org.openscreentime.shared.model.todayDateString
 import org.openscreentime.shared.repo.FamilyRepository
@@ -124,17 +126,17 @@ fun ChildDetailScreen(
                 newDomainText = newBlockedDomain,
                 onNewDomainTextChange = { newBlockedDomain = it },
                 onAddDomain = {
-                    val domain = newBlockedDomain.trim().trimEnd('.').lowercase()
-                    if (domain.isNotEmpty() && domain !in currentChild.blockedDomains) {
-                        scope.launch {
-                            repository.updateBlockedDomains(parentUid, childId, currentChild.blockedDomains + domain)
-                        }
+                    val updated = addBlockedDomain(currentChild.blockedDomains, newBlockedDomain)
+                    if (updated != currentChild.blockedDomains) {
+                        scope.launch { repository.updateBlockedDomains(parentUid, childId, updated) }
                     }
                     newBlockedDomain = ""
                 },
                 onRemoveDomain = { domain ->
                     scope.launch {
-                        repository.updateBlockedDomains(parentUid, childId, currentChild.blockedDomains - domain)
+                        repository.updateBlockedDomains(
+                            parentUid, childId, removeBlockedDomain(currentChild.blockedDomains, domain)
+                        )
                     }
                 }
             )
