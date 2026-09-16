@@ -32,7 +32,6 @@ import org.openscreentime.shared.model.ChildProfile
 import org.openscreentime.shared.model.DailyStats
 import org.openscreentime.shared.model.calmParentStatusLabel
 import org.openscreentime.shared.model.computeStreak
-import org.openscreentime.shared.model.randomTip
 import org.openscreentime.shared.model.todayDateString
 import org.openscreentime.shared.repo.FirestorePaths
 
@@ -64,11 +63,6 @@ class MainActivity : ComponentActivity() {
                 var screen by remember { mutableStateOf(KidScreen.STATUS) }
                 var child by remember { mutableStateOf<ChildProfile?>(null) }
                 var streakDays by remember { mutableIntStateOf(0) }
-                // Hoisted to survive navigating to other screens and back within one app
-                // open - a fresh tip only on the next process start, not every revisit.
-                val tip = remember { randomTip() }
-                var tipAcknowledged by remember { mutableStateOf(false) }
-                var tipDismissed by remember { mutableStateOf(false) }
                 var parentSelfProfile by remember { mutableStateOf<ChildProfile?>(null) }
                 var parentSelfStats by remember { mutableStateOf(DailyStats(date = todayDateString())) }
 
@@ -138,11 +132,6 @@ class MainActivity : ComponentActivity() {
                             themeMode = themeMode,
                             textSize = textSize,
                             streakDays = streakDays,
-                            tip = tip,
-                            tipAcknowledged = tipAcknowledged,
-                            tipDismissed = tipDismissed,
-                            onTipAcknowledge = { tipAcknowledged = true },
-                            onTipDismiss = { tipDismissed = true },
                             parentStatusLabel = parentSelfProfile?.let { calmParentStatusLabel(it, parentSelfStats) },
                             onRequestOverlay = {
                                 startActivity(

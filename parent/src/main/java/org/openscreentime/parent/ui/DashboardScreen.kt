@@ -15,6 +15,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
@@ -34,15 +35,19 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.testTagsAsResourceId
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
+import org.openscreentime.parent.data.TipsStore
 import org.openscreentime.shared.model.ChildProfile
 import org.openscreentime.shared.model.DailyStats
 import org.openscreentime.shared.model.computeStreak
+import org.openscreentime.shared.model.currentDayIndex
+import org.openscreentime.shared.model.currentDayParentTip
 import org.openscreentime.shared.model.todayDateString
 import org.openscreentime.shared.repo.FamilyRepository
 
@@ -51,11 +56,6 @@ private const val STREAK_LOOKBACK_DAYS = 14
 @Composable
 fun DashboardScreen(
     repository: FamilyRepository,
-    tip: String,
-    tipAcknowledged: Boolean,
-    tipDismissed: Boolean,
-    onTipAcknowledge: () -> Unit,
-    onTipDismiss: () -> Unit,
     onOpenChild: (String) -> Unit,
     onOpenSettings: () -> Unit,
     onOpenAppearance: () -> Unit,
@@ -96,16 +96,8 @@ fun DashboardScreen(
         }
     ) { padding ->
         LazyColumn(modifier = Modifier.fillMaxSize().padding(padding)) {
-            if (!tipDismissed) {
-                item {
-                    TipCard(
-                        tip = tip,
-                        acknowledged = tipAcknowledged,
-                        onAcknowledge = onTipAcknowledge,
-                        onDismiss = onTipDismiss,
-                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp)
-                    )
-                }
+            item {
+                TipOfTheDayCard(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp))
             }
             item {
                 Card(
@@ -308,35 +300,39 @@ private fun ChildSummaryCard(
 }
 
 /**
- * See #17 - dismissible, not naggy: acknowledging or dismissing never nudges again this
- * app open, and there's no visible "you never do this" state either way.
+ * A single tip for the day, not a fresh one per app open - see #17. Checking it off just
+ * shows a one-line "Nice job!" in place of the checkbox label; nothing is counted or
+ * remembered beyond "was *today's* tip checked" - when the day turns over, a new tip
+ * appears already unchecked, with no record of whether the previous day's was ever
+ * checked off. That's deliberate, not a gap: this is acknowledgment-only, the same
+ * non-punitive rule as the streaks feature (#13) - there is no way for this to ever show
+ * "you missed a day."
  */
 @Composable
-private fun TipCard(
-    tip: String,
-    acknowledged: Boolean,
-    onAcknowledge: () -> Unit,
-    onDismiss: () -> Unit,
-    modifier: Modifier = Modifier
-) {
+private fun TipOfTheDayCard(modifier: Modifier = Modifier) {
+    val context = LocalContext.current
+    val tipsStore = remember { TipsStore(context) }
+    val dayIndex = remember { currentDayIndex() }
+    var acknowledged by remember { mutableStateOf(tipsStore.acknowledgedDayIndex == dayIndex) }
+
     Card(modifier = modifier) {
         Column(Modifier.padding(12.dp)) {
-            if (acknowledged) {
+            Text("Today's idea", style = MaterialTheme.typography.labelMedium)
+            Spacer(Modifier.height(2.dp))
+            Text(currentDayParentTip(), style = MaterialTheme.typography.bodyMedium)
+            Spacer(Modifier.height(6.dp))
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Checkbox(
+                    checked = acknowledged,
+                    onCheckedChange = { checked ->
+                        acknowledged = checked
+                        tipsStore.acknowledgedDayIndex = if (checked) dayIndex else null
+                    }
+                )
                 Text(
-                    "Nice job! You're practicing great screen time management!",
+                    if (acknowledged) "Nice job! You're practicing great screen time management!" else "I did this",
                     style = MaterialTheme.typography.bodyMedium
                 )
-                Spacer(Modifier.height(6.dp))
-                TextButton(onClick = onDismiss) { Text("Dismiss") }
-            } else {
-                Text("Idea", style = MaterialTheme.typography.labelMedium)
-                Spacer(Modifier.height(2.dp))
-                Text(tip, style = MaterialTheme.typography.bodyMedium)
-                Spacer(Modifier.height(6.dp))
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    TextButton(onClick = onAcknowledge) { Text("I did this") }
-                    TextButton(onClick = onDismiss) { Text("Not now") }
-                }
             }
         }
     }

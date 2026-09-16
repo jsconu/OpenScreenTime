@@ -34,7 +34,6 @@ import org.openscreentime.parent.data.SelfProfileStore
 import org.openscreentime.parent.monitor.ScreenMonitorService
 import org.openscreentime.parent.util.checkPermissions
 import org.openscreentime.shared.model.PasscodeInfo
-import org.openscreentime.shared.model.randomTip
 
 class MainActivity : ComponentActivity() {
 
@@ -52,11 +51,6 @@ class MainActivity : ComponentActivity() {
             var textSize by remember { mutableStateOf(appearancePrefs.textSize) }
             var selfPermissions by remember { mutableStateOf(checkPermissions(this)) }
             var isSelfTracking by remember { mutableStateOf(selfProfileStore.isTracking) }
-            // Hoisted above NavHost so it survives navigating to a child/settings screen
-            // and back - a fresh tip only on the next process start, not every revisit.
-            val tip = remember { randomTip() }
-            var tipAcknowledged by remember { mutableStateOf(false) }
-            var tipDismissed by remember { mutableStateOf(false) }
 
             DisposableEffect(Unit) {
                 val observer = LifecycleEventObserver { _, event ->
@@ -105,11 +99,6 @@ class MainActivity : ComponentActivity() {
                             composable("dashboard") {
                                 DashboardScreen(
                                     repository = repository,
-                                    tip = tip,
-                                    tipAcknowledged = tipAcknowledged,
-                                    tipDismissed = tipDismissed,
-                                    onTipAcknowledge = { tipAcknowledged = true },
-                                    onTipDismiss = { tipDismissed = true },
                                     onOpenChild = { childId -> navController.navigate("child/$childId") },
                                     onOpenSettings = { navController.navigate("settings") },
                                     onOpenAppearance = { navController.navigate("appearance") },
