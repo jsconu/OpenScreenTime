@@ -6,12 +6,14 @@ import Foundation
 /// `/firebase/firestore.rules` for the security rules this relies on - the same rules
 /// the Android apps use, since all three apps share one Firestore project and data model.
 ///
-/// This covers the parent-app v1 scope from issue #7: sign up/in, dashboard, add-child +
-/// pairing-code display, child detail (stats, limits, lock), passcode settings. It
-/// deliberately does not yet port the kid-only or newer Android-parent methods (pairing-
-/// code claiming, self-tracking, bedtime windows, negotiated-limit proposals, unlock
-/// goals) - `shared/repo/FamilyRepository.kt` is the reference for those when this app
-/// grows to cover them.
+/// Covers the parent-app scope from issue #7 plus the #26 parity pass: sign up/in,
+/// dashboard, add-child + pairing-code display, child detail (stats, limits, lock, unlock
+/// goal, bedtime, streaks, negotiated-proposal approve/decline, website blocking, "more
+/// time" grant/decline), passcode settings, feedback, crash reporting. Deliberately does
+/// not port kid-only methods (pairing-code claiming - there's no iOS kid app yet, see #7)
+/// or self-tracking (needs the same OS-level monitoring capability the iOS kid app is
+/// blocked on) - `shared/repo/FamilyRepository.kt` is the reference for those if that ever
+/// changes.
 public final class FamilyRepository {
     private let auth: Auth
     private let db: Firestore
@@ -107,12 +109,69 @@ public final class FamilyRepository {
         }
     }
 
+    /// The `days` calendar dates before today, oldest first - used to compute a streak
+    /// (see #13). Excludes today, since that day isn't over yet.
+    func getRecentDailyStats(parentUid: String, childId: String, days: Int) async throws -> [DailyStats] {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd"
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        let todayStr = formatter.string(from: Date())
+        let startDate = Calendar(identifier: .gregorian).date(byAdding: .day, value: -days, to: Date()) ?? Date()
+        let startStr = formatter.string(from: startDate)
+
+        let snapshot = try await db.collection(FirestorePaths.dailyStatsCollection(parentUid, childId))
+            .order(by: FieldPath.documentID())
+            .whereField(FieldPath.documentID(), isGreaterThanOrEqualTo: startStr)
+            .whereField(FieldPath.documentID(), isLessThan: todayStr)
+            .getDocuments()
+        return snapshot.documents.map { DailyStats.from(date: $0.documentID, map: $0.data()) }
+    }
+
     func updateDailyLimit(parentUid: String, childId: String, minutes: Int) async throws {
         try await db.document(FirestorePaths.childDoc(parentUid, childId)).updateData(["dailyLimitMinutes": minutes])
     }
 
     func updateAppLimits(parentUid: String, childId: String, appLimits: [String: Int]) async throws {
         try await db.document(FirestorePaths.childDoc(parentUid, childId)).updateData(["appLimits": appLimits])
+    }
+
+    /// See #10 - informational only, never enforced/blocked.
+    func updateDailyUnlockGoal(parentUid: String, childId: String, goal: Int?) async throws {
+        try await db.document(FirestorePaths.childDoc(parentUid, childId))
+            .updateData(["dailyUnlockGoal": goal ?? NSNull()])
+    }
+
+    /// Both nil clears the bedtime window (see #15).
+    func updateBedtimeWindow(parentUid: String, childId: String, startMinutes: Int?, endMinutes: Int?) async throws {
+        try await db.document(FirestorePaths.childDoc(parentUid, childId)).updateData([
+            "bedtimeStartMinutes": startMinutes ?? NSNull(),
+            "bedtimeEndMinutes": endMinutes ?? NSNull()
+        ])
+    }
+
+    /// Copies a pending proposal into the real limits and clears it. See #14. iOS never
+    /// writes a proposal itself (that's kid-initiated, and there's no iOS kid app yet, see
+    /// #7) - only approving/declining one an Android kid device already wrote.
+    func approveProposal(parentUid: String, childId: String, child: ChildProfile) async throws {
+        var updates: [String: Any] = [
+            "proposedDailyLimitMinutes": NSNull(),
+            "proposedAppLimits": NSNull()
+        ]
+        if let proposedDailyLimitMinutes = child.proposedDailyLimitMinutes {
+            updates["dailyLimitMinutes"] = proposedDailyLimitMinutes
+        }
+        if let proposedAppLimits = child.proposedAppLimits {
+            updates["appLimits"] = proposedAppLimits
+        }
+        try await db.document(FirestorePaths.childDoc(parentUid, childId)).updateData(updates)
+    }
+
+    /// Clears a pending proposal without applying it. See #14.
+    func declineProposal(parentUid: String, childId: String) async throws {
+        try await db.document(FirestorePaths.childDoc(parentUid, childId)).updateData([
+            "proposedDailyLimitMinutes": NSNull(),
+            "proposedAppLimits": NSNull()
+        ])
     }
 
     /// Replaces the whole blocked-domains list (see #19, `ChildProfile.blockedDomains`).

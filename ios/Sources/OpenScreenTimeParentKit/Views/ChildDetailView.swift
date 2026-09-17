@@ -1,8 +1,10 @@
 import SwiftUI
 import FirebaseFirestore
 
-/// Mirrors the Android parent app's ChildDetailScreen.kt (v1 subset). Full stats, the
-/// daily-limit progress, and per-app limit editing.
+/// Mirrors the Android parent app's ChildDetailScreen.kt (see #26 for the parity pass that
+/// brought this in line: unlock goal, bedtime, streaks, and negotiated-proposal approve/
+/// decline joined the daily-limit/app-limit/lock/website-blocking/extra-time sections
+/// already here).
 ///
 /// Broken into several small extracted subviews rather than one large `body` - Swift's
 /// type-checker times out ("unable to type-check this expression in reasonable time") on
@@ -16,9 +18,12 @@ struct ChildDetailView: View {
 
     @State private var child: ChildProfile?
     @State private var stats = DailyStats()
+    @State private var streakDays = 0
     @State private var childListener: ListenerRegistration?
     @State private var statsListener: ListenerRegistration?
     @State private var showLimitDialog = false
+    @State private var showUnlockGoalDialog = false
+    @State private var showBedtimeDialog = false
     @State private var editingApp: String?
     @State private var showLockConfirm = false
     @State private var showDeleteConfirm = false
@@ -41,16 +46,44 @@ struct ChildDetailView: View {
                 Text("This deletes \(child?.name ?? "")'s profile and all of their screen time history. This can't be undone.")
             }
             .sheet(isPresented: $showLimitDialog) { limitDialogSheet }
+            .sheet(isPresented: $showUnlockGoalDialog) { unlockGoalDialogSheet }
+            .sheet(isPresented: $showBedtimeDialog) { bedtimeDialogSheet }
             .sheet(item: editingAppBinding) { item in appLimitSheet(for: item) }
+            .task(id: streakDependencyKey) { await loadStreak() }
+    }
+
+    /// See #13 - recomputed whenever the limit or goal it's measured against changes,
+    /// same trigger as the Android app's LaunchedEffect(childId, dailyLimitMinutes,
+    /// dailyUnlockGoal).
+    private var streakDependencyKey: String {
+        "\(child?.dailyLimitMinutes ?? 0)-\(child?.dailyUnlockGoal.map(String.init) ?? "none")"
+    }
+
+    private func loadStreak() async {
+        guard let child else { return }
+        let recent = try? await repository.getRecentDailyStats(parentUid: parentUid, childId: childId, days: 14)
+        streakDays = computeStreak(
+            recentStats: recent ?? [],
+            dailyLimitMinutes: child.dailyLimitMinutes,
+            dailyUnlockGoal: child.dailyUnlockGoal
+        )
     }
 
     @ViewBuilder
     private var content: some View {
         if let child {
             List {
+                PendingProposalSection(repository: repository, parentUid: parentUid, childId: childId, child: child)
                 ExtraTimeRequestSection(repository: repository, parentUid: parentUid, childId: childId, child: child)
                 LockSection(repository: repository, parentUid: parentUid, childId: childId, child: child, showLockConfirm: $showLockConfirm)
-                TodaySection(stats: stats, child: child, showLimitDialog: $showLimitDialog)
+                TodaySection(
+                    stats: stats,
+                    child: child,
+                    streakDays: streakDays,
+                    showLimitDialog: $showLimitDialog,
+                    showUnlockGoalDialog: $showUnlockGoalDialog,
+                    showBedtimeDialog: $showBedtimeDialog
+                )
                 WebsiteBlockingSection(
                     repository: repository,
                     parentUid: parentUid,
@@ -96,6 +129,31 @@ struct ChildDetailView: View {
         }
     }
 
+    private var unlockGoalDialogSheet: some View {
+        UnlockGoalInputSheet(initialGoal: child?.dailyUnlockGoal) { goal in
+            Task { try? await repository.updateDailyUnlockGoal(parentUid: parentUid, childId: childId, goal: goal) }
+            showUnlockGoalDialog = false
+        } onCancel: {
+            showUnlockGoalDialog = false
+        }
+    }
+
+    private var bedtimeDialogSheet: some View {
+        BedtimeWindowSheet(
+            initialStartMinutes: child?.bedtimeStartMinutes,
+            initialEndMinutes: child?.bedtimeEndMinutes
+        ) { start, end in
+            Task {
+                try? await repository.updateBedtimeWindow(
+                    parentUid: parentUid, childId: childId, startMinutes: start, endMinutes: end
+                )
+            }
+            showBedtimeDialog = false
+        } onCancel: {
+            showBedtimeDialog = false
+        }
+    }
+
     private var editingAppBinding: Binding<EditingApp?> {
         Binding(get: { editingApp.map(EditingApp.init) }, set: { editingApp = $0?.packageName })
     }
@@ -135,6 +193,43 @@ struct ChildDetailView: View {
 /// A kid-requested "more time" extension, awaiting a Grant or Decline (see #23). Requested
 /// from the Android kid app's block screen only, but either parent should be able to grant
 /// it from either platform.
+/// A kid-proposed limit change awaiting approval or decline (see #14) - written passcode-free
+/// by an Android kid device (there's no iOS kid app yet, see #7), but either parent should be
+/// able to act on it from either platform.
+private struct PendingProposalSection: View {
+    let repository: FamilyRepository
+    let parentUid: String
+    let childId: String
+    let child: ChildProfile
+
+    private var hasPendingProposal: Bool {
+        child.proposedDailyLimitMinutes != nil || child.proposedAppLimits != nil
+    }
+
+    var body: some View {
+        if hasPendingProposal {
+            Section {
+                Text("\(child.name) suggested a change")
+                if let proposed = child.proposedDailyLimitMinutes {
+                    Text("New daily limit: \(proposed) min (currently \(child.dailyLimitMinutes) min)")
+                        .font(.caption)
+                }
+                if child.proposedAppLimits != nil {
+                    Text("Suggested app limits included").font(.caption)
+                }
+                HStack {
+                    Button("Approve") {
+                        Task { try? await repository.approveProposal(parentUid: parentUid, childId: childId, child: child) }
+                    }
+                    Button("Decline", role: .cancel) {
+                        Task { try? await repository.declineProposal(parentUid: parentUid, childId: childId) }
+                    }
+                }
+            }
+        }
+    }
+}
+
 private struct ExtraTimeRequestSection: View {
     let repository: FamilyRepository
     let parentUid: String
@@ -185,7 +280,10 @@ private struct LockSection: View {
 private struct TodaySection: View {
     let stats: DailyStats
     let child: ChildProfile
+    let streakDays: Int
     @Binding var showLimitDialog: Bool
+    @Binding var showUnlockGoalDialog: Bool
+    @Binding var showBedtimeDialog: Bool
 
     private var progress: Double {
         let usedMinutes = Double(stats.totalScreenTimeMs) / 60_000
@@ -199,9 +297,35 @@ private struct TodaySection: View {
                 StatBlock(label: "Screen time", value: formatDuration(stats.totalScreenTimeMs))
                 StatBlock(label: "Unlocks", value: "\(stats.unlockCount)")
             }
+            if streakDays > 0 {
+                Text("\(streakDays) day\(streakDays == 1 ? "" : "s") in a row under goal")
+                    .font(.caption)
+            }
             ProgressView(value: progress)
             Text("Daily limit: \(child.dailyLimitMinutes) min").font(.caption)
             Button("Change daily limit") { showLimitDialog = true }
+        }
+        Section {
+            if let goal = child.dailyUnlockGoal {
+                Text("Unlock goal: \(goal) a day").font(.caption)
+            } else {
+                Text("No unlock goal set").font(.caption)
+            }
+            Text("Informational only - never blocks. Today's unlocks: \(stats.unlockCount).")
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+            Button("Change unlock goal") { showUnlockGoalDialog = true }
+        }
+        Section {
+            if let start = child.bedtimeStartMinutes, let end = child.bedtimeEndMinutes {
+                Text("Bedtime: \(formatMinutesOfDay(start)) - \(formatMinutesOfDay(end))").font(.caption)
+            } else {
+                Text("No bedtime set").font(.caption)
+            }
+            Text("Blocks every app during this window, independent of the daily limit.")
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+            Button("Change bedtime") { showBedtimeDialog = true }
         }
     }
 }
@@ -355,6 +479,89 @@ struct MinutesInputSheet: View {
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Save") {
                         if let minutes = Int(text) { onSave(minutes) }
+                    }
+                }
+            }
+        }
+    }
+}
+
+struct UnlockGoalInputSheet: View {
+    let onSave: (Int?) -> Void
+    let onCancel: () -> Void
+
+    @State private var text: String
+
+    init(initialGoal: Int?, onSave: @escaping (Int?) -> Void, onCancel: @escaping () -> Void) {
+        self.onSave = onSave
+        self.onCancel = onCancel
+        _text = State(initialValue: initialGoal.map(String.init) ?? "")
+    }
+
+    var body: some View {
+        NavigationStack {
+            Form {
+                Text("Informational only - never enforced or blocked, just shown alongside actual unlocks.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                TextField("Unlocks per day (blank = no goal)", text: $text)
+                    .keyboardType(.numberPad)
+            }
+            .navigationTitle("Daily unlock goal")
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel", action: onCancel)
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Save") { onSave(Int(text)) }
+                }
+            }
+        }
+    }
+}
+
+struct BedtimeWindowSheet: View {
+    let onSave: (Int?, Int?) -> Void
+    let onCancel: () -> Void
+
+    @State private var startText: String
+    @State private var endText: String
+
+    init(
+        initialStartMinutes: Int?,
+        initialEndMinutes: Int?,
+        onSave: @escaping (Int?, Int?) -> Void,
+        onCancel: @escaping () -> Void
+    ) {
+        self.onSave = onSave
+        self.onCancel = onCancel
+        _startText = State(initialValue: initialStartMinutes.map(formatHHmm) ?? "")
+        _endText = State(initialValue: initialEndMinutes.map(formatHHmm) ?? "")
+    }
+
+    var body: some View {
+        NavigationStack {
+            Form {
+                Text("Blocks every app during this window, independent of the daily limit. Leave both blank to turn it off.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                TextField("Start (24h, e.g. 21:00)", text: $startText)
+                TextField("End (24h, e.g. 07:00)", text: $endText)
+            }
+            .navigationTitle("Bedtime")
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel", action: onCancel)
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Save") {
+                        let start = parseHHmm(startText)
+                        let end = parseHHmm(endText)
+                        if let start, let end {
+                            onSave(start, end)
+                        } else {
+                            onSave(nil, nil)
+                        }
                     }
                 }
             }

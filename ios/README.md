@@ -1,11 +1,13 @@
 # OpenScreenTime Parent for iOS
 
-See [issue #7](../../../issues/7) for the requirements analysis this was scoped against.
-This covers that issue's iOS-parent-app checklist: sign up/in, dashboard, add-child +
-pairing-code display, child detail (stats, limits, lock), and passcode settings. It does
-**not** yet cover the newer Android-parent features (self-tracking, bedtime windows,
-negotiated-limit proposals, unlock goals, streaks, appearance settings) - those can be
-ported later the same way, using `shared/repo/FamilyRepository.kt` as the reference.
+See [issue #7](../../../issues/7) for the requirements analysis this was scoped against,
+and [issue #26](../../../issues/26) for the parity pass that brought it in line with most
+of the Android parent app: sign up/in, dashboard, add-child + pairing-code display, child
+detail (stats, limits, lock, unlock goal, bedtime, streaks, negotiated-proposal approve/
+decline, website blocking, "more time" grant/decline), passcode settings, feedback, crash
+reporting. It does **not** cover self-tracking - that needs the same OS-level monitoring
+capability the iOS kid app is blocked on (see #7) - or off-screen-idea tips or an
+appearance (theme/text size) settings screen, both lower-priority and not yet ported.
 
 This was written and CI-verified (see `.github/workflows/ios-ci.yml`, which actually
 builds and tests it on a macOS runner) without a local Mac/Xcode available - there is no
