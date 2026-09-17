@@ -56,6 +56,7 @@ import org.openscreentime.shared.model.currentDayIndex
 import org.openscreentime.shared.model.currentDayParentTip
 import org.openscreentime.shared.model.todayDateString
 import org.openscreentime.shared.repo.FamilyRepository
+import org.openscreentime.shared.repo.FirestorePaths
 
 private const val STREAK_LOOKBACK_DAYS = 14
 
@@ -71,6 +72,7 @@ fun DashboardScreen(
     val parentUid = repository.currentUid ?: return
     val scope = rememberCoroutineScope()
     var children by remember { mutableStateOf<List<ChildProfile>>(emptyList()) }
+    var selfProfile by remember { mutableStateOf<ChildProfile?>(null) }
     var showAddDialog by remember { mutableStateOf(false) }
     var newChildCode by remember { mutableStateOf<String?>(null) }
     var showFeedbackDialog by remember { mutableStateOf(false) }
@@ -79,13 +81,22 @@ fun DashboardScreen(
         // Excludes the parent's own self-tracking profile (see #8) - that one gets its
         // own dedicated "My screen time" card above, not a slot in the kids list.
         val reg = repository.listenChildren(parentUid) { children = it.filter { child -> !child.isSelf } }
-        onDispose { reg.remove() }
+        // The self doc's snapshot listener still fires even if self-tracking was never
+        // started (an empty, default-valued ChildProfile with isSelf = false) - gate on
+        // isSelf, not nullability, to tell "never started" from "actively tracking."
+        val selfReg = repository.listenChild(parentUid, FirestorePaths.SELF_CHILD_ID) { child ->
+            selfProfile = if (child.isSelf) child else null
+        }
+        onDispose {
+            reg.remove()
+            selfReg.remove()
+        }
     }
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Your children") },
+                title = { Text("Manage Your Screen Time") },
                 actions = {
                     var showMenu by remember { mutableStateOf(false) }
                     TextButton(
@@ -127,19 +138,32 @@ fun DashboardScreen(
                 TipOfTheDayCard(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp))
             }
             item {
-                Card(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp)
-                        .clickable(onClick = onOpenSelfTracking)
-                ) {
-                    Column(Modifier.padding(16.dp)) {
-                        Text("My screen time", style = MaterialTheme.typography.titleMedium)
-                        Spacer(Modifier.height(4.dp))
-                        Text(
-                            "Track and limit your own screen time on this device too.",
-                            style = MaterialTheme.typography.bodySmall
-                        )
+                val trackedSelf = selfProfile
+                if (trackedSelf != null) {
+                    // Reuses the same card every child gets - the self profile is a real
+                    // ChildProfile (isSelf = true), so this shows actual numbers directly
+                    // on the landing page instead of only a "go manage this" prompt.
+                    ChildSummaryCard(
+                        repository = repository,
+                        parentUid = parentUid,
+                        child = trackedSelf,
+                        onClick = onOpenSelfTracking
+                    )
+                } else {
+                    Card(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp)
+                            .clickable(onClick = onOpenSelfTracking)
+                    ) {
+                        Column(Modifier.padding(16.dp)) {
+                            Text("My screen time", style = MaterialTheme.typography.titleMedium)
+                            Spacer(Modifier.height(4.dp))
+                            Text(
+                                "Track and limit your own screen time on this device too.",
+                                style = MaterialTheme.typography.bodySmall
+                            )
+                        }
                     }
                 }
             }

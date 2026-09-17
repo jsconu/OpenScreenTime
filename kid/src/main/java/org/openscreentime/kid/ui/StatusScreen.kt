@@ -118,13 +118,15 @@ fun StatusScreen(
 
         PermissionRow(
             "Display over other apps",
-            "Needed to show a screen when a limit is reached",
+            "Needed to show a screen when a limit is reached. If OpenScreenTime isn't " +
+                "visible right away on the next screen, scroll down.",
             permissions.overlay,
             permissionActions.onRequestOverlay
         )
         PermissionRow(
             "Accessibility service",
-            "Needed to detect which app is open",
+            "Needed to detect which app is open. On the next screen, tap \"Downloaded " +
+                "apps\" (or \"Installed apps\"), then find and turn on OpenScreenTime.",
             permissions.accessibility,
             permissionActions.onRequestAccessibility
         )
