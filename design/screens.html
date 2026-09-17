@@ -10,6 +10,8 @@
     --rule: #e2ddd0;
     --accent: #6b5b95;
     --accent-soft: #ede8f5;
+    --calm: #2e7d32;
+    --calm-soft: #e6f1e6;
     --shadow: rgba(24, 18, 8, .45);
 
     --kid-primary: #2e7d32;
@@ -42,6 +44,8 @@
       --rule: #37322a;
       --accent: #b7a3e8;
       --accent-soft: #2b2540;
+      --calm: #7fc584;
+      --calm-soft: #1c2c1e;
       --shadow: rgba(0, 0, 0, .6);
     }
   }
@@ -54,6 +58,8 @@
     --rule: #37322a;
     --accent: #b7a3e8;
     --accent-soft: #2b2540;
+    --calm: #7fc584;
+    --calm-soft: #1c2c1e;
     --shadow: rgba(0, 0, 0, .6);
   }
 
@@ -70,7 +76,7 @@
   }
   .wrap { max-width: 1280px; margin: 0 auto; }
 
-  header.intro { max-width: 900px; margin-bottom: 64px; }
+  header.intro { max-width: 900px; margin-bottom: 56px; }
   .eyebrow {
     font-family: var(--font-mono);
     text-transform: uppercase;
@@ -98,6 +104,62 @@
   .legend { display: flex; flex-wrap: wrap; gap: 10px 28px; }
   .legend-item { display: flex; align-items: center; gap: 9px; font-size: .85rem; color: var(--ink-soft); }
   .swatch { width: 13px; height: 13px; border-radius: 4px; flex: none; }
+
+  /* ---- Calm-by-design principles section ---- */
+  section.principles {
+    background: var(--surface);
+    border: 1px solid var(--rule);
+    border-radius: 18px;
+    padding: 32px clamp(20px, 4vw, 40px) 36px;
+    margin-bottom: 64px;
+  }
+  section.principles h2 {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 1.35rem;
+    margin: 0 0 10px;
+  }
+  section.principles > p {
+    max-width: 68ch;
+    color: var(--ink-soft);
+    font-size: .95rem;
+    line-height: 1.6;
+    margin: 0 0 28px;
+  }
+  .principle-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 20px;
+  }
+  .principle-card {
+    border: 1px solid var(--rule);
+    border-radius: 12px;
+    padding: 16px 18px;
+    background: var(--page-bg);
+  }
+  .principle-card .p-num {
+    font-family: var(--font-mono);
+    font-size: .68rem;
+    color: var(--calm);
+    letter-spacing: .05em;
+  }
+  .principle-card h3 {
+    font-family: var(--font-display);
+    font-size: .98rem;
+    font-weight: 600;
+    margin: 4px 0 6px;
+  }
+  .principle-card p {
+    font-size: .82rem;
+    color: var(--ink-soft);
+    line-height: 1.55;
+    margin: 0 0 8px;
+  }
+  .principle-card .p-where {
+    font-family: var(--font-mono);
+    font-size: .68rem;
+    color: var(--ink-faint);
+  }
 
   section.app-section { margin-bottom: 76px; }
   section.app-section:last-child { margin-bottom: 0; }
@@ -169,10 +231,12 @@
 
   .body { flex: 1; padding: 16px 14px; display: flex; flex-direction: column; overflow: hidden; }
   .body.centered { align-items: center; justify-content: center; text-align: center; }
+  .body.scroll { overflow-y: auto; }
 
   .headline { font-size: 16px; font-weight: 700; color: #161616; margin: 0 0 6px; line-height: 1.25; }
   .subtext { font-size: 10.5px; color: #55534d; line-height: 1.5; margin: 0 0 14px; }
   .subtext.tight { margin-bottom: 8px; }
+  .subtext.micro { font-size: 8.5px; }
 
   .m-field {
     border: 1.4px solid #8a8778;
@@ -223,8 +287,10 @@
   .m-list-item .head { font-size: 11px; font-weight: 500; color: #1b1b1b; }
   .m-list-item .sub { font-size: 9.5px; color: #5c594f; margin-top: 2px; }
   .m-list-item .sub.over { color: #b3261e; font-weight: 600; }
-  .m-list-item .trailing { font-size: 9.5px; font-weight: 600; color: var(--app-primary); flex: none; }
+  .m-list-item .trailing { font-size: 9.5px; font-weight: 600; color: var(--app-primary); flex: none; display: flex; align-items: center; gap: 6px; }
   .m-list-item .trailing.granted { color: #2e7d32; }
+  .m-checkbox { width: 12px; height: 12px; border: 1.4px solid #8a8778; border-radius: 3px; flex: none; }
+  .m-checkbox.checked { background: var(--app-primary); border-color: var(--app-primary); }
 
   .m-progress { height: 7px; border-radius: 4px; background: rgba(0,0,0,.08); overflow: hidden; margin: 4px 0 10px; }
   .m-progress .fill { height: 100%; background: var(--app-primary); }
@@ -250,6 +316,14 @@
   .block-screen .headline { font-size: 15px; }
 
   .card-tint { background: var(--app-surface-variant); border-radius: 10px; padding: 10px; margin-bottom: 10px; }
+  .card-tint.calm-banner { background: var(--calm-soft); }
+  .card-tint.calm-banner p { color: #2c4a2e; }
+
+  .bar-chart { display: flex; align-items: flex-end; gap: 6px; height: 46px; margin: 8px 0 4px; }
+  .bar-chart .bar { flex: 1; background: var(--app-primary); border-radius: 3px 3px 0 0; }
+  .bar-chart .bar.secondary { background: var(--app-secondary, var(--app-primary)); opacity: .7; }
+  .bar-labels { display: flex; gap: 6px; margin-bottom: 10px; }
+  .bar-labels span { flex: 1; font-size: 7.5px; color: #8c8878; text-align: center; }
 
   .caption { text-align: left; }
   .screen-name { font-family: var(--font-display); font-weight: 600; font-size: .95rem; margin: 0 0 4px; }
@@ -262,6 +336,10 @@
     background: var(--accent-soft);
     border-radius: 5px;
     padding: 2px 7px;
+  }
+  .tag.calm {
+    color: var(--calm);
+    background: var(--calm-soft);
   }
 
   footer.note {
@@ -289,18 +367,86 @@
     <p class="lede">
       A reproduction of the two shipped apps' actual Compose UI &mdash; real copy, real component
       states, real <code style="font-family:var(--font-mono);font-size:.92em;">Modifier.testTag</code>
-      identifiers from the codebase, not placeholder text. Sixteen screens across the kid device app
+      identifiers from the codebase, not placeholder text. Nineteen screens across the kid device app
       and the parent app, shown in their default light theme.
     </p>
     <div class="legend">
       <span class="legend-item"><span class="swatch" style="background:#2e7d32"></span>Kid app &mdash; org.openscreentime.kid</span>
       <span class="legend-item"><span class="swatch" style="background:#1565c0"></span>Parent app &mdash; org.openscreentime.parent</span>
       <span class="legend-item"><span class="swatch" style="background:var(--accent);border-radius:50%"></span>monospace tag = testTag / resource-id used by the E2E test suite</span>
+      <span class="legend-item"><span class="swatch" style="background:var(--calm);border-radius:50%"></span>green tag = a calm-technology principle, explained below</span>
     </div>
   </header>
 
+  <!-- ================= CALM BY DESIGN ================= -->
+  <section class="principles">
+    <h2>Calm by design</h2>
+    <p>
+      This project's standing mandate is the opposite of an engagement-maximizing app: every
+      mechanic below was chosen (and several were deliberately <em>not</em> built) to keep screen
+      time something a family stays aware of, not something either the kid or the parent ends up
+      fixated on checking. Each card names the mechanism, why it exists, and which screen shows it.
+    </p>
+    <div class="principle-grid">
+      <div class="principle-card">
+        <div class="p-num">01</div>
+        <h3>A calm signal, not exact numbers</h3>
+        <p>The kid app's ongoing notification and home screen show one of three icons - comfortably under, approaching, or at the goal - never a running total. The app says outright why, right next to the icon.</p>
+        <div class="p-where">Status screen</div>
+      </div>
+      <div class="principle-card">
+        <div class="p-num">02</div>
+        <h3>A pause, not a wall</h3>
+        <p>Crossing halfway into an app's daily limit triggers a few quiet seconds before "Continue" enables - not a block, just a beat to notice the automatic reach for the app. Fires once per app per day.</p>
+        <div class="p-where">Pause overlay</div>
+      </div>
+      <div class="principle-card">
+        <div class="p-num">03</div>
+        <h3>Always an off-ramp</h3>
+        <p>A block screen suggests a concrete alternative activity (except at bedtime, where winding down is the point, not finding something else to do), and can be asked to open back up via "Request more time" - never a dead end.</p>
+        <div class="p-where">Block overlay</div>
+      </div>
+      <div class="principle-card">
+        <div class="p-num">04</div>
+        <h3>Nothing here scores failure</h3>
+        <p>Streaks only ever count up from zero. There is no "broken streak" state anywhere in the app - a day over the limit just silently isn't counted, never flagged or called out.</p>
+        <div class="p-where">Status &amp; Dashboard</div>
+      </div>
+      <div class="principle-card">
+        <div class="p-num">05</div>
+        <h3>Suggest, don't just impose</h3>
+        <p>A kid can propose their own new limit with no passcode required - it's sent to a parent for approval, not applied directly. Limits are something negotiated, not only handed down.</p>
+        <div class="p-where">Suggest a change</div>
+      </div>
+      <div class="principle-card">
+        <div class="p-num">06</div>
+        <h3>Detail stays with the parent - and says why</h3>
+        <p>The weekly report's bar chart and by-app breakdown never reach the kid app. Both apps carry an explicit line explaining the asymmetry, framing the report as something to start a conversation with, not run silent surveillance.</p>
+        <div class="p-where">Weekly report &amp; Status</div>
+      </div>
+      <div class="principle-card">
+        <div class="p-num">07</div>
+        <h3>A short window, not an archive</h3>
+        <p>The report only ever shows a rolling four weeks - enough to see a real trend, not something bounded to invite scrolling back through months of a kid's history.</p>
+        <div class="p-where">Weekly report</div>
+      </div>
+      <div class="principle-card">
+        <div class="p-num">08</div>
+        <h3>The nudge points at the parent too</h3>
+        <p>Opening the detailed report a 4th time in one day gets its own "Check in, not check up" prompt before it opens again - the same friction-pause idea from the kid side, turned back on the parent's own checking habit.</p>
+        <div class="p-where">Weekly report</div>
+      </div>
+      <div class="principle-card">
+        <div class="p-num">09</div>
+        <h3>Walk the walk</h3>
+        <p>Parental self-tracking reuses the exact same card, stats, and lock button a kid's profile gets - no separate, easier standard for the adult in the house.</p>
+        <div class="p-where">Dashboard &amp; Self tracking</div>
+      </div>
+    </div>
+  </section>
+
   <!-- ================= KID APP ================= -->
-  <section class="app-section" style="--app-primary:var(--kid-primary);--app-on-primary:var(--kid-on-primary);--app-bg:var(--kid-bg);--app-surface-variant:var(--kid-surface-variant);">
+  <section class="app-section" style="--app-primary:var(--kid-primary);--app-secondary:var(--kid-secondary);--app-on-primary:var(--kid-on-primary);--app-bg:var(--kid-bg);--app-surface-variant:var(--kid-surface-variant);">
     <div class="section-head">
       <span class="app-dot" style="background:var(--kid-primary)"></span>
       <h2>Kid app</h2>
@@ -332,20 +478,28 @@
       <!-- 2. Status -->
       <div class="screen-card">
         <div class="phone"><div class="phone-inner">
-          <div class="body" style="padding-top:12px;">
+          <div class="body scroll" style="padding-top:12px;">
             <div class="headline" style="margin-bottom:2px;">Hi, Mia</div>
-            <p class="subtext" style="margin-bottom:4px;">Screen time monitoring is active.</p>
-            <p class="subtext tight" style="color:var(--app-primary);font-weight:600;">5 days in a row under your goal</p>
+            <p class="subtext" style="margin-bottom:6px;">Screen time monitoring is active.</p>
+            <div class="label-eyebrow" style="margin-top:0;">What the status icon means</div>
+            <div class="m-list-item" style="border:none;padding:3px 0;"><div class="sub" style="margin:0;">&#128077; Comfortably under today's goal</div></div>
+            <div class="m-list-item" style="border:none;padding:3px 0;"><div class="sub" style="margin:0;">&#9995; Approaching today's goal</div></div>
+            <div class="m-list-item" style="border-bottom:1px solid rgba(0,0,0,.06);padding:3px 0 8px;"><div class="sub" style="margin:0;">&#128721; At or over today's goal</div></div>
+            <div class="card-tint calm-banner" style="margin-top:6px;">
+              <p class="subtext micro" style="margin:0;">This app deliberately doesn't show exact numbers or a report here - just this signal, so screen time stays something to be aware of, not something to obsess over. Ask a parent if you want to talk through the details.</p>
+            </div>
+            <p class="subtext tight" style="color:var(--app-primary);font-weight:600;margin-top:8px;">5 days in a row under your goal</p>
+            <div class="card-tint" style="margin-bottom:10px;">
+              <div class="label-eyebrow" style="margin:0 0 2px;">Parent's screen time today</div>
+              <p class="subtext tight" style="margin:0 0 2px;">Comfortably under goal</p>
+              <p class="subtext micro" style="margin:0;">1h 12m &middot; 9 unlocks</p>
+            </div>
             <div class="m-list-item"><div><div class="head">Display over other apps</div><div class="sub">Shows a screen when a limit is reached</div></div><div class="trailing granted">Granted</div></div>
             <div class="m-list-item"><div><div class="head">Accessibility service</div><div class="sub">Detects which app is open</div></div><div class="trailing granted">Granted</div></div>
-            <div class="m-list-item"><div><div class="head">Notifications</div><div class="sub">Ongoing monitoring notice</div></div><div class="trailing granted">Granted</div></div>
             <div class="m-list-item"><div><div class="head">Battery optimization</div><div class="sub">Stops the OS killing tracking</div></div><div class="trailing">Fix</div></div>
             <div class="label-eyebrow">Display</div>
             <div class="m-list-item"><div class="head">Theme</div><div class="trailing">System &nbsp;Change</div></div>
-            <div class="m-list-item"><div class="head">Text size</div><div class="trailing">Default &nbsp;Change</div></div>
-            <p class="subtext" style="font-size:8.5px;margin:6px 0 4px;">Recommended: built-in grayscale makes apps noticeably less compelling to check.</p>
-            <div class="m-btn-outline full" style="padding:7px 16px;">Open Accessibility settings</div>
-            <div style="flex:1;"></div>
+            <div class="m-btn-outline full" style="padding:7px 16px;margin-top:6px;">Open Accessibility settings</div>
             <div class="m-btn-outline full">Suggest a change</div>
             <div class="m-btn full">Parent controls</div>
             <div class="m-btn-outline full">Unpair this device</div>
@@ -353,8 +507,8 @@
         </div></div>
         <div class="caption">
           <p class="screen-name">Status</p>
-          <p class="screen-desc">Home screen once paired. Permission checklist drives the headline copy above it; a streak line appears only once it's &gt; 0 days, never a broken-streak state (#13). &ldquo;Suggest a change&rdquo; needs no passcode &mdash; it's a request, not an override (#14).</p>
-          <div class="tag-row"><span class="tag">status_greeting</span><span class="tag">status_streak</span><span class="tag">status_propose_change</span><span class="tag">status_parent_controls</span></div>
+          <p class="screen-desc">Home screen once paired. The icon legend now states outright why only this signal is shown, not exact numbers (#30). A streak line appears only once it's &gt; 0 days, never a broken-streak state (#13). When a parent has opted into self-tracking, their own calm status and numbers show here too (#18) - the arrangement isn't one-directional.</p>
+          <div class="tag-row"><span class="tag">status_greeting</span><span class="tag">status_icon_legend</span><span class="tag">status_streak</span><span class="tag calm">01 calm signal</span></div>
         </div>
       </div>
 
@@ -383,21 +537,31 @@
       <div class="screen-card">
         <div class="phone"><div class="phone-inner">
           <div class="appbar"><span class="title">Parent controls</span><span class="action">DONE</span></div>
-          <div class="body">
+          <div class="body scroll">
+            <div class="card-tint">
+              <div style="font-size:11px;font-weight:600;margin-bottom:4px;">Asking for more time</div>
+              <p class="subtext tight" style="margin:0 0 8px;">Requested: 15 more minutes</p>
+              <div style="display:flex;gap:8px;">
+                <span class="m-btn" style="margin:0;padding:5px 12px;">Grant 15 min</span>
+                <span class="m-btn-outline" style="margin:0;padding:5px 12px;">Decline</span>
+              </div>
+            </div>
             <div class="m-btn-outline danger full">End screen time now</div>
             <p class="subtext tight" style="margin-top:6px;">Daily limit: 120 min</p>
             <div class="m-btn-outline full">Change daily limit</div>
-            <p class="subtext tight" style="margin-top:4px;">Unlock goal: 15 a day</p>
-            <div class="m-btn-outline full">Change unlock goal</div>
+            <p class="subtext tight">Bedtime: 9:00 PM - 7:00 AM</p>
+            <div class="m-btn-outline full">Change bedtime</div>
+            <div class="label-eyebrow">Uninstall protection</div>
+            <p class="subtext micro" style="margin:0 0 6px;">Off. Turning this on adds a warning before OpenScreenTime can be removed - a clear signal to ask a parent first.</p>
+            <div class="m-btn-outline full" style="padding:7px 16px;">Turn on</div>
             <div class="label-eyebrow">App limits</div>
-            <div class="m-list-item"><div class="head">Instagram</div><div class="trailing">Limit</div></div>
-            <div class="m-list-item"><div><div class="head">YouTube</div><div class="sub">No limit set</div></div><div class="trailing">Limit</div></div>
-            <div class="m-list-item"><div><div class="head">Minecraft</div><div class="sub">Limit: 60 min/day</div></div><div class="trailing">Limit</div></div>
+            <div class="m-list-item"><div><div class="head">Instagram</div><div class="sub">Limit: 30 min/day</div></div><div class="trailing"><span class="m-checkbox"></span>Limit</div></div>
+            <div class="m-list-item"><div><div class="head">Minecraft</div><div class="sub">Always allowed</div></div><div class="trailing"><span class="m-checkbox checked"></span>Limit</div></div>
           </div>
         </div></div>
         <div class="caption">
           <p class="screen-name">Parent controls</p>
-          <p class="screen-desc">Reached only after the passcode unlock. Reads today's usage from this device's own local store &mdash; no round trip needed.</p>
+          <p class="screen-desc">Reached only after the passcode unlock. Now includes bedtime editing, a pending "more time" request (#23), uninstall protection (#31), and an "always allow" checkbox per app (#28) alongside its minute limit - all mirroring the parent app's own ChildDetailScreen.</p>
           <div class="tag-row"><span class="tag">ParentControlsScreen.kt</span></div>
         </div>
       </div>
@@ -408,13 +572,18 @@
           <div class="block-screen">
             <div class="headline">Screen time is up for today</div>
             <p class="subtext">Ask a parent if you need more time.</p>
-            <div class="m-btn" style="margin-top:10px;">Go to home screen</div>
+            <p class="subtext" style="color:var(--app-primary);font-weight:600;">In the meantime: stretch and look out a window for two minutes</p>
+            <div style="display:flex;gap:8px;margin-top:6px;">
+              <span class="m-btn-outline" style="margin:0;padding:7px 14px;">+5 min</span>
+              <span class="m-btn-outline" style="margin:0;padding:7px 14px;">+15 min</span>
+            </div>
+            <div class="m-btn" style="margin-top:14px;">OK</div>
           </div>
         </div></div>
         <div class="caption">
           <p class="screen-name">Block overlay</p>
-          <p class="screen-desc">Full-screen interrupt shown on top of whatever app was open. Also renders for a per-app limit and for a parent's immediate lock, each with its own wording.</p>
-          <div class="tag-row"><span class="tag">reason=daily_limit</span><span class="tag">app_limit</span><span class="tag">parent_lock</span></div>
+          <p class="screen-desc">Full-screen interrupt on top of whatever app was open, with an alternative-activity suggestion and a "request more time" ask (never offered for a parent lock, and never a self-serve grant). The back gesture no longer dismisses this without going through "OK" (#31) - that used to quietly drop you back into the blocked app.</p>
+          <div class="tag-row"><span class="tag">reason=daily_limit</span><span class="tag">app_limit</span><span class="tag">parent_lock</span><span class="tag calm">03 off-ramp</span></div>
         </div>
       </div>
 
@@ -430,7 +599,7 @@
         <div class="caption">
           <p class="screen-name">Pause overlay</p>
           <p class="screen-desc">Not a block &mdash; a 4-second countdown before &ldquo;Continue&rdquo; enables, shown once per app per day the first time it crosses 50% of its limit (#12). Interrupts the automatic reach for the app without removing the choice.</p>
-          <div class="tag-row"><span class="tag">PauseOverlayActivity.kt</span></div>
+          <div class="tag-row"><span class="tag">PauseOverlayActivity.kt</span><span class="tag calm">02 pause not wall</span></div>
         </div>
       </div>
 
@@ -454,7 +623,7 @@
         <div class="caption">
           <p class="screen-name">Suggest a change</p>
           <p class="screen-desc">Reachable straight from Status with no passcode &mdash; a request, not an override (#14). Writes only proposedDailyLimitMinutes/proposedAppLimits; the real limit never changes until a parent approves.</p>
-          <div class="tag-row"><span class="tag">ProposeChangeScreen.kt</span></div>
+          <div class="tag-row"><span class="tag">ProposeChangeScreen.kt</span><span class="tag calm">05 suggest, don't impose</span></div>
         </div>
       </div>
 
@@ -462,7 +631,7 @@
   </section>
 
   <!-- ================= PARENT APP ================= -->
-  <section class="app-section" style="--app-primary:var(--parent-primary);--app-on-primary:var(--parent-on-primary);--app-bg:var(--parent-bg);--app-surface-variant:var(--parent-surface-variant);">
+  <section class="app-section" style="--app-primary:var(--parent-primary);--app-secondary:var(--parent-secondary);--app-on-primary:var(--parent-on-primary);--app-bg:var(--parent-bg);--app-surface-variant:var(--parent-surface-variant);">
     <div class="section-head">
       <span class="app-dot" style="background:var(--parent-primary)"></span>
       <h2>Parent app</h2>
@@ -471,7 +640,7 @@
 
     <div class="grid">
 
-      <!-- 6. Auth -->
+      <!-- 8. Auth -->
       <div class="screen-card">
         <div class="phone"><div class="phone-inner">
           <div class="body centered">
@@ -484,12 +653,12 @@
         </div></div>
         <div class="caption">
           <p class="screen-name">Sign up / sign in</p>
-          <p class="screen-desc">Firebase email/password auth. Same screen toggles between create-account and sign-in copy.</p>
+          <p class="screen-desc">Firebase email/password auth. Same screen toggles between create-account and sign-in copy. Two parents on any mix of Android/iOS share access by signing into the same account.</p>
           <div class="tag-row"><span class="tag">auth_email</span><span class="tag">auth_password</span><span class="tag">auth_submit</span></div>
         </div>
       </div>
 
-      <!-- 7. Passcode unlock -->
+      <!-- 9. Passcode unlock -->
       <div class="screen-card">
         <div class="phone"><div class="phone-inner">
           <div class="body centered">
@@ -505,14 +674,15 @@
         </div>
       </div>
 
-      <!-- 8. Dashboard -->
+      <!-- 10. Dashboard -->
       <div class="screen-card">
         <div class="phone"><div class="phone-inner" style="position:relative;">
-          <div class="appbar"><span class="title">Your children</span><div class="actions"><span class="action">STYLE</span><span class="action">PASSCODE</span></div></div>
-          <div class="body">
+          <div class="appbar"><span class="title">Manage Your Screen Time</span><div class="actions"><span class="action">&#8942;</span></div></div>
+          <div class="body scroll">
             <div class="card-tint" style="border-left:3px solid var(--app-primary);">
-              <div style="font-size:12px;font-weight:600;margin-bottom:2px;">My screen time</div>
-              <div class="sub">Track and limit your own screen time on this device too.</div>
+              <div style="font-size:11px;font-weight:600;margin-bottom:2px;">Off-screen idea</div>
+              <div class="sub" style="margin-bottom:4px;">Step outside for five minutes, no phone.</div>
+              <div style="display:flex;align-items:center;gap:6px;"><span class="m-checkbox"></span><span class="sub" style="margin:0;">I did this</span></div>
             </div>
             <div class="card-tint">
               <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
@@ -528,23 +698,26 @@
               <div class="sub">5 days in a row under goal</div>
             </div>
             <div class="card-tint" style="margin-bottom:0;">
-              <div style="font-size:12px;font-weight:600;margin-bottom:4px;">Theo</div>
-              <div class="sub">Waiting for device pairing (code: 349217)</div>
+              <div style="font-size:12px;font-weight:600;margin-bottom:4px;">My screen time</div>
+              <div class="stat-row" style="margin-bottom:0;">
+                <div class="stat"><div class="num">1h 12m</div><div class="label">SCREEN TIME</div></div>
+                <div class="stat"><div class="num">9</div><div class="label">UNLOCKS</div></div>
+              </div>
             </div>
           </div>
           <div style="position:absolute;right:12px;bottom:14px;width:36px;height:36px;border-radius:50%;background:var(--app-primary);color:#fff;display:flex;align-items:center;justify-content:center;font-size:18px;box-shadow:0 4px 10px rgba(0,0,0,.25);">+</div>
         </div></div>
         <div class="caption">
           <p class="screen-name">Dashboard</p>
-          <p class="screen-desc">A dedicated card tracks the parent's own device (#8), separate from the per-child list. Each child's card shows a streak line when &gt; 0 (#13) and a pending-proposal hint when the kid has suggested a change (#14).</p>
-          <div class="tag-row"><span class="tag">dashboard_add_child</span><span class="tag">dashboard_child_lock_toggle</span></div>
+          <p class="screen-desc">Header retitled from "Your children" for clarity (#27); four separate top-bar actions collapsed into one "&#8942;" menu (Style / Passcode / Feedback / Sign out). The parent's own self-tracking card now shows live numbers directly here, reusing the exact same card as a kid's (#27, #18) &mdash; walking the walk, not just saying it.</p>
+          <div class="tag-row"><span class="tag">dashboard_add_child</span><span class="tag">dashboard_child_lock_toggle</span><span class="tag calm">09 walk the walk</span></div>
         </div>
       </div>
 
-      <!-- 9. Add child dialog -->
+      <!-- 11. Add child dialog -->
       <div class="screen-card">
         <div class="phone"><div class="phone-inner" style="position:relative;">
-          <div class="appbar"><span class="title">Your children</span><div class="actions"><span class="action" style="opacity:.4">PASSCODE</span><span class="action" style="opacity:.4">SIGN OUT</span></div></div>
+          <div class="appbar"><span class="title">Manage Your Screen Time</span><div class="actions"><span class="action" style="opacity:.4">&#8942;</span></div></div>
           <div class="dialog-scrim">
             <div class="dialog-box">
               <div class="d-title">Add a child</div>
@@ -560,10 +733,10 @@
         </div>
       </div>
 
-      <!-- 10. Pairing code dialog -->
+      <!-- 12. Pairing code dialog -->
       <div class="screen-card">
         <div class="phone"><div class="phone-inner" style="position:relative;">
-          <div class="appbar"><span class="title">Your children</span><div class="actions"><span class="action" style="opacity:.4">PASSCODE</span><span class="action" style="opacity:.4">SIGN OUT</span></div></div>
+          <div class="appbar"><span class="title">Manage Your Screen Time</span><div class="actions"><span class="action" style="opacity:.4">&#8942;</span></div></div>
           <div class="dialog-scrim">
             <div class="dialog-box">
               <div class="d-title">Pairing code</div>
@@ -580,17 +753,17 @@
         </div>
       </div>
 
-      <!-- 11. Child detail -->
+      <!-- 13. Child detail -->
       <div class="screen-card">
         <div class="phone"><div class="phone-inner">
           <div class="appbar"><span class="title">Mia</span><span class="action">BACK</span></div>
-          <div class="body">
-            <div class="card-tint" style="border-left:3px solid var(--app-primary);">
-              <div style="font-size:12px;font-weight:600;margin-bottom:4px;">Mia suggested a change</div>
-              <p class="subtext tight" style="margin:0 0 8px;">New daily limit: 150 min (currently 120 min)</p>
+          <div class="body scroll">
+            <div class="card-tint">
+              <div style="font-size:11px;font-weight:600;margin-bottom:4px;">Mia is asking for more time</div>
+              <p class="subtext tight" style="margin:0 0 8px;">Requested: 15 more minutes</p>
               <div style="display:flex;gap:8px;">
-                <span class="m-btn" style="margin:0;padding:6px 14px;">Approve</span>
-                <span class="m-btn-outline" style="margin:0;padding:6px 14px;">Decline</span>
+                <span class="m-btn" style="margin:0;padding:5px 12px;">Grant 15 min</span>
+                <span class="m-btn-outline" style="margin:0;padding:5px 12px;">Decline</span>
               </div>
             </div>
             <div class="m-btn-outline danger full">End screen time now</div>
@@ -601,22 +774,56 @@
             </div>
             <p class="subtext tight" style="color:var(--app-primary);font-weight:600;">5 days in a row under goal</p>
             <div class="m-progress"><div class="fill" style="width:85%"></div></div>
-            <p class="subtext tight">Daily limit: 120 min</p>
-            <div class="m-btn-outline full" style="margin-bottom:8px;">Change daily limit</div>
-            <p class="subtext tight">Unlock goal: 15 a day</p>
+            <p class="subtext tight">Daily limit: 120 min &middot; Bedtime: 9:00 PM - 7:00 AM</p>
+            <div class="m-btn-outline full" style="margin-bottom:10px;">View weekly report</div>
             <div class="label-eyebrow">App usage today</div>
-            <div class="m-list-item"><div><div class="head">Instagram</div><div class="sub over">45m of 30m limit</div></div><div class="trailing">Limit</div></div>
-            <div class="m-list-item"><div><div class="head">YouTube</div><div class="sub">32m</div></div><div class="trailing">Limit</div></div>
+            <div class="m-list-item"><div><div class="head">Instagram</div><div class="sub over">45m of 30m limit</div></div><div class="trailing"><span class="m-checkbox"></span>Limit</div></div>
+            <div class="m-list-item"><div><div class="head">Google Maps</div><div class="sub">Always allow</div></div><div class="trailing"><span class="m-checkbox checked"></span>Limit</div></div>
           </div>
         </div></div>
         <div class="caption">
           <p class="screen-name">Child detail</p>
-          <p class="screen-desc">Full stats, streak line, the daily-limit progress bar, and per-app limit editing. A pending-proposal card (#14) sits at the top when the kid has suggested a change; &ldquo;Remove Mia&rdquo; sits below the app list (scrolled out of frame here).</p>
-          <div class="tag-row"><span class="tag">ChildDetailScreen.kt</span></div>
+          <p class="screen-desc">Now includes a pending "more time" grant/decline card (#23), a bedtime summary, an "always allow" checkbox per app (#28), and a single "View weekly report" button &mdash; the detailed numbers stay one tap away rather than shown inline here, deliberately (#29).</p>
+          <div class="tag-row"><span class="tag">ChildDetailScreen.kt</span><span class="tag calm">06 detail stays with parent</span></div>
         </div>
       </div>
 
-      <!-- 12. Passcode settings -->
+      <!-- 14. Weekly report -->
+      <div class="screen-card">
+        <div class="phone"><div class="phone-inner">
+          <div class="appbar"><span class="title">Mia report</span><span class="action">BACK</span></div>
+          <div class="body scroll">
+            <div class="card-tint calm-banner">
+              <p class="subtext micro" style="margin:0;">Your child only ever sees a simple status icon, never this report or exact numbers - that's deliberate. Use what you see here to start a conversation with them, not to track them silently.</p>
+            </div>
+            <div class="label-eyebrow">Total screen time</div>
+            <p class="subtext tight" style="margin:0 0 4px;">Weekly average: 11h 20m</p>
+            <div class="bar-chart">
+              <div class="bar" style="height:55%"></div>
+              <div class="bar" style="height:70%"></div>
+              <div class="bar" style="height:48%"></div>
+              <div class="bar" style="height:100%"></div>
+            </div>
+            <div class="bar-labels"><span>Aug 25</span><span>Sep 1</span><span>Sep 8</span><span>Sep 15</span></div>
+            <div class="label-eyebrow">By app</div>
+            <p class="subtext micro" style="margin:0 0 6px;">The apps used most over the last 4 weeks, oldest to newest.</p>
+            <p class="subtext tight" style="margin:0 0 2px;">Instagram</p>
+            <div class="bar-chart" style="height:26px;">
+              <div class="bar secondary" style="height:40%"></div>
+              <div class="bar secondary" style="height:65%"></div>
+              <div class="bar secondary" style="height:50%"></div>
+              <div class="bar secondary" style="height:100%"></div>
+            </div>
+          </div>
+        </div></div>
+        <div class="caption">
+          <p class="screen-name">Weekly report</p>
+          <p class="screen-desc">New (#29): a rolling 4-week bar chart plus a by-app trend for the top 5 apps, reached only from Child detail's "View weekly report" button. Opening it a 4th time in one day triggers a "Check in, not check up" prompt first (#30) &mdash; the same friction-pause idea used on the kid side, turned back on the parent.</p>
+          <div class="tag-row"><span class="tag">WeeklyReportScreen.kt</span><span class="tag calm">07 short window</span><span class="tag calm">08 nudges the parent</span></div>
+        </div>
+      </div>
+
+      <!-- 15. Passcode settings -->
       <div class="screen-card">
         <div class="phone"><div class="phone-inner">
           <div class="appbar"><span class="title">Family passcode</span><span class="action">BACK</span></div>
@@ -634,7 +841,7 @@
         </div>
       </div>
 
-      <!-- 13. Appearance settings -->
+      <!-- 16. Appearance settings -->
       <div class="screen-card">
         <div class="phone"><div class="phone-inner">
           <div class="appbar"><span class="title">Appearance</span><span class="action">BACK</span></div>
@@ -653,28 +860,48 @@
         </div></div>
         <div class="caption">
           <p class="screen-name">Appearance settings</p>
-          <p class="screen-desc">Per-device display preferences &mdash; theme, text-size scaling, and the same grayscale guidance as the kid app. Reached from Dashboard's STYLE action.</p>
+          <p class="screen-desc">Per-device display preferences &mdash; theme, text-size scaling, and the same grayscale guidance as the kid app. Reached from Dashboard's &#8942; menu.</p>
           <div class="tag-row"><span class="tag">AppearanceSettingsScreen.kt</span></div>
         </div>
       </div>
 
-      <!-- 14. Self tracking -->
+      <!-- 17. Self tracking -->
       <div class="screen-card">
         <div class="phone"><div class="phone-inner">
           <div class="appbar"><span class="title">My screen time</span><span class="action">BACK</span></div>
           <div class="body">
-            <p class="subtext">Track and limit your own screen time on this device, the same way you track your kids' &mdash; walking the walk.</p>
+            <p class="subtext">Track and limit your own screen time on this device, the same way you can for your kids &mdash; walking the walk.</p>
             <div class="m-list-item"><div><div class="head">Display over other apps</div></div><div class="trailing granted">Granted</div></div>
             <div class="m-list-item"><div><div class="head">Accessibility service</div></div><div class="trailing granted">Granted</div></div>
-            <div class="m-list-item"><div><div class="head">Notifications</div></div><div class="trailing granted">Granted</div></div>
+            <div class="m-list-item"><div><div class="head">Battery optimization</div></div><div class="trailing">Fix</div></div>
             <div style="flex:1;"></div>
-            <div class="m-btn full">View my stats</div>
+            <div class="m-btn full">View my screen time</div>
+            <div class="m-btn-outline full">Stop tracking my screen time</div>
           </div>
         </div></div>
         <div class="caption">
           <p class="screen-name">Self tracking</p>
-          <p class="screen-desc">Opt-in parental self-tracking (#8) &mdash; the core mechanic behind the &ldquo;diametrical opposite of an addiction machine&rdquo; goal. Once started, &ldquo;View my stats&rdquo; reuses ChildDetailScreen for the parent's own profile.</p>
-          <div class="tag-row"><span class="tag">SelfTrackingScreen.kt</span></div>
+          <p class="screen-desc">Opt-in parental self-tracking (#8) &mdash; the core mechanic behind the "diametrical opposite of an addiction machine" goal. Once started, "View my screen time" reuses Child detail (and its weekly report) for the parent's own profile, unchanged from a kid's.</p>
+          <div class="tag-row"><span class="tag">SelfTrackingScreen.kt</span><span class="tag calm">09 walk the walk</span></div>
+        </div>
+      </div>
+
+      <!-- 18. Feedback dialog -->
+      <div class="screen-card">
+        <div class="phone"><div class="phone-inner" style="position:relative;">
+          <div class="appbar"><span class="title">Manage Your Screen Time</span><div class="actions"><span class="action" style="opacity:.4">&#8942;</span></div></div>
+          <div class="dialog-scrim">
+            <div class="dialog-box">
+              <div class="d-title">Send feedback</div>
+              <div class="m-field" style="margin-bottom:14px;"><span class="m-label">What's on your mind?</span><div class="m-value" style="color:#8c8876;">The bedtime window doesn't...</div></div>
+              <div class="dialog-actions"><span class="m-text-btn">Cancel</span><span class="m-text-btn">Send</span></div>
+            </div>
+          </div>
+        </div></div>
+        <div class="caption">
+          <p class="screen-name">Send feedback</p>
+          <p class="screen-desc">Writes to a write-only Firestore collection instead of a mailto: link (#22) &mdash; a mailto: link would reveal the destination address to every parent who opens this, defeating the point of keeping it out of the public repo.</p>
+          <div class="tag-row"><span class="tag">feedback_text</span><span class="tag">feedback_send</span></div>
         </div>
       </div>
 
@@ -685,7 +912,7 @@
     Reproduced from the live Jetpack Compose source in <code style="font-family:var(--font-mono);">kid/src/main/java/.../ui</code>
     and <code style="font-family:var(--font-mono);">parent/src/main/java/.../ui</code> &mdash; component shapes, copy, and color
     values match the running app; pixel-exact Material 3 tonal-palette shading is approximated. All names, codes, and figures
-    on this page are illustrative examples, not real account data.
+    on this page are illustrative examples, not real account data. iOS parity for the weekly report is not yet built.
   </footer>
 
 </div>
