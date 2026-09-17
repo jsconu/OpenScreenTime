@@ -46,9 +46,6 @@ That's a one-time, roughly 10-minute step:
    struct OpenScreenTimeParentApp: App {
        init() {
            FirebaseApp.configure() // import FirebaseCore
-           // Real feedback destination - keeps it out of the OpenScreenTime repo
-           // entirely, since this app target isn't part of that repo (see #21).
-           FeedbackConfig.feedbackEmail = "you@example.com"
        }
        var body: some Scene {
            WindowGroup { RootView() }

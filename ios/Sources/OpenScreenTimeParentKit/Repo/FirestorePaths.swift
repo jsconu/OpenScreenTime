@@ -5,6 +5,8 @@ enum FirestorePaths {
     static let children = "children"
     static let dailyStats = "dailyStats"
     static let pairingCodes = "pairingCodes"
+    /// See #22/#26 - in-app feedback. Write-only from the client; reviewed via the Firebase console.
+    static let feedback = "feedback"
 
     static func childrenCollection(_ parentUid: String) -> String {
         "\(parents)/\(parentUid)/\(children)"

@@ -138,6 +138,20 @@ public final class FamilyRepository {
         ])
     }
 
+    /// In-app feedback (see #22/#26) - write-only. Nobody, not even the submitter, can read
+    /// it back through the app; it's reviewed via the Firebase console. Deliberately not a
+    /// mailto: link - that would show the destination address to every user who taps
+    /// "Feedback," which is exactly what the Android app moved away from in #22.
+    func submitFeedback(parentUid: String, text: String, appVersion: String, device: String) async throws {
+        try await db.collection(FirestorePaths.feedback).addDocument(data: [
+            "parentUid": parentUid,
+            "text": text,
+            "appVersion": appVersion,
+            "device": device,
+            "createdAt": FieldValue.serverTimestamp()
+        ])
+    }
+
     /// Deletes a child and its usage history. Firestore doesn't cascade-delete
     /// subcollections, so dailyStats docs are removed explicitly first.
     func deleteChild(parentUid: String, childId: String) async throws {

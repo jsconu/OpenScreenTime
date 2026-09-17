@@ -15,7 +15,7 @@ struct DashboardView: View {
     @State private var showAddChild = false
     @State private var newChildCode: String?
     @State private var errorMessage: String?
-    @Environment(\.openURL) private var openURL
+    @State private var showFeedbackSheet = false
 
     var body: some View {
         childList
@@ -26,6 +26,11 @@ struct DashboardView: View {
             .toolbar { toolbarContent }
             .sheet(isPresented: $showAddChild) { addChildSheet }
             .sheet(item: newChildCodeBinding) { item in PairingCodeSheet(code: item.code) { newChildCode = nil } }
+            .sheet(isPresented: $showFeedbackSheet) {
+                FeedbackSheet { text in
+                    try await submitFeedback(text: text)
+                }
+            }
             .alert("Something went wrong", isPresented: errorMessageBinding) {
                 Button("OK", role: .cancel) {}
             } message: {
@@ -59,7 +64,7 @@ struct DashboardView: View {
             }
         }
         ToolbarItem(placement: .navigationBarTrailing) {
-            Button("Feedback", action: sendFeedbackEmail)
+            Button("Feedback") { showFeedbackSheet = true }
         }
         ToolbarItem(placement: .navigationBarTrailing) {
             Button("Sign out") { session.signOut() }
@@ -91,23 +96,17 @@ struct DashboardView: View {
         listener = repository.listenChildren(parentUid: parentUid) { children = $0 }
     }
 
-    /// See #21 - FeedbackConfig.feedbackEmail is set once by the outer app target's own
-    /// init code, next to FirebaseApp.configure(); this package never holds the real address.
-    private func sendFeedbackEmail() {
+    /// See #22/#26 - a write-only Firestore submission, not a mailto: link (which would
+    /// show the destination address to every user who taps "Feedback").
+    private func submitFeedback(text: String) async throws {
         let appVersion = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "unknown"
         let device = UIDevice.current
-        let body = "\n\n---\nApp version: \(appVersion)\nDevice: \(device.model), iOS \(device.systemVersion)"
-
-        var components = URLComponents()
-        components.scheme = "mailto"
-        components.path = FeedbackConfig.feedbackEmail
-        components.queryItems = [
-            URLQueryItem(name: "subject", value: "OpenScreenTime feedback"),
-            URLQueryItem(name: "body", value: body)
-        ]
-        if let url = components.url {
-            openURL(url)
-        }
+        try await repository.submitFeedback(
+            parentUid: parentUid,
+            text: text,
+            appVersion: appVersion,
+            device: "\(device.model), iOS \(device.systemVersion)"
+        )
     }
 
     private func createChild(name: String) async {
@@ -191,6 +190,50 @@ private struct AddChildSheet: View {
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Create") { onCreate(name) }.disabled(name.isEmpty)
                 }
+            }
+        }
+    }
+}
+
+private struct FeedbackSheet: View {
+    let onSubmit: (String) async throws -> Void
+    @Environment(\.dismiss) private var dismiss
+    @State private var text = ""
+    @State private var sending = false
+    @State private var errorMessage: String?
+
+    var body: some View {
+        NavigationStack {
+            Form {
+                TextField("What's on your mind?", text: $text, axis: .vertical)
+                    .lineLimit(3...6)
+                if let errorMessage {
+                    Text(errorMessage).foregroundStyle(.red)
+                }
+            }
+            .navigationTitle("Send feedback")
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") { dismiss() }
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button(sending ? "Sending..." : "Send") { send() }
+                        .disabled(text.isEmpty || sending)
+                }
+            }
+        }
+    }
+
+    private func send() {
+        sending = true
+        errorMessage = nil
+        Task {
+            do {
+                try await onSubmit(text)
+                dismiss()
+            } catch {
+                sending = false
+                errorMessage = "Couldn't send - check your connection and try again."
             }
         }
     }
