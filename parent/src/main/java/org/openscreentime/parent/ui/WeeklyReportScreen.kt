@@ -10,6 +10,8 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -92,9 +94,33 @@ fun WeeklyReportScreen(
         }
     ) { padding ->
         LazyColumn(modifier = Modifier.fillMaxSize().padding(padding)) {
+            item { WhyOnlyHereCard() }
             item { WeeklyTotalsSection(report) }
             item { AppTrendsSection(report) }
         }
+    }
+}
+
+/**
+ * See #30 - names the asymmetry explicitly rather than leaving a parent to wonder why the
+ * kid app only ever shows a calm status icon: this level of detail is deliberately
+ * parent-only, meant to inform a conversation, not to run silent surveillance.
+ */
+@Composable
+private fun WhyOnlyHereCard() {
+    Card(
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer),
+        modifier = Modifier.fillMaxWidth().padding(16.dp)
+    ) {
+        Text(
+            "Your child only ever sees a simple status icon, never this report or exact " +
+                "numbers - that's deliberate, so screen time stays something to be aware of, " +
+                "not something to obsess over. Use what you see here to start a conversation " +
+                "with them, not to track them silently.",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSecondaryContainer,
+            modifier = Modifier.padding(16.dp)
+        )
     }
 }
 

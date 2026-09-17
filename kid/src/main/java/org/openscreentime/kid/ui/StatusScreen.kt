@@ -216,7 +216,8 @@ fun StatusScreen(
  * Explains the ongoing notification's status icon (see #9's calm status indicator) - the
  * icon itself only ever appears in the system notification, so this is the one place in
  * the app that says what it actually means, for whenever it's glanced at without opening
- * the app.
+ * the app. See #30 - also says *why* this is the only signal shown here (no exact numbers,
+ * no report), since an unexplained limitation reads as arbitrary or secretive otherwise.
  */
 @Composable
 private fun StatusIconLegend() {
@@ -226,6 +227,15 @@ private fun StatusIconLegend() {
         StatusIconLegendRow(R.drawable.ic_status_good, "Comfortably under today's goal")
         StatusIconLegendRow(R.drawable.ic_status_caution, "Approaching today's goal")
         StatusIconLegendRow(R.drawable.ic_status_stop, "At or over today's goal")
+        Spacer(Modifier.height(6.dp))
+        Text(
+            "This app deliberately doesn't show exact numbers or a detailed report here - " +
+                "just this simple signal, so screen time stays something to be aware of, not " +
+                "something to obsess over checking. Ask a parent if you want to talk through " +
+                "the details.",
+            style = MaterialTheme.typography.bodySmall,
+            modifier = Modifier.testTag("status_icon_legend_why")
+        )
     }
 }
 

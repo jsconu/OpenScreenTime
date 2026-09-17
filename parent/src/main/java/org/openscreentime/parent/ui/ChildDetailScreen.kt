@@ -37,8 +37,10 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
+import org.openscreentime.parent.data.ReportOpenTracker
 import org.openscreentime.shared.model.AppUsage
 import org.openscreentime.shared.model.ChildProfile
 import org.openscreentime.shared.model.DailyStats
@@ -54,6 +56,8 @@ import org.openscreentime.sharedui.MinutesInputDialog
 import org.openscreentime.sharedui.UnlockGoalInputDialog
 
 private const val STREAK_LOOKBACK_DAYS = 14
+/** See #30 - opening the detailed report this many times already today prompts an "are you sure." */
+private const val FREQUENT_CHECK_THRESHOLD = 3
 
 /**
  * Broken into named sections (mirroring the iOS ChildDetailView's LockSection/TodaySection/
@@ -70,6 +74,8 @@ fun ChildDetailScreen(
 ) {
     val parentUid = repository.currentUid ?: return
     val scope = rememberCoroutineScope()
+    val context = LocalContext.current
+    val reportTracker = remember { ReportOpenTracker(context) }
 
     var child by remember { mutableStateOf<ChildProfile?>(null) }
     var stats by remember { mutableStateOf(DailyStats(date = todayDateString())) }
@@ -77,6 +83,7 @@ fun ChildDetailScreen(
     var showLimitDialog by remember { mutableStateOf(false) }
     var showUnlockGoalDialog by remember { mutableStateOf(false) }
     var showBedtimeDialog by remember { mutableStateOf(false) }
+    var showFrequentCheckWarning by remember { mutableStateOf(false) }
     var editingApp by remember { mutableStateOf<String?>(null) }
     var showLockConfirm by remember { mutableStateOf(false) }
     var showDeleteConfirm by remember { mutableStateOf(false) }
@@ -129,7 +136,16 @@ fun ChildDetailScreen(
                 onChangeUnlockGoal = { showUnlockGoalDialog = true },
                 onChangeBedtime = { showBedtimeDialog = true }
             )
-            weeklyReportSection(onOpenReport = onOpenReport)
+            weeklyReportSection(
+                onOpenReport = {
+                    if (reportTracker.todayOpenCount >= FREQUENT_CHECK_THRESHOLD) {
+                        showFrequentCheckWarning = true
+                    } else {
+                        reportTracker.recordOpen()
+                        onOpenReport()
+                    }
+                }
+            )
             websiteBlockingSection(
                 blockedDomains = currentChild.blockedDomains,
                 newDomainText = newBlockedDomain,
@@ -199,6 +215,28 @@ fun ChildDetailScreen(
                 scope.launch { repository.updateBedtimeWindow(parentUid, childId, start, end) }
                 showBedtimeDialog = false
             }
+        )
+    }
+
+    if (showFrequentCheckWarning) {
+        AlertDialog(
+            onDismissRequest = { showFrequentCheckWarning = false },
+            title = { Text("Check in, not check up") },
+            text = {
+                Text(
+                    "You've opened a report a few times today already. A quick look now and " +
+                        "then makes sense, but checking constantly can turn this into its own " +
+                        "source of stress. Still want to open it?"
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    reportTracker.recordOpen()
+                    showFrequentCheckWarning = false
+                    onOpenReport()
+                }) { Text("Open anyway") }
+            },
+            dismissButton = { TextButton(onClick = { showFrequentCheckWarning = false }) { Text("Not now") } }
         )
     }
 
