@@ -82,6 +82,15 @@ hard block - Android doesn't let a plain (non-Device-Owner) device admin
 actually veto uninstalling, only warn - so a kid who taps through the
 warning can still remove it.
 
+The same screen also has "Bedtime calls": during the bedtime window, only
+phone numbers a parent has explicitly allowed (Android's call-screening and
+call-redirection roles, Android 10+) can call or text through - everyone
+else is blocked until bedtime ends, so the phone can still reach a parent
+overnight. Texts are muted rather than fully blocked (opening the messaging
+app directly can still show one) - true SMS blocking would require becoming
+the phone's default messaging app, a much larger undertaking left out of
+scope for now.
+
 ### What "screen time" means here
 
 - **Screen time** = time spent unlocked and interactive, measured from

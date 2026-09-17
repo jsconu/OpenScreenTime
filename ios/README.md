@@ -11,6 +11,11 @@ requirements analysis). In practice this means:
 - Self-tracking (a parent tracking their own device the way they track a kid's) isn't
   available here either, for the same entitlement reason - it needs the same OS-level
   monitoring capability.
+- If your child uses an iPhone rather than Android, OpenScreenTime can't manage it at all
+  yet. Apple's own Settings > Screen Time > Communication Limits, set up directly on the
+  child's iPhone, is the closest built-in equivalent for restricting who they can call or
+  text - this app has no way to configure that for you, it's purely a pointer to Apple's
+  own feature.
 
 See [issue #7](../../../issues/7) for the requirements analysis this was scoped against,
 and [issue #26](../../../issues/26) for the parity pass that brought it in line with most

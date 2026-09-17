@@ -98,6 +98,24 @@
             </intent-filter>
         </receiver>
 
+        <service
+            android:name=".monitor.BedtimeCallScreeningService"
+            android:exported="true"
+            android:permission="android.permission.BIND_SCREENING_SERVICE">
+            <intent-filter>
+                <action android:name="android.telecom.CallScreeningService" />
+            </intent-filter>
+        </service>
+
+        <service
+            android:name=".monitor.BedtimeCallRedirectionService"
+            android:exported="true"
+            android:permission="android.permission.BIND_CALL_REDIRECTION_SERVICE">
+            <intent-filter>
+                <action android:name="android.telecom.CallRedirectionService" />
+            </intent-filter>
+        </service>
+
         <receiver
             android:name=".monitor.UninstallProtectionAdminReceiver"
             android:exported="true"

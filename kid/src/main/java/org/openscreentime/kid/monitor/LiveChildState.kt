@@ -28,4 +28,6 @@ object LiveChildState {
     @Volatile var temporaryUnlockUntilMs: Long? = null
     /** See #28 - packages that bypass bedtime and every daily/app-limit check. */
     @Volatile var alwaysAllowedPackages: Set<String> = emptySet()
+    /** See #34 - phone numbers that can still call/text through a bedtime block. */
+    @Volatile var alwaysAllowedContacts: List<String> = emptyList()
 }

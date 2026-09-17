@@ -186,7 +186,10 @@ private struct AddChildSheet: View {
                     Text(
                         "Beta note: there's no OpenScreenTime Kid app for iPhone yet - Apple's " +
                         "Family Controls entitlement for it hasn't been granted. The pairing code " +
-                        "this creates only works with OpenScreenTime Kid on an Android phone."
+                        "this creates only works with OpenScreenTime Kid on an Android phone. If " +
+                        "your child uses an iPhone, Apple's own Settings > Screen Time > " +
+                        "Communication Limits (on their iPhone) can restrict who they can call or " +
+                        "text in the meantime - OpenScreenTime can't set that up for you."
                     )
                 }
             }

@@ -98,6 +98,10 @@ class FamilyRepository(
     suspend fun updateAlwaysAllowedPackages(parentUid: String, childId: String, packages: List<String>) =
         limits.updateAlwaysAllowedPackages(parentUid, childId, packages)
 
+    /** Replaces the whole always-allowed contacts list (see #34, [ChildProfile.alwaysAllowedContacts]). */
+    suspend fun updateAlwaysAllowedContacts(parentUid: String, childId: String, contacts: List<String>) =
+        limits.updateAlwaysAllowedContacts(parentUid, childId, contacts)
+
     /**
      * Kid-initiated, passcode-free suggestion (see #14) - writes only the two proposal
      * fields, never the real limits. Either parameter may be left null to leave that

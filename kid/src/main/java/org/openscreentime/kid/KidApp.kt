@@ -78,6 +78,7 @@ class KidApp : Application() {
             LiveChildState.blockedDomains = child.blockedDomains
             LiveChildState.temporaryUnlockUntilMs = child.temporaryUnlockUntilMs
             LiveChildState.alwaysAllowedPackages = child.alwaysAllowedPackages.toSet()
+            LiveChildState.alwaysAllowedContacts = child.alwaysAllowedContacts
 
             val wasLocked = LiveChildState.lockedCache
             LiveChildState.lockedCache = child.locked

@@ -1,20 +1,38 @@
 package org.openscreentime.kid.monitor
 
 import android.app.Notification
+import android.app.Person
 import android.service.notification.NotificationListenerService
 import android.service.notification.StatusBarNotification
 import org.openscreentime.kid.data.NotificationDigestStore
 import org.openscreentime.shared.model.DigestNotification
+import org.openscreentime.shared.model.isCallAllowedDuringBedtime
+import org.openscreentime.shared.model.isInBedtimeWindow
+import org.openscreentime.shared.model.nowMinutesOfDay
 import org.openscreentime.shared.model.shouldIncludeInDigest
 
 /**
  * Optional, off-by-default listener for the kid-app notification digest (see #20).
  * Records locally only; [onNotificationRemoved] is intentionally a no-op so the day's
  * list stays a digest of what arrived, not a live shade.
+ *
+ * Also does the texting half of #34's bedtime call/text blocking: any notification the
+ * posting app tagged [Notification.CATEGORY_MESSAGE] gets dismissed during a bedtime
+ * window unless its sender is in [LiveChildState.alwaysAllowedContacts] - independent of
+ * the digest opt-in above, since it only needs the notification-listener permission
+ * already granted for that feature, not the digest itself turned on. This mutes the
+ * alert, it doesn't prevent delivery: true SMS/MMS blocking would require this app to
+ * become the phone's default messaging app, a far larger undertaking (see the design
+ * discussion on #34) - a kid who opens Messages directly during bedtime can still see a
+ * muted text. When the sender's number can't be determined from the notification at all,
+ * this deliberately does nothing rather than risk muting a message that was actually from
+ * a parent.
  */
 class NotificationDigestListenerService : NotificationListenerService() {
 
     override fun onNotificationPosted(sbn: StatusBarNotification) {
+        maybeMuteBedtimeMessage(sbn)
+
         val store = NotificationDigestStore(this)
         if (!store.optedIn) return
 
@@ -54,5 +72,33 @@ class NotificationDigestListenerService : NotificationListenerService() {
         } catch (_: Exception) {
             packageName
         }
+    }
+
+    private fun maybeMuteBedtimeMessage(sbn: StatusBarNotification) {
+        if (sbn.notification.category != Notification.CATEGORY_MESSAGE) return
+        val isInBedtime = isInBedtimeWindow(
+            nowMinutesOfDay(), LiveChildState.bedtimeStartMinutes, LiveChildState.bedtimeEndMinutes
+        )
+        if (!isInBedtime) return
+        val senderNumber = extractSenderPhoneNumber(sbn.notification) ?: return
+        val allowed = isCallAllowedDuringBedtime(
+            phoneNumber = senderNumber,
+            nowMinutesOfDay = nowMinutesOfDay(),
+            bedtimeStartMinutes = LiveChildState.bedtimeStartMinutes,
+            bedtimeEndMinutes = LiveChildState.bedtimeEndMinutes,
+            alwaysAllowedContacts = LiveChildState.alwaysAllowedContacts
+        )
+        if (!allowed) cancelNotification(sbn.key)
+    }
+
+    /** Modern messaging notifications (RCS/SMS via Google Messages, etc.) attach a `tel:` Person URI per sender. */
+    @Suppress("DEPRECATION")
+    private fun extractSenderPhoneNumber(notification: Notification): String? {
+        val people = notification.extras.getParcelableArrayList<Person>(Notification.EXTRA_PEOPLE_LIST) ?: return null
+        for (person in people) {
+            val uri = person.uri ?: continue
+            if (uri.startsWith("tel:")) return uri.removePrefix("tel:")
+        }
+        return null
     }
 }

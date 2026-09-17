@@ -1,9 +1,11 @@
 package org.openscreentime.kid.util
 
 import android.app.admin.DevicePolicyManager
+import android.app.role.RoleManager
 import android.content.ComponentName
 import android.content.Context
 import android.net.VpnService
+import android.os.Build
 import android.os.PowerManager
 import android.provider.Settings
 import android.text.TextUtils
@@ -52,6 +54,26 @@ fun isNotificationListenerEnabled(context: Context): Boolean =
 fun isDeviceAdminActive(context: Context): Boolean {
     val dpm = context.getSystemService(Context.DEVICE_POLICY_SERVICE) as DevicePolicyManager
     return dpm.isAdminActive(ComponentName(context, UninstallProtectionAdminReceiver::class.java))
+}
+
+/**
+ * See #34 - bedtime call blocking needs both the call-screening (incoming) and
+ * call-redirection (outgoing) roles, only grantable via [android.app.role.RoleManager] on
+ * Android 10+ (API 29). Below that, this always reports false - there's no equivalent way
+ * to request either role on older Android versions, so bedtime call blocking simply isn't
+ * offered there.
+ */
+fun isCallScreeningRoleHeld(context: Context): Boolean {
+    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) return false
+    val roleManager = context.getSystemService(Context.ROLE_SERVICE) as? RoleManager ?: return false
+    return roleManager.isRoleHeld(RoleManager.ROLE_CALL_SCREENING)
+}
+
+/** See [isCallScreeningRoleHeld] - the outgoing-call counterpart. */
+fun isCallRedirectionRoleHeld(context: Context): Boolean {
+    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) return false
+    val roleManager = context.getSystemService(Context.ROLE_SERVICE) as? RoleManager ?: return false
+    return roleManager.isRoleHeld(RoleManager.ROLE_CALL_REDIRECTION)
 }
 
 fun checkPermissions(context: Context): PermissionState = PermissionState(

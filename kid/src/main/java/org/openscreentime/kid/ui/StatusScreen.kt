@@ -333,10 +333,12 @@ private fun NotificationDigestCard(
             )
         }
     )
-    if (optedIn && !listenerGranted) {
+    if (!listenerGranted) {
         PermissionRow(
             "Notification access",
-            "Needed to build the local digest. Off until you turn it on in system settings.",
+            "Needed for the digest above, and separately to mute texts from numbers " +
+                "that aren't allowed through during bedtime (see Parent controls). " +
+                "Off until you turn it on in system settings.",
             granted = false,
             onClick = onRequestListener
         )

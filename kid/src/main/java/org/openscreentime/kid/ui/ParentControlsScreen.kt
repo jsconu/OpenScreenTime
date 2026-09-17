@@ -1,8 +1,11 @@
 package org.openscreentime.kid.ui
 
 import android.app.admin.DevicePolicyManager
+import android.app.role.RoleManager
 import android.content.ComponentName
+import android.content.Context
 import android.content.Intent
+import android.os.Build
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -44,11 +47,15 @@ import androidx.lifecycle.LifecycleEventObserver
 import kotlinx.coroutines.launch
 import org.openscreentime.kid.data.UsageStore
 import org.openscreentime.kid.monitor.UninstallProtectionAdminReceiver
+import org.openscreentime.kid.util.isCallRedirectionRoleHeld
+import org.openscreentime.kid.util.isCallScreeningRoleHeld
 import org.openscreentime.kid.util.isDeviceAdminActive
 import org.openscreentime.shared.model.AppUsage
 import org.openscreentime.shared.model.ChildProfile
+import org.openscreentime.shared.model.addAllowedContact
 import org.openscreentime.shared.model.addBlockedDomain
 import org.openscreentime.shared.model.formatMinutesOfDay
+import org.openscreentime.shared.model.removeAllowedContact
 import org.openscreentime.shared.model.removeBlockedDomain
 import org.openscreentime.shared.repo.FamilyRepository
 import org.openscreentime.sharedui.BedtimeWindowDialog
@@ -78,13 +85,20 @@ fun ParentControlsScreen(
         }.sortedByDescending { it.foregroundTimeMs }
     }
 
-    // See #31 - re-checked on resume, since activating/deactivating device admin happens
-    // in a system Settings screen this composable navigates away to and back from.
+    // See #31/#34 - re-checked on resume, since activating device admin or granting a
+    // call role both happen in a system screen this composable navigates away to and
+    // back from.
     var deviceAdminActive by remember { mutableStateOf(isDeviceAdminActive(context)) }
+    var callScreeningActive by remember { mutableStateOf(isCallScreeningRoleHeld(context)) }
+    var callRedirectionActive by remember { mutableStateOf(isCallRedirectionRoleHeld(context)) }
     val lifecycleOwner = LocalLifecycleOwner.current
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
-            if (event == Lifecycle.Event.ON_RESUME) deviceAdminActive = isDeviceAdminActive(context)
+            if (event == Lifecycle.Event.ON_RESUME) {
+                deviceAdminActive = isDeviceAdminActive(context)
+                callScreeningActive = isCallScreeningRoleHeld(context)
+                callRedirectionActive = isCallRedirectionRoleHeld(context)
+            }
         }
         lifecycleOwner.lifecycle.addObserver(observer)
         onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
@@ -96,6 +110,7 @@ fun ParentControlsScreen(
     var editingApp by remember { mutableStateOf<String?>(null) }
     var showLockConfirm by remember { mutableStateOf(false) }
     var newBlockedDomain by remember { mutableStateOf("") }
+    var newAllowedContact by remember { mutableStateOf("") }
 
     Scaffold(
         topBar = {
@@ -203,6 +218,99 @@ fun ParentControlsScreen(
                         }) { Text("Turn on") }
                     }
                 }
+            }
+            item {
+                Column(Modifier.padding(16.dp)) {
+                    Text("Bedtime calls", style = MaterialTheme.typography.labelLarge)
+                    Spacer(Modifier.height(4.dp))
+                    Text(
+                        "During bedtime, only the numbers below can call or text - " +
+                            "everyone else is blocked until bedtime ends. Add a parent's " +
+                            "number so this device is never truly unreachable overnight. " +
+                            "Texts are muted, not fully blocked - opening Messages directly " +
+                            "can still show one - and also needs \"Notification access\" " +
+                            "granted from the main screen.",
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
+                        Spacer(Modifier.height(4.dp))
+                        Text(
+                            "Requires Android 10 or newer - not available on this device.",
+                            style = MaterialTheme.typography.bodySmall
+                        )
+                    } else {
+                        Spacer(Modifier.height(8.dp))
+                        Text(
+                            if (callScreeningActive) "Incoming calls: on" else "Incoming calls: off",
+                            style = MaterialTheme.typography.bodySmall
+                        )
+                        if (!callScreeningActive) {
+                            OutlinedButton(onClick = {
+                                val roleManager = context.getSystemService(Context.ROLE_SERVICE) as? RoleManager
+                                roleManager?.let {
+                                    context.startActivity(it.createRequestRoleIntent(RoleManager.ROLE_CALL_SCREENING))
+                                }
+                            }) { Text("Turn on incoming-call blocking") }
+                        }
+                        Spacer(Modifier.height(4.dp))
+                        Text(
+                            if (callRedirectionActive) "Outgoing calls: on" else "Outgoing calls: off",
+                            style = MaterialTheme.typography.bodySmall
+                        )
+                        if (!callRedirectionActive) {
+                            OutlinedButton(onClick = {
+                                val roleManager = context.getSystemService(Context.ROLE_SERVICE) as? RoleManager
+                                roleManager?.let {
+                                    context.startActivity(it.createRequestRoleIntent(RoleManager.ROLE_CALL_REDIRECTION))
+                                }
+                            }) { Text("Turn on outgoing-call blocking") }
+                        }
+                    }
+                    Spacer(Modifier.height(12.dp))
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        OutlinedTextField(
+                            value = newAllowedContact,
+                            onValueChange = { newAllowedContact = it },
+                            label = { Text("e.g. +15551234567") },
+                            singleLine = true,
+                            modifier = Modifier.weight(1f)
+                        )
+                        Spacer(Modifier.width(8.dp))
+                        Button(
+                            enabled = newAllowedContact.isNotBlank(),
+                            onClick = {
+                                val updated = addAllowedContact(child.alwaysAllowedContacts, newAllowedContact)
+                                if (updated != child.alwaysAllowedContacts) {
+                                    scope.launch { repository.updateAlwaysAllowedContacts(parentUid, childId, updated) }
+                                }
+                                newAllowedContact = ""
+                            }
+                        ) { Text("Allow") }
+                    }
+                }
+            }
+            if (child.alwaysAllowedContacts.isEmpty()) {
+                item {
+                    Text(
+                        "No numbers allowed through bedtime yet.",
+                        style = MaterialTheme.typography.bodySmall,
+                        modifier = Modifier.padding(horizontal = 16.dp)
+                    )
+                }
+            }
+            items(child.alwaysAllowedContacts, key = { it }) { number ->
+                ListItem(
+                    headlineContent = { Text(number) },
+                    trailingContent = {
+                        TextButton(onClick = {
+                            scope.launch {
+                                repository.updateAlwaysAllowedContacts(
+                                    parentUid, childId, removeAllowedContact(child.alwaysAllowedContacts, number)
+                                )
+                            }
+                        }) { Text("Remove") }
+                    }
+                )
             }
             item {
                 Column(Modifier.padding(16.dp)) {

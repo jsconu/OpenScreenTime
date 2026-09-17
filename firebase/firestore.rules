@@ -108,7 +108,8 @@ service cloud.firestore {
           && request.resource.data.diff(resource.data).affectedKeys()
                .hasOnly(['dailyLimitMinutes', 'appLimits', 'locked', 'dailyUnlockGoal',
                          'bedtimeStartMinutes', 'bedtimeEndMinutes', 'blockedDomains',
-                         'temporaryUnlockUntilMs', 'requestedExtraMinutes', 'alwaysAllowedPackages']);
+                         'temporaryUnlockUntilMs', 'requestedExtraMinutes', 'alwaysAllowedPackages',
+                         'alwaysAllowedContacts']);
 
         // Negotiated limits (#14) and "more time" requests (#23): the linked device may
         // write these with no passcode/parent-mode gate at all - deliberately separate from

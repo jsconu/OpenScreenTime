@@ -39,6 +39,12 @@ internal class LimitsRepository(private val db: FirebaseFirestore) {
             .update("alwaysAllowedPackages", packages).await()
     }
 
+    /** See #34 - phone numbers that can still call/text through a bedtime block. */
+    suspend fun updateAlwaysAllowedContacts(parentUid: String, childId: String, contacts: List<String>) {
+        db.document(FirestorePaths.childDoc(parentUid, childId))
+            .update("alwaysAllowedContacts", contacts).await()
+    }
+
     suspend fun proposeLimits(
         parentUid: String,
         childId: String,

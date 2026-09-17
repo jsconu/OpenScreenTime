@@ -78,7 +78,15 @@ data class ChildProfile(
      * wins - that stays the one absolute signal, same reasoning as #23. See
      * [decideEnforcement].
      */
-    val alwaysAllowedPackages: List<String> = emptyList()
+    val alwaysAllowedPackages: List<String> = emptyList(),
+    /**
+     * Phone numbers that can still call/text during bedtime, when every other number is
+     * blocked - see #34. Meant for a parent's own number(s), so a kid is never truly
+     * unreachable overnight. Normalized loosely (digits only, last-10-compared) when
+     * matched against an incoming call/text, not stored normalized, so a parent can enter
+     * a number however they'd naturally type it.
+     */
+    val alwaysAllowedContacts: List<String> = emptyList()
 ) {
     fun toMap(): Map<String, Any?> = mapOf(
         "name" to name,
@@ -99,7 +107,8 @@ data class ChildProfile(
         "blockedDomains" to blockedDomains,
         "requestedExtraMinutes" to requestedExtraMinutes,
         "temporaryUnlockUntilMs" to temporaryUnlockUntilMs,
-        "alwaysAllowedPackages" to alwaysAllowedPackages
+        "alwaysAllowedPackages" to alwaysAllowedPackages,
+        "alwaysAllowedContacts" to alwaysAllowedContacts
     )
 
     companion object {
@@ -124,7 +133,8 @@ data class ChildProfile(
             blockedDomains = (map["blockedDomains"] as? List<String>) ?: emptyList(),
             requestedExtraMinutes = (map["requestedExtraMinutes"] as? Long)?.toInt(),
             temporaryUnlockUntilMs = map["temporaryUnlockUntilMs"] as? Long,
-            alwaysAllowedPackages = (map["alwaysAllowedPackages"] as? List<String>) ?: emptyList()
+            alwaysAllowedPackages = (map["alwaysAllowedPackages"] as? List<String>) ?: emptyList(),
+            alwaysAllowedContacts = (map["alwaysAllowedContacts"] as? List<String>) ?: emptyList()
         )
     }
 }
