@@ -65,6 +65,7 @@ private const val STREAK_LOOKBACK_DAYS = 14
 fun ChildDetailScreen(
     repository: FamilyRepository,
     childId: String,
+    onOpenReport: () -> Unit,
     onBack: () -> Unit
 ) {
     val parentUid = repository.currentUid ?: return
@@ -128,6 +129,7 @@ fun ChildDetailScreen(
                 onChangeUnlockGoal = { showUnlockGoalDialog = true },
                 onChangeBedtime = { showBedtimeDialog = true }
             )
+            weeklyReportSection(onOpenReport = onOpenReport)
             websiteBlockingSection(
                 blockedDomains = currentChild.blockedDomains,
                 newDomainText = newBlockedDomain,
@@ -385,6 +387,21 @@ private fun LazyListScope.lockAndLimitsSection(
             )
             Spacer(Modifier.height(8.dp))
             OutlinedButton(onClick = onChangeBedtime) { Text("Change bedtime") }
+        }
+    }
+}
+
+/**
+ * A single tap through to the rolling 4-week report (see #29) - deliberately not shown
+ * inline here, the same "one tap away, not glanceable" reasoning as the Dashboard's calm
+ * status card instead of raw numbers.
+ */
+private fun LazyListScope.weeklyReportSection(onOpenReport: () -> Unit) {
+    item {
+        Column(Modifier.padding(16.dp)) {
+            OutlinedButton(onClick = onOpenReport, modifier = Modifier.fillMaxWidth()) {
+                Text("View weekly report")
+            }
         }
     }
 }

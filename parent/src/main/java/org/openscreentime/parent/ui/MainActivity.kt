@@ -126,6 +126,18 @@ class MainActivity : ComponentActivity() {
                                 ChildDetailScreen(
                                     repository = repository,
                                     childId = childId,
+                                    onOpenReport = { navController.navigate("report/$childId") },
+                                    onBack = { navController.popBackStack() }
+                                )
+                            }
+                            composable(
+                                "report/{childId}",
+                                arguments = listOf(navArgument("childId") { type = NavType.StringType })
+                            ) { backStackEntry ->
+                                val childId = backStackEntry.arguments?.getString("childId")!!
+                                WeeklyReportScreen(
+                                    repository = repository,
+                                    childId = childId,
                                     onBack = { navController.popBackStack() }
                                 )
                             }
