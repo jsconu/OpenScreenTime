@@ -4,6 +4,7 @@ import android.accessibilityservice.AccessibilityService
 import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Intent
+import android.graphics.Color
 import android.os.Handler
 import android.os.Looper
 import android.view.accessibility.AccessibilityEvent
@@ -189,6 +190,10 @@ class AppLimitAccessibilityService : AccessibilityService() {
         )
         val notification = NotificationCompat.Builder(this, ParentApp.MONITOR_CHANNEL_ID)
             .setSmallIcon(iconRes)
+            // See the kid app's AppLimitAccessibilityService: Android forces every
+            // status-bar icon to a flat white silhouette regardless of setColor() -
+            // this only reaches the pulled-down notification shade's icon circle.
+            .setColor(statusTierColor(tier))
             .setContentTitle(getString(R.string.self_monitor_notification_title))
             .setContentText(getString(R.string.self_monitor_notification_text))
             .setContentIntent(openIntent)
@@ -217,4 +222,11 @@ class AppLimitAccessibilityService : AccessibilityService() {
         /** See #28 - packages that bypass bedtime and every daily/app-limit check. */
         @Volatile var alwaysAllowedCache: Set<String> = emptySet()
     }
+}
+
+/** Matches the three status-icon colors used elsewhere (e.g. the Dashboard's "Granted" text, the lock button). */
+private fun statusTierColor(tier: StatusTier): Int = when (tier) {
+    StatusTier.GOOD -> Color.parseColor("#2E7D32")
+    StatusTier.CAUTION -> Color.parseColor("#F57C00")
+    StatusTier.STOP -> Color.parseColor("#B3261E")
 }

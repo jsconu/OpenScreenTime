@@ -4,6 +4,7 @@ import android.accessibilityservice.AccessibilityService
 import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Intent
+import android.graphics.Color
 import android.os.Handler
 import android.os.Looper
 import android.view.accessibility.AccessibilityEvent
@@ -210,6 +211,12 @@ class AppLimitAccessibilityService : AccessibilityService() {
         )
         val notification = NotificationCompat.Builder(this, KidApp.MONITOR_CHANNEL_ID)
             .setSmallIcon(iconRes)
+            // Android forces every status-bar icon to a flat white silhouette (alpha
+            // channel only, RGB ignored) - true for every app since Lollipop, not
+            // something a notification can opt out of. setColor() only reaches the
+            // pulled-down notification shade, tinting the icon's background circle
+            // there to match the tier, since that's the one place color can show at all.
+            .setColor(statusTierColor(tier))
             .setContentTitle(getString(R.string.monitor_notification_title))
             .setContentText(getString(R.string.monitor_notification_text))
             .setContentIntent(openIntent)
@@ -226,4 +233,11 @@ class AppLimitAccessibilityService : AccessibilityService() {
         private const val TICK_INTERVAL_MS = 30_000L
         private const val WARNING_NOTIFICATION_ID = 1002
     }
+}
+
+/** Matches the three status-icon colors used elsewhere (e.g. the Dashboard's "Granted" text, the lock button). */
+private fun statusTierColor(tier: StatusTier): Int = when (tier) {
+    StatusTier.GOOD -> Color.parseColor("#2E7D32")
+    StatusTier.CAUTION -> Color.parseColor("#F57C00")
+    StatusTier.STOP -> Color.parseColor("#B3261E")
 }
