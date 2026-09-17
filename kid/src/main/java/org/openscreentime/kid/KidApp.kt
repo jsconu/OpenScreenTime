@@ -77,6 +77,7 @@ class KidApp : Application() {
             LiveChildState.bedtimeEndMinutes = child.bedtimeEndMinutes
             LiveChildState.blockedDomains = child.blockedDomains
             LiveChildState.temporaryUnlockUntilMs = child.temporaryUnlockUntilMs
+            LiveChildState.alwaysAllowedPackages = child.alwaysAllowedPackages.toSet()
 
             val wasLocked = LiveChildState.lockedCache
             LiveChildState.lockedCache = child.locked

@@ -91,7 +91,14 @@ struct ChildDetailView: View {
                     child: child,
                     newDomain: $newBlockedDomain
                 )
-                AppUsageSection(stats: stats, child: child, editingApp: $editingApp)
+                AppUsageSection(
+                    repository: repository,
+                    parentUid: parentUid,
+                    childId: childId,
+                    stats: stats,
+                    child: child,
+                    editingApp: $editingApp
+                )
                 Section {
                     Button("Remove \(child.name)", role: .destructive) { showDeleteConfirm = true }
                 }
@@ -383,7 +390,12 @@ private struct WebsiteBlockingSection: View {
     }
 }
 
+/// See #28 - "always allow" lets an app through the daily limit and bedtime, no matter
+/// what; meant for a phone/calling app or maps, not a way to skip a limit day to day.
 private struct AppUsageSection: View {
+    let repository: FamilyRepository
+    let parentUid: String
+    let childId: String
     let stats: DailyStats
     let child: ChildProfile
     @Binding var editingApp: String?
@@ -393,15 +405,35 @@ private struct AppUsageSection: View {
     }
 
     var body: some View {
-        Section("App usage today") {
+        Section {
             if stats.appUsage.isEmpty {
                 Text("No app usage synced yet.").foregroundStyle(.secondary)
             }
             ForEach(sortedUsage) { app in
-                AppUsageRow(app: app, limitMinutes: child.appLimits[app.packageName]) {
-                    editingApp = app.packageName
-                }
+                AppUsageRow(
+                    app: app,
+                    limitMinutes: child.appLimits[app.packageName],
+                    alwaysAllowed: child.alwaysAllowedPackages.contains(app.packageName),
+                    onTap: { editingApp = app.packageName },
+                    onToggleAlwaysAllowed: { allowed in toggleAlwaysAllowed(app.packageName, allowed) }
+                )
             }
+        } header: {
+            Text("App usage today")
+        } footer: {
+            Text("\"Always allow\" lets an app through the daily limit and bedtime, no matter what.")
+        }
+    }
+
+    private func toggleAlwaysAllowed(_ packageName: String, _ allowed: Bool) {
+        var updated = child.alwaysAllowedPackages
+        if allowed {
+            if !updated.contains(packageName) { updated.append(packageName) }
+        } else {
+            updated.removeAll { $0 == packageName }
+        }
+        Task {
+            try? await repository.updateAlwaysAllowedPackages(parentUid: parentUid, childId: childId, packages: updated)
         }
     }
 }
@@ -409,7 +441,9 @@ private struct AppUsageSection: View {
 private struct AppUsageRow: View {
     let app: AppUsage
     let limitMinutes: Int?
+    let alwaysAllowed: Bool
     let onTap: () -> Void
+    let onToggleAlwaysAllowed: (Bool) -> Void
 
     private var subtitle: String {
         if let limitMinutes {
@@ -419,17 +453,16 @@ private struct AppUsageRow: View {
     }
 
     var body: some View {
-        Button(action: onTap) {
-            HStack {
-                VStack(alignment: .leading) {
-                    Text(app.appName)
-                    Text(subtitle).font(.caption).foregroundStyle(.secondary)
-                }
-                Spacer()
-                Text("Limit").font(.caption).foregroundStyle(.blue)
+        HStack {
+            VStack(alignment: .leading) {
+                Text(app.appName)
+                Text(subtitle).font(.caption).foregroundStyle(.secondary)
             }
+            Spacer()
+            Toggle("Always allow", isOn: Binding(get: { alwaysAllowed }, set: onToggleAlwaysAllowed))
+                .labelsHidden()
+            Button("Limit", action: onTap).font(.caption).foregroundStyle(.blue)
         }
-        .foregroundStyle(.primary)
     }
 }
 

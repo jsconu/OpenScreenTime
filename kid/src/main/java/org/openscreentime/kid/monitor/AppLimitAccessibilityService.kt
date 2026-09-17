@@ -116,7 +116,8 @@ class AppLimitAccessibilityService : AccessibilityService() {
             // self-tracking equivalent, which never supplies this.
             appAlreadyPaused = pkg?.let { it in usageStore.pausedApps },
             nowMs = System.currentTimeMillis(),
-            temporaryUnlockUntilMs = LiveChildState.temporaryUnlockUntilMs
+            temporaryUnlockUntilMs = LiveChildState.temporaryUnlockUntilMs,
+            alwaysAllowedPackages = LiveChildState.alwaysAllowedPackages
         )
     }
 

@@ -44,6 +44,11 @@ struct ChildProfile: Identifiable, Equatable {
     /// Epoch milliseconds until which the kid is temporarily let through bedtime and any
     /// daily/app-limit block - never a parent lock, which stays absolute. See #23.
     var temporaryUnlockUntilMs: Int64?
+    /// Packages that stay usable no matter what - bypass the daily limit, every per-app
+    /// limit, and bedtime, the same way `temporaryUnlockUntilMs` does, but a parent lock
+    /// still always wins (see #28). Enforcement only runs on the Android apps today, same
+    /// as every other limit field here - this app can view/edit the list regardless.
+    var alwaysAllowedPackages: [String] = []
 
     func toMap() -> [String: Any] {
         var map: [String: Any] = [
@@ -54,7 +59,8 @@ struct ChildProfile: Identifiable, Equatable {
             "appLimits": appLimits,
             "locked": locked,
             "isSelf": isSelf,
-            "blockedDomains": blockedDomains
+            "blockedDomains": blockedDomains,
+            "alwaysAllowedPackages": alwaysAllowedPackages
         ]
         map["deviceUid"] = deviceUid
         map["parentPasscodeHash"] = parentPasscodeHash
@@ -90,7 +96,8 @@ struct ChildProfile: Identifiable, Equatable {
             blockedDomains: (map["blockedDomains"] as? [String]) ?? [],
             requestedExtraMinutes: map["requestedExtraMinutes"] as? Int,
             temporaryUnlockUntilMs: (map["temporaryUnlockUntilMs"] as? Int64)
-                ?? (map["temporaryUnlockUntilMs"] as? Int).map(Int64.init)
+                ?? (map["temporaryUnlockUntilMs"] as? Int).map(Int64.init),
+            alwaysAllowedPackages: (map["alwaysAllowedPackages"] as? [String]) ?? []
         )
     }
 }

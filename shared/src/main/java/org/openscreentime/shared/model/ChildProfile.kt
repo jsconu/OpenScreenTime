@@ -69,7 +69,16 @@ data class ChildProfile(
      * parent granting a [requestedExtraMinutes] request, never by the kid device itself.
      * See #23 and [decideEnforcement].
      */
-    val temporaryUnlockUntilMs: Long? = null
+    val temporaryUnlockUntilMs: Long? = null,
+    /**
+     * Packages that stay usable no matter what - they bypass the daily limit, every
+     * per-app limit, and bedtime, the same way [temporaryUnlockUntilMs] does. Meant for a
+     * small allowlist a parent trusts unconditionally (a phone/calling app, maps), not a
+     * per-app limit override. Unlike [temporaryUnlockUntilMs], a parent lock still always
+     * wins - that stays the one absolute signal, same reasoning as #23. See
+     * [decideEnforcement].
+     */
+    val alwaysAllowedPackages: List<String> = emptyList()
 ) {
     fun toMap(): Map<String, Any?> = mapOf(
         "name" to name,
@@ -89,7 +98,8 @@ data class ChildProfile(
         "bedtimeEndMinutes" to bedtimeEndMinutes,
         "blockedDomains" to blockedDomains,
         "requestedExtraMinutes" to requestedExtraMinutes,
-        "temporaryUnlockUntilMs" to temporaryUnlockUntilMs
+        "temporaryUnlockUntilMs" to temporaryUnlockUntilMs,
+        "alwaysAllowedPackages" to alwaysAllowedPackages
     )
 
     companion object {
@@ -113,7 +123,8 @@ data class ChildProfile(
             bedtimeEndMinutes = (map["bedtimeEndMinutes"] as? Long)?.toInt(),
             blockedDomains = (map["blockedDomains"] as? List<String>) ?: emptyList(),
             requestedExtraMinutes = (map["requestedExtraMinutes"] as? Long)?.toInt(),
-            temporaryUnlockUntilMs = map["temporaryUnlockUntilMs"] as? Long
+            temporaryUnlockUntilMs = map["temporaryUnlockUntilMs"] as? Long,
+            alwaysAllowedPackages = (map["alwaysAllowedPackages"] as? List<String>) ?: emptyList()
         )
     }
 }

@@ -181,6 +181,12 @@ public final class FamilyRepository {
         try await db.document(FirestorePaths.childDoc(parentUid, childId)).updateData(["blockedDomains": domains])
     }
 
+    /// Replaces the whole always-allowed list (see #28, `ChildProfile.alwaysAllowedPackages`).
+    func updateAlwaysAllowedPackages(parentUid: String, childId: String, packages: [String]) async throws {
+        try await db.document(FirestorePaths.childDoc(parentUid, childId))
+            .updateData(["alwaysAllowedPackages": packages])
+    }
+
     /// Grants `minutes` of temporary unlock starting now, and clears the pending request. See #23.
     func grantExtraTime(parentUid: String, childId: String, minutes: Int) async throws {
         let untilMs = Int64(Date().timeIntervalSince1970 * 1000) + Int64(minutes) * 60_000

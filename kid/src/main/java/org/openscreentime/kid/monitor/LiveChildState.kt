@@ -26,4 +26,6 @@ object LiveChildState {
     @Volatile var blockedDomains: List<String> = emptyList()
     /** See #23 - a parent-granted "more time" window; null or in the past means no active grant. */
     @Volatile var temporaryUnlockUntilMs: Long? = null
+    /** See #28 - packages that bypass bedtime and every daily/app-limit check. */
+    @Volatile var alwaysAllowedPackages: Set<String> = emptySet()
 }

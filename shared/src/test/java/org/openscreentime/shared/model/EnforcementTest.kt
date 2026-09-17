@@ -308,4 +308,75 @@ class EnforcementTest {
         val input = baseline.copy(liveTotalScreenTimeMs = 999 * 60_000L)
         assertEquals(listOf(EnforcementEvent.Block(BlockReason.DAILY_LIMIT)), decideEnforcement(input))
     }
+
+    // --- Always-allowed apps (see #28) ---
+
+    @Test
+    fun `an always-allowed foreground app skips a reached daily limit`() {
+        val input = baseline.copy(
+            liveTotalScreenTimeMs = 999 * 60_000L,
+            foregroundPackage = "com.example.phone",
+            alwaysAllowedPackages = setOf("com.example.phone")
+        )
+        assertEquals(emptyList<EnforcementEvent>(), decideEnforcement(input))
+    }
+
+    @Test
+    fun `an always-allowed foreground app skips bedtime too`() {
+        val input = baseline.copy(
+            bedtimeStartMinutes = 1260,
+            bedtimeEndMinutes = 420,
+            nowMinutesOfDay = 0,
+            foregroundPackage = "com.example.phone",
+            alwaysAllowedPackages = setOf("com.example.phone")
+        )
+        assertEquals(emptyList<EnforcementEvent>(), decideEnforcement(input))
+    }
+
+    @Test
+    fun `an always-allowed foreground app skips its own per-app limit`() {
+        val input = baseline.copy(
+            foregroundPackage = "com.example.phone",
+            appLimitMinutes = 30,
+            appUsedMs = 999 * 60_000L,
+            alwaysAllowedPackages = setOf("com.example.phone")
+        )
+        assertEquals(emptyList<EnforcementEvent>(), decideEnforcement(input))
+    }
+
+    @Test
+    fun `always-allowed never overrides a parent lock`() {
+        val input = baseline.copy(
+            locked = true,
+            foregroundPackage = "com.example.phone",
+            alwaysAllowedPackages = setOf("com.example.phone")
+        )
+        assertEquals(listOf(EnforcementEvent.Block(BlockReason.PARENT_LOCK)), decideEnforcement(input))
+    }
+
+    @Test
+    fun `a different foreground app is not exempted by another app's always-allowed entry`() {
+        val input = baseline.copy(
+            liveTotalScreenTimeMs = 999 * 60_000L,
+            foregroundPackage = "com.example.other",
+            alwaysAllowedPackages = setOf("com.example.phone")
+        )
+        assertEquals(listOf(EnforcementEvent.Block(BlockReason.DAILY_LIMIT)), decideEnforcement(input))
+    }
+
+    @Test
+    fun `always-allowed has no effect with no foreground app, eg at the home screen`() {
+        val input = baseline.copy(
+            liveTotalScreenTimeMs = 999 * 60_000L,
+            foregroundPackage = null,
+            alwaysAllowedPackages = setOf("com.example.phone")
+        )
+        assertEquals(listOf(EnforcementEvent.Block(BlockReason.DAILY_LIMIT)), decideEnforcement(input))
+    }
+
+    @Test
+    fun `no always-allowed packages set behaves exactly as before`() {
+        val input = baseline.copy(liveTotalScreenTimeMs = 999 * 60_000L, foregroundPackage = "com.example")
+        assertEquals(listOf(EnforcementEvent.Block(BlockReason.DAILY_LIMIT)), decideEnforcement(input))
+    }
 }

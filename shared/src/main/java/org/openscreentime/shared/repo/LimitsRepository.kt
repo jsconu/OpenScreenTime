@@ -33,6 +33,12 @@ internal class LimitsRepository(private val db: FirebaseFirestore) {
             .update("blockedDomains", domains).await()
     }
 
+    /** See #28 - packages that bypass every limit/bedtime check, the same way a temporary unlock does. */
+    suspend fun updateAlwaysAllowedPackages(parentUid: String, childId: String, packages: List<String>) {
+        db.document(FirestorePaths.childDoc(parentUid, childId))
+            .update("alwaysAllowedPackages", packages).await()
+    }
+
     suspend fun proposeLimits(
         parentUid: String,
         childId: String,

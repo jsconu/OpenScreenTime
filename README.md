@@ -25,7 +25,8 @@ OpenScreenTime is MIT licensed so families and developers can inspect it, modify
   notification digest (plain text, grouped by app, never synced to a parent).
 - **`parent`** — installed on the parent's phone. Shows live stats for each
   paired child and lets the parent change the daily limit or a per-app limit
-  at any time.
+  at any time, and mark specific apps "always allowed" so they stay usable
+  (a phone/calling app, maps) even once the daily limit or bedtime hits.
 - **`shared`** — the data models and Firestore access code both apps use.
 - **`ios`** — an iOS build of the parent app (Swift/SwiftUI), for a parent on
   an iPhone pairing with an Android kid device. See [`ios/README.md`](ios/README.md)

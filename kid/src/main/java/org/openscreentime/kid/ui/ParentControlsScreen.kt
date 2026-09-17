@@ -13,6 +13,7 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
+import androidx.compose.material3.Checkbox
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.width
 import androidx.compose.material3.ListItem
@@ -209,6 +210,11 @@ fun ParentControlsScreen(
                     style = MaterialTheme.typography.labelLarge,
                     modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
                 )
+                Text(
+                    "\"Always allow\" lets an app through the daily limit and bedtime, no matter what.",
+                    style = MaterialTheme.typography.bodySmall,
+                    modifier = Modifier.padding(horizontal = 16.dp)
+                )
             }
             if (appUsage.isEmpty()) {
                 item {
@@ -227,7 +233,23 @@ fun ParentControlsScreen(
                         Text(if (limit != null) "Limit: $limit min/day" else "No limit set")
                     },
                     trailingContent = {
-                        TextButton(onClick = { editingApp = app.packageName }) { Text("Limit") }
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text("Always allow", style = MaterialTheme.typography.labelSmall)
+                            Checkbox(
+                                checked = app.packageName in child.alwaysAllowedPackages,
+                                onCheckedChange = { allowed ->
+                                    val updated = if (allowed) {
+                                        child.alwaysAllowedPackages + app.packageName
+                                    } else {
+                                        child.alwaysAllowedPackages - app.packageName
+                                    }
+                                    scope.launch {
+                                        repository.updateAlwaysAllowedPackages(parentUid, childId, updated)
+                                    }
+                                }
+                            )
+                            TextButton(onClick = { editingApp = app.packageName }) { Text("Limit") }
+                        }
                     }
                 )
             }

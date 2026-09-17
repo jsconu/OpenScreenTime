@@ -4,8 +4,8 @@ See [issue #7](../../../issues/7) for the requirements analysis this was scoped 
 and [issue #26](../../../issues/26) for the parity pass that brought it in line with most
 of the Android parent app: sign up/in, dashboard, add-child + pairing-code display, child
 detail (stats, limits, lock, unlock goal, bedtime, streaks, negotiated-proposal approve/
-decline, website blocking, "more time" grant/decline), passcode settings, feedback, crash
-reporting. It does **not** cover self-tracking - that needs the same OS-level monitoring
+decline, website blocking, always-allowed apps, "more time" grant/decline), passcode
+settings, feedback, crash reporting. It does **not** cover self-tracking - that needs the same OS-level monitoring
 capability the iOS kid app is blocked on (see #7) - or off-screen-idea tips or an
 appearance (theme/text size) settings screen, both lower-priority and not yet ported.
 

@@ -16,6 +16,7 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
@@ -149,7 +150,16 @@ fun ChildDetailScreen(
             appUsageSection(
                 appUsage = stats.appUsage,
                 appLimits = currentChild.appLimits,
-                onEditApp = { editingApp = it }
+                alwaysAllowedPackages = currentChild.alwaysAllowedPackages,
+                onEditApp = { editingApp = it },
+                onToggleAlwaysAllowed = { pkg, allowed ->
+                    val updated = if (allowed) {
+                        currentChild.alwaysAllowedPackages + pkg
+                    } else {
+                        currentChild.alwaysAllowedPackages - pkg
+                    }
+                    scope.launch { repository.updateAlwaysAllowedPackages(parentUid, childId, updated) }
+                }
             )
             removeChildSection(childName = currentChild.name, onRequestDelete = { showDeleteConfirm = true })
         }
@@ -434,13 +444,21 @@ private fun LazyListScope.websiteBlockingSection(
 private fun LazyListScope.appUsageSection(
     appUsage: List<AppUsage>,
     appLimits: Map<String, Int>,
-    onEditApp: (String) -> Unit
+    alwaysAllowedPackages: List<String>,
+    onEditApp: (String) -> Unit,
+    onToggleAlwaysAllowed: (String, Boolean) -> Unit
 ) {
     item {
         Text(
             "App usage today",
             style = MaterialTheme.typography.labelLarge,
             modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+        )
+        Text(
+            "\"Always allow\" lets an app through the daily limit and bedtime, no matter what - " +
+                "meant for a phone/calling app or maps, not a way to skip a limit day to day.",
+            style = MaterialTheme.typography.bodySmall,
+            modifier = Modifier.padding(horizontal = 16.dp)
         )
     }
     if (appUsage.isEmpty()) {
@@ -453,12 +471,24 @@ private fun LazyListScope.appUsageSection(
         }
     }
     items(appUsage.sortedByDescending { it.foregroundTimeMs }, key = { it.packageName }) { app ->
-        AppUsageRow(app = app, limitMinutes = appLimits[app.packageName], onEdit = { onEditApp(app.packageName) })
+        AppUsageRow(
+            app = app,
+            limitMinutes = appLimits[app.packageName],
+            alwaysAllowed = app.packageName in alwaysAllowedPackages,
+            onEdit = { onEditApp(app.packageName) },
+            onToggleAlwaysAllowed = { onToggleAlwaysAllowed(app.packageName, it) }
+        )
     }
 }
 
 @Composable
-private fun AppUsageRow(app: AppUsage, limitMinutes: Int?, onEdit: () -> Unit) {
+private fun AppUsageRow(
+    app: AppUsage,
+    limitMinutes: Int?,
+    alwaysAllowed: Boolean,
+    onEdit: () -> Unit,
+    onToggleAlwaysAllowed: (Boolean) -> Unit
+) {
     ListItem(
         headlineContent = { Text(app.appName) },
         supportingContent = {
@@ -471,7 +501,11 @@ private fun AppUsageRow(app: AppUsage, limitMinutes: Int?, onEdit: () -> Unit) {
             )
         },
         trailingContent = {
-            TextButton(onClick = onEdit) { Text("Limit") }
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text("Always allow", style = MaterialTheme.typography.labelSmall)
+                Checkbox(checked = alwaysAllowed, onCheckedChange = onToggleAlwaysAllowed)
+                TextButton(onClick = onEdit) { Text("Limit") }
+            }
         }
     )
 }

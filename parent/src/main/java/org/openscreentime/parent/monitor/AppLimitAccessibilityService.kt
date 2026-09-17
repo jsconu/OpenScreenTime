@@ -107,8 +107,9 @@ class AppLimitAccessibilityService : AccessibilityService() {
             foregroundPackage = pkg,
             appLimitMinutes = appLimitMinutes,
             appUsedMs = pkg?.let { usageStore.appUsageMs[it] } ?: 0,
-            appWarned = pkg?.let { it in usageStore.warnedApps } ?: false
+            appWarned = pkg?.let { it in usageStore.warnedApps } ?: false,
             // appAlreadyPaused intentionally left null - no pause feature on this app.
+            alwaysAllowedPackages = alwaysAllowedCache
         )
     }
 
@@ -213,5 +214,7 @@ class AppLimitAccessibilityService : AccessibilityService() {
         /** Minutes since local midnight; either null = no bedtime window set. See #15. */
         @Volatile var bedtimeStartMinutes: Int? = null
         @Volatile var bedtimeEndMinutes: Int? = null
+        /** See #28 - packages that bypass bedtime and every daily/app-limit check. */
+        @Volatile var alwaysAllowedCache: Set<String> = emptySet()
     }
 }

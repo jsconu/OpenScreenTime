@@ -70,7 +70,14 @@ data class EnforcementInput(
      * bypassed: it's a separate, stronger signal the parent controls directly, not something
      * a time-limit exception should ever override.
      */
-    val temporaryUnlockUntilMs: Long? = null
+    val temporaryUnlockUntilMs: Long? = null,
+    /**
+     * See #28 - packages a parent has marked always-allowed. When [foregroundPackage] is
+     * one of these, every check below (bedtime, daily limit, per-app limit) is skipped for
+     * this tick, the same way an active [temporaryUnlockUntilMs] is - but a parent lock is
+     * never bypassed, same reasoning as the temporary-unlock exception.
+     */
+    val alwaysAllowedPackages: Set<String> = emptySet()
 )
 
 private const val WARNING_THRESHOLD_MS = 5 * 60_000L
@@ -86,11 +93,15 @@ val WARNING_THRESHOLD_MINUTES = WARNING_THRESHOLD_MS / 60_000L
  * behavior is carried over unchanged from the code this was extracted from, not a new
  * behavior introduced by this refactor - see EnforcementTest for the cases that pin it.
  *
- * Two deliberate exceptions to that:
+ * Three deliberate exceptions to that:
  *
  * An active [EnforcementInput.temporaryUnlockUntilMs] (see #23) skips bedtime and every
  * daily/app-level check for this tick - but never a parent lock, which stays absolute
  * regardless.
+ *
+ * A [EnforcementInput.foregroundPackage] that's in [EnforcementInput.alwaysAllowedPackages]
+ * (see #28) does the same - skips bedtime and every daily/app-level check - for the same
+ * reason: a parent lock is a separate, stronger signal neither exception should override.
  *
  * The daily-limit check runs even when [EnforcementInput.foregroundPackage] is null (e.g.
  * the kid is on the home screen, not inside any app). The previous, duplicated
@@ -100,16 +111,17 @@ val WARNING_THRESHOLD_MINUTES = WARNING_THRESHOLD_MS / 60_000L
  */
 fun decideEnforcement(input: EnforcementInput): List<EnforcementEvent> {
     val temporarilyUnlocked = input.temporaryUnlockUntilMs?.let { it > input.nowMs } ?: false
+    val alwaysAllowed = input.foregroundPackage != null && input.foregroundPackage in input.alwaysAllowedPackages
 
     if (isInBedtimeWindow(input.nowMinutesOfDay, input.bedtimeStartMinutes, input.bedtimeEndMinutes) &&
-        !temporarilyUnlocked
+        !temporarilyUnlocked && !alwaysAllowed
     ) {
         return listOf(EnforcementEvent.Block(BlockReason.BEDTIME))
     }
     if (input.locked) {
         return listOf(EnforcementEvent.Block(BlockReason.PARENT_LOCK))
     }
-    if (temporarilyUnlocked) {
+    if (temporarilyUnlocked || alwaysAllowed) {
         return emptyList()
     }
 

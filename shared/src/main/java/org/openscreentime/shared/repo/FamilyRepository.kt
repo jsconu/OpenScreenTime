@@ -94,6 +94,10 @@ class FamilyRepository(
     suspend fun updateBlockedDomains(parentUid: String, childId: String, domains: List<String>) =
         limits.updateBlockedDomains(parentUid, childId, domains)
 
+    /** Replaces the whole always-allowed list (see #28, [ChildProfile.alwaysAllowedPackages]). */
+    suspend fun updateAlwaysAllowedPackages(parentUid: String, childId: String, packages: List<String>) =
+        limits.updateAlwaysAllowedPackages(parentUid, childId, packages)
+
     /**
      * Kid-initiated, passcode-free suggestion (see #14) - writes only the two proposal
      * fields, never the real limits. Either parameter may be left null to leave that
