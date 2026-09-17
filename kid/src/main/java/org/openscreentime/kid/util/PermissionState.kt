@@ -1,5 +1,7 @@
 package org.openscreentime.kid.util
 
+import android.app.admin.DevicePolicyManager
+import android.content.ComponentName
 import android.content.Context
 import android.net.VpnService
 import android.os.PowerManager
@@ -7,6 +9,7 @@ import android.provider.Settings
 import android.text.TextUtils
 import androidx.core.app.NotificationManagerCompat
 import org.openscreentime.kid.monitor.AppLimitAccessibilityService
+import org.openscreentime.kid.monitor.UninstallProtectionAdminReceiver
 
 data class PermissionState(
     val overlay: Boolean,
@@ -38,6 +41,18 @@ data class PermissionActions(
 /** Separate from [PermissionState.allGranted] - the digest is optional (see #20). */
 fun isNotificationListenerEnabled(context: Context): Boolean =
     NotificationManagerCompat.getEnabledListenerPackages(context).contains(context.packageName)
+
+/**
+ * See #31 - also separate from [PermissionState.allGranted]: this is a deterrent against
+ * the kid uninstalling the app, not something core monitoring needs to function, so it
+ * lives behind the passcode-gated Parent controls screen rather than as a StatusScreen
+ * setup step. See [UninstallProtectionAdminReceiver] for what this actually does and doesn't
+ * guarantee.
+ */
+fun isDeviceAdminActive(context: Context): Boolean {
+    val dpm = context.getSystemService(Context.DEVICE_POLICY_SERVICE) as DevicePolicyManager
+    return dpm.isAdminActive(ComponentName(context, UninstallProtectionAdminReceiver::class.java))
+}
 
 fun checkPermissions(context: Context): PermissionState = PermissionState(
     overlay = Settings.canDrawOverlays(context),

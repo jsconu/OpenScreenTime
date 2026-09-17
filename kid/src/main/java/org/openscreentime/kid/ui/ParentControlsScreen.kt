@@ -1,5 +1,8 @@
 package org.openscreentime.kid.ui
 
+import android.app.admin.DevicePolicyManager
+import android.content.ComponentName
+import android.content.Intent
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -25,6 +28,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -33,9 +37,14 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
 import kotlinx.coroutines.launch
 import org.openscreentime.kid.data.UsageStore
+import org.openscreentime.kid.monitor.UninstallProtectionAdminReceiver
+import org.openscreentime.kid.util.isDeviceAdminActive
 import org.openscreentime.shared.model.AppUsage
 import org.openscreentime.shared.model.ChildProfile
 import org.openscreentime.shared.model.addBlockedDomain
@@ -67,6 +76,18 @@ fun ParentControlsScreen(
         usageStore.appUsageMs.map { (pkg, ms) ->
             AppUsage(packageName = pkg, appName = usageStore.appNames[pkg] ?: pkg, foregroundTimeMs = ms)
         }.sortedByDescending { it.foregroundTimeMs }
+    }
+
+    // See #31 - re-checked on resume, since activating/deactivating device admin happens
+    // in a system Settings screen this composable navigates away to and back from.
+    var deviceAdminActive by remember { mutableStateOf(isDeviceAdminActive(context)) }
+    val lifecycleOwner = LocalLifecycleOwner.current
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) deviceAdminActive = isDeviceAdminActive(context)
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
     }
 
     var showLimitDialog by remember { mutableStateOf(false) }
@@ -148,6 +169,39 @@ fun ParentControlsScreen(
                     )
                     Spacer(Modifier.height(8.dp))
                     OutlinedButton(onClick = { showBedtimeDialog = true }) { Text("Change bedtime") }
+                }
+            }
+            item {
+                Column(Modifier.padding(16.dp)) {
+                    Text("Uninstall protection", style = MaterialTheme.typography.labelLarge)
+                    Spacer(Modifier.height(4.dp))
+                    Text(
+                        if (deviceAdminActive) {
+                            "On. Removing OpenScreenTime now shows a warning to ask a parent first."
+                        } else {
+                            "Off. Turning this on adds a warning before OpenScreenTime can be " +
+                                "removed - it can still be removed by someone who taps through " +
+                                "the warning, but it's a clear signal to ask a parent first."
+                        },
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                    if (!deviceAdminActive) {
+                        Spacer(Modifier.height(8.dp))
+                        OutlinedButton(onClick = {
+                            val intent = Intent(DevicePolicyManager.ACTION_ADD_DEVICE_ADMIN).apply {
+                                putExtra(
+                                    DevicePolicyManager.EXTRA_DEVICE_ADMIN,
+                                    ComponentName(context, UninstallProtectionAdminReceiver::class.java)
+                                )
+                                putExtra(
+                                    DevicePolicyManager.EXTRA_ADD_EXPLANATION,
+                                    "Adds a warning before OpenScreenTime can be removed from this " +
+                                        "device, so removing it needs a parent's OK first."
+                                )
+                            }
+                            context.startActivity(intent)
+                        }) { Text("Turn on") }
+                    }
                 }
             }
             item {

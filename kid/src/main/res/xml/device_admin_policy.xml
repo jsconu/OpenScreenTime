@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- No policies requested - this app only needs to be an active device admin so its
+     UninstallProtectionAdminReceiver can show a custom warning on deactivation (see #31).
+     It doesn't manage passwords, wipe data, or any other device-admin capability. -->
+<device-admin xmlns:android="http://schemas.android.com/apk/res/android">
+    <uses-policies />
+</device-admin>

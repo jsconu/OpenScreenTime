@@ -3,6 +3,7 @@ package org.openscreentime.kid.ui
 import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -55,6 +56,15 @@ class BlockOverlayActivity : ComponentActivity() {
             OpenScreenTimeTheme {
                 val scope = rememberCoroutineScope()
                 var requestedExtraMinutes by remember { mutableStateOf<Int?>(null) }
+
+                // The system back gesture/button used to just finish this activity, which
+                // (since it's the root of its own task - see the FLAG_ACTIVITY_NEW_TASK
+                // launch below) revealed whatever was underneath: the blocked app itself,
+                // fully interactive again. Swallowing it here means the only way off this
+                // screen is the explicit "OK" button, which - unlike the old back-gesture
+                // path - always takes them to the home screen, never back into the app
+                // that got them blocked.
+                BackHandler {}
 
                 // See #23: a parent granting the request lands here live - dismiss the block
                 // screen right away instead of leaving the kid staring at a screen they've
@@ -122,7 +132,7 @@ class BlockOverlayActivity : ComponentActivity() {
                             )
                             finish()
                         }) {
-                            Text("Go to home screen")
+                            Text("OK")
                         }
                     }
                 }

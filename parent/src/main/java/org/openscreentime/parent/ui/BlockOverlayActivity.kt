@@ -3,6 +3,7 @@ package org.openscreentime.parent.ui
 import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -44,6 +45,10 @@ class BlockOverlayActivity : ComponentActivity() {
 
         setContent {
             OpenScreenTimeTheme {
+                // See the kid app's BlockOverlayActivity for why: the back gesture/button
+                // used to just finish this activity and reveal the blocked app underneath.
+                BackHandler {}
+
                 Surface(modifier = Modifier.fillMaxSize()) {
                     Column(
                         modifier = Modifier.fillMaxSize().padding(32.dp),
@@ -81,7 +86,7 @@ class BlockOverlayActivity : ComponentActivity() {
                             )
                             finish()
                         }) {
-                            Text("Go to home screen")
+                            Text("OK")
                         }
                     }
                 }

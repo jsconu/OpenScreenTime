@@ -73,6 +73,13 @@ useful for dinner, bedtime, or just needing quiet right now. "Resume" undoes
 it. The kid app also posts a one-time notification when screen time or an
 app is within 5 minutes of its limit, so a limit is rarely a total surprise.
 
+From the same passcode-gated "Parent controls" screen, a parent can also turn
+on "Uninstall protection" (Android's device-admin API) so that removing the
+kid app first shows a warning to ask a parent. This is a deterrent, not a
+hard block - Android doesn't let a plain (non-Device-Owner) device admin
+actually veto uninstalling, only warn - so a kid who taps through the
+warning can still remove it.
+
 ### What "screen time" means here
 
 - **Screen time** = time spent unlocked and interactive, measured from
