@@ -1,5 +1,17 @@
 # OpenScreenTime Parent for iOS
 
+**Beta note - no iOS kid app yet.** This is the *parent* app only. There is no
+OpenScreenTime Kid for iPhone: Apple has not granted this project the Family Controls
+entitlement that a kid-side screen-time app on iOS requires (see #7 for the full
+requirements analysis). In practice this means:
+- A child paired through this app must use OpenScreenTime Kid on an **Android** phone -
+  the pairing code this app generates won't work with anything on iOS.
+- Two parents on any mix of Android/iOS can manage the same Android kid device together
+  (see the root README's "Multiple parents" section) - this app is fully usable for that.
+- Self-tracking (a parent tracking their own device the way they track a kid's) isn't
+  available here either, for the same entitlement reason - it needs the same OS-level
+  monitoring capability.
+
 See [issue #7](../../../issues/7) for the requirements analysis this was scoped against,
 and [issue #26](../../../issues/26) for the parity pass that brought it in line with most
 of the Android parent app: sign up/in, dashboard, add-child + pairing-code display, child

@@ -5,9 +5,11 @@ OpenScreenTime is a free, open-source, no-nonsense screen time platform for fami
 No account fees, no ads, no dark patterns. MIT licensed — fork it, self-host
 your own backend, send patches back.
 
-**Project status: Early functional prototype**
+**Project status: Early functional prototype (beta)**
 
 Android pairing, screen-time tracking, limits, locking, and parent controls are implemented. Cross-platform support and real-device testing are ongoing.
+
+**iOS note:** the iOS app is parent-only. There is no OpenScreenTime Kid for iPhone yet — Apple hasn't granted this project the Family Controls entitlement a kid-side app on iOS requires. A child must be paired using OpenScreenTime Kid on an Android phone; the iOS app can then manage that same child (and share access with another parent on Android or iOS), but can't pair or self-track on an iPhone itself. See [`ios/README.md`](ios/README.md) for details.
 
 **Why OpenScreenTime?**
 

@@ -180,7 +180,15 @@ private struct AddChildSheet: View {
     var body: some View {
         NavigationStack {
             Form {
-                TextField("Child's name", text: $name)
+                Section {
+                    TextField("Child's name", text: $name)
+                } footer: {
+                    Text(
+                        "Beta note: there's no OpenScreenTime Kid app for iPhone yet - Apple's " +
+                        "Family Controls entitlement for it hasn't been granted. The pairing code " +
+                        "this creates only works with OpenScreenTime Kid on an Android phone."
+                    )
+                }
             }
             .navigationTitle("Add a child")
             .toolbar {
@@ -246,9 +254,12 @@ private struct PairingCodeSheet: View {
     var body: some View {
         NavigationStack {
             VStack(spacing: 16) {
-                Text("Enter this code in OpenScreenTime Kid on your child's phone:")
+                Text("Enter this code in OpenScreenTime Kid on your child's Android phone:")
                 Text(code)
                     .font(.system(size: 36, weight: .bold, design: .monospaced))
+                Text("There's no iPhone version of OpenScreenTime Kid yet.")
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
             }
             .padding(32)
             .navigationTitle("Pairing code")
