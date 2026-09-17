@@ -32,6 +32,38 @@ no shared backend.
 5. Match the existing code style (plain Kotlin + Jetpack Compose, no extra
    architecture layers beyond what's already there).
 
+## Bigger things the community could tackle
+
+Two gaps are explicitly not on the maintainer's near-term roadmap, not
+because they're unwanted, but because each is closer in scope to standing
+up a whole additional platform target than to a normal feature PR. If
+either interests you and you have what it takes to start, please open an
+issue first so the approach can be agreed on before you sink real time in.
+
+- **An iOS kid app** (see [issue #7](https://github.com/jsconu/OpenScreenTime/issues/7)).
+  Blocked on Apple's Family Controls entitlement, which this project hasn't
+  been granted - you'd need an active Apple Developer account and to go
+  through Apple's entitlement-request process yourself. Once granted, the
+  actual screen-time enforcement (via Apple's Screen Time / Family Controls
+  APIs) is a genuinely different mechanism than the Android kid app's
+  AccessibilityService approach, so this is closer to a fresh design than a
+  port of existing Kotlin code.
+- **Smartwatch tracking and limits.** Only Wear OS has any viable path at
+  all - Tizen, Fitbit, Garmin, and Apple Watch expose no third-party API for
+  this. Even Wear OS means a genuinely separate app: its own Wear Compose
+  UI (round-screen layouts, rotary/bezel input), its own on-watch
+  AccessibilityService-based enforcement loop, and its own sync layer back
+  to the phone over Google's Wearable Data Layer API. Watch battery/Doze
+  constraints are stricter than a phone's, so reliable background survival
+  is a harder version of a problem this project has already had to solve
+  once for phones (see #5). Real physical watch hardware is close to
+  required for meaningful testing.
+
+Smaller, more approachable gaps if you want something scoped down: porting
+the Android parent app's weekly report to iOS (see `ios/README.md`),
+broader OEM background-survival testing (#5), and a from-scratch security
+review of `firebase/firestore.rules` beyond the initial pass in #2.
+
 ## Reporting bugs
 
 Please include: your Android version, which app (kid or parent), and steps

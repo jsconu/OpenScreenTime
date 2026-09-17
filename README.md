@@ -1,13 +1,19 @@
 # OpenScreenTime
 
+> **Beta.** Functional and real-device-tested on Android, but young: no security audit,
+> limited device/OEM coverage, and two known gaps the community could pick up (see
+> [What's missing](#whats-missing-and-could-use-a-contributor) below) - an iOS kid app and
+> smartwatch tracking/limits.
+
 OpenScreenTime is a free, open-source, no-nonsense screen time platform for families. The project is designed to work across Android and iOS, starting with a functional Android implementation for parents and kids.
 
 No account fees, no ads, no dark patterns. MIT licensed — fork it, self-host
 your own backend, send patches back.
 
-**Project status: Early functional prototype (beta)**
-
-Android pairing, screen-time tracking, limits, locking, and parent controls are implemented. Cross-platform support and real-device testing are ongoing.
+Android pairing, screen-time tracking, limits, locking, and parent controls
+are implemented and have been through multiple rounds of real-device testing
+(see [Project status](#project-status)). The iOS app covers the *parent*
+side only - see the iOS note below and [`ios/README.md`](ios/README.md).
 
 **iOS note:** the iOS app is parent-only. There is no OpenScreenTime Kid for iPhone yet — Apple hasn't granted this project the Family Controls entitlement a kid-side app on iOS requires. A child must be paired using OpenScreenTime Kid on an Android phone; the iOS app can then manage that same child (and share access with another parent on Android or iOS), but can't pair or self-track on an iPhone itself. See [`ios/README.md`](ios/README.md) for details.
 
@@ -19,22 +25,31 @@ The goal isn't to maximize time spent in an app. It's to help families use techn
 
 OpenScreenTime is MIT licensed so families and developers can inspect it, modify it, self-host it, and contribute improvements.
 
+## Screens
+
+[`design/screens.html`](design/screens.html) is a from-source reproduction of
+every screen in both apps — real copy, real component states, pulled
+directly from the Compose/SwiftUI source, not mockup placeholder text.
+Open it in a browser to see the whole UI, including the "calm by design"
+callouts explaining the reasoning behind specific choices. It's a faithful
+rebuild, not photographs of a real device — if you're running this on your
+own phone, real screenshots to replace it are a very welcome contribution.
+
 ## How it works
 
 - **`kid`** — installed on the child's phone. Runs quietly in the background,
   measures screen time and unlocks, enforces the limits a parent has set, and
-  syncs a daily summary to the cloud. Optionally, the kid can turn on a local
-  notification digest (plain text, grouped by app, never synced to a parent).
+  syncs a daily summary to the cloud.
 - **`parent`** — installed on the parent's phone. Shows live stats for each
-  paired child and lets the parent change the daily limit or a per-app limit
-  at any time, and mark specific apps "always allowed" so they stay usable
-  (a phone/calling app, maps) even once the daily limit or bedtime hits.
-- **`shared`** — the data models and Firestore access code both apps use.
+  paired child, edits limits, and can opt into tracking the parent's *own*
+  screen time the same way.
+- **`shared`** — the data models, Firestore access code, and enforcement
+  logic both apps use.
 - **`ios`** — an iOS build of the parent app (Swift/SwiftUI), for a parent on
   an iPhone pairing with an Android kid device. See [`ios/README.md`](ios/README.md)
   for setup and current scope; there is no iOS kid app yet (see
-  [issue #7](https://github.com/jsconu/OpenScreenTime/issues/7) for why that's a
-  much bigger, separate undertaking).
+  [issue #7](https://github.com/jsconu/OpenScreenTime/issues/7) and
+  [What's missing](#whats-missing-and-could-use-a-contributor) below).
 
 Sync between the two apps runs on [Firebase](https://firebase.google.com)
 (Firestore + Authentication). There is no custom server to host — each
@@ -48,6 +63,60 @@ control the same child by signing into the same parent account
 ```
 parent app  <---sync--->  Firebase (Firestore + Auth)  <---sync--->  kid app
 ```
+
+### What a parent can do
+
+- Set a **daily time limit** and, per app, a **per-app time limit**.
+- Set a **bedtime window** — a full block independent of the minute-count
+  limit, with its own "wind down" copy on the block screen rather than an
+  alternative-activity suggestion.
+- Mark specific apps **"always allowed"** so they stay usable (a phone/calling
+  app, maps) even once the daily limit or bedtime hits.
+- Mark specific **phone numbers as always-allowed during bedtime** — every
+  other call is screened and blocked (Android's call-screening/redirection
+  roles, Android 10+), and texts from anyone else are muted rather than
+  alerting, so the phone is never fully unreachable overnight but also isn't
+  a distraction magnet.
+- **Lock now / End screen time now** at any point, for any reason, undone
+  with "Resume."
+- Turn on **uninstall protection** (Android device-admin) so removing the
+  kid app shows a warning first — a deterrent, not a hard block.
+- Block specific **websites/domains** device-wide, in any browser, via a
+  local DNS sinkhole.
+- Approve or decline a kid's own **suggested limit change**, and a kid's
+  **request for more time** when blocked (including during bedtime) — both
+  need an actual parent tap, never self-granted.
+- View a **rolling 4-week report** (total screen time and a by-app trend) —
+  reached with one deliberate tap, not shown on the main dashboard, and
+  capped to 4 weeks on purpose so it stays a tool for noticing a trend, not
+  an archive to pore over. Opening it repeatedly in one day triggers its own
+  "check in, not check up" prompt, the same friction-pause idea used on the
+  kid side, turned back on the parent.
+- Opt the **parent's own device** into the exact same tracking/limits a kid
+  gets — reusing the same dashboard card, same stats, same lock button.
+
+### What a kid sees and can do
+
+- A **calm status icon** (comfortably under / approaching / at-or-over
+  today's goal) instead of a running number — explained right there in the
+  app, along with *why* only this signal is shown.
+- A **non-punitive streak** that only ever counts up; there's no "you missed
+  a day" state anywhere.
+- A **friction pause** (a few quiet seconds, once per app per day) crossing
+  halfway into a per-app limit — not a block, a beat to notice the automatic
+  reach for the app.
+- A block screen with a **concrete alternative activity** suggestion (except
+  at bedtime) and a **request more time** option that a parent has to
+  approve.
+- **Suggest a change** to their own limit, no passcode needed — sent to a
+  parent for approval, not applied directly.
+- An optional, **local-only notification digest** (plain text, grouped by
+  app) — nothing here is ever synced to a parent.
+- A passcode-gated **Parent controls** screen, for a parent to edit limits
+  directly on the kid's device without needing their own phone in hand.
+- **Never** the weekly report, exact usage numbers, or a by-app breakdown —
+  that detail stays with the parent by design, meant to start a
+  conversation rather than run silent surveillance.
 
 ### Pairing
 
@@ -105,13 +174,42 @@ Everything resets at local midnight on the kid's device.
 
 ## Project status
 
-This is an early, functional scaffold: the pairing flow, background
-tracking, limit enforcement, and the parent dashboard are all implemented,
-but it hasn't been through a real build/device test pass yet (see
-[Building](#building) below) or a security audit. Treat it as a solid
-starting point to build on, not a finished product — contributions very
-welcome, especially around real-device testing, notification nudges before a
-limit hits, and weekly/historical stats.
+The Android apps (kid and parent) are functional and have been through
+several rounds of real-device installation, pairing, and day-to-day use,
+with bugs found that way fixed as they came up (see the closed issues for
+specifics). That's still one household's worth of devices, not broad OEM
+coverage — Samsung/Xiaomi/etc.-specific background-execution behavior in
+particular is still an open question (see
+[issue #5](https://github.com/jsconu/OpenScreenTime/issues/5)). There's also
+been no independent security audit; review `firebase/firestore.rules`
+yourself before trusting it with real family data. Treat it as a solid,
+actively-used starting point, not a finished, broadly-verified product.
+
+### What's missing (and could use a contributor)
+
+Two things are explicitly out of scope for now, not because they're
+undesirable, but because they're each roughly as much work as a whole
+additional platform target — real community-contributor territory:
+
+- **An iOS kid app.** Requires Apple's Family Controls entitlement, which
+  this project hasn't been granted (see
+  [issue #7](https://github.com/jsconu/OpenScreenTime/issues/7) for the
+  requirements analysis). Someone with an active Apple Developer account and
+  the patience for Apple's entitlement-request process could unblock this.
+- **Smartwatch tracking/limits.** Technically feasible only for Wear OS (not
+  Tizen, Fitbit, Garmin, or Apple Watch - none of those expose a third-party
+  API for this at all), but it means a genuinely separate app: its own
+  Wear Compose UI, its own on-watch AccessibilityService-based enforcement
+  loop, its own sync layer back to the phone over Google's Wearable Data
+  Layer API, and real physical watch hardware to test background-survival
+  on, since watch battery/Doze constraints are stricter than a phone's.
+  Worth doing if someone's motivated and has the hardware; not something to
+  start without knowing that scope going in.
+
+Smaller, more approachable gaps: weekly-report iOS parity (see
+[`ios/README.md`](ios/README.md)), broader OEM background-survival testing
+(#5), and a from-scratch security review of the Firestore rules (#2 covered
+an initial pass, not a full audit).
 
 ## Building
 
@@ -149,8 +247,11 @@ On the kid's device, after installing, the app will ask you to grant a few
 things from its status screen: **Accessibility service**, **display over
 other apps**, **notifications**, **battery optimization**, and the
 **website filter**. Those are required for tracking and limit enforcement.
-An optional **calm notification list** can be turned on separately; it is
-not part of that core checklist.
+A few more are optional, granted separately, and not part of that core
+checklist: a **calm notification list** (local-only digest), **notification
+access** (also powers muting non-allowed texts during bedtime), and, from
+the passcode-gated Parent controls screen, **uninstall protection** and
+**bedtime call blocking** (Android 10+ only for the latter).
 
 ## Security & privacy notes for anyone deploying this
 
@@ -165,7 +266,12 @@ not part of that core checklist.
 - This kind of app is inherently powerful (it can see app usage and block
   apps). Use it thoughtfully and talk to your kid about it — it's meant to
   support a conversation about healthy screen time, not to be sprung on
-  someone unannounced.
+  someone unannounced. The detailed weekly report and by-app breakdown are
+  deliberately parent-only and never reach the kid app, for the same reason.
+- The optional bedtime-call-blocking and notification-access permissions are
+  powerful too (they can screen calls and dismiss notifications) - both are
+  opt-in, separate from the core tracking checklist, and only take effect
+  during the configured bedtime window.
 - All three apps report crashes to Firebase Crashlytics (same Firebase
   project as everything else): stack traces plus device model/OS/app
   version, never any family data. CI/emulator builds never report.
