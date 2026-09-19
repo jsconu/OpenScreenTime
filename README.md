@@ -110,6 +110,13 @@ parent app  <---sync--->  Firebase (Firestore + Auth)  <---sync--->  kid app
   the weekly report plus a day-by-day digest. A parent can also choose to
   show today's count on the kid's phone, with a note that watching counts
   can make phone use feel more compulsive.
+- Ask the built-in **help bot** (the "?" on the dashboard) how to use the app,
+  why it's designed the way it is, or what public guidance says about
+  reasonable screen-time limits for a given age - answers cite their sources
+  (WHO, the Canadian 24-Hour Movement Guidelines, the AAP, the UK Chief
+  Medical Officers). It's a small offline retriever over a curated knowledge
+  base, not an AI model: nothing you type leaves the phone, and it says so
+  plainly when it has no answer.
 - Opt the **parent's own device** into the exact same tracking/limits a kid
   gets — reusing the same dashboard card, same stats, same lock button.
 
@@ -130,6 +137,8 @@ parent app  <---sync--->  Firebase (Firestore + Auth)  <---sync--->  kid app
   parent for approval, not applied directly.
 - An optional, **local-only notification digest** (plain text, grouped by
   app) — nothing here is ever synced to a parent.
+- The same **help bot** behind a "?" on their home screen, for how the app
+  works and why.
 - A passcode-gated **Parent controls** screen, for a parent to edit limits
   directly on the kid's device without needing their own phone in hand.
 - **Never** the weekly report, exact usage numbers, or a by-app breakdown —

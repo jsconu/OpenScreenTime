@@ -69,6 +69,7 @@ fun StatusScreen(
     onCycleTextSize: () -> Unit,
     onOpenColorSettings: () -> Unit,
     onOpenParentMode: () -> Unit,
+    onOpenHelp: () -> Unit,
     onProposeChange: () -> Unit,
     onOpenNotificationDigest: () -> Unit,
     onRequestNotificationListener: () -> Unit,
@@ -80,11 +81,14 @@ fun StatusScreen(
             .verticalScroll(rememberScrollState())
             .padding(24.dp)
     ) {
-        Text(
-            "Hi, $childName",
-            style = MaterialTheme.typography.headlineSmall,
-            modifier = Modifier.testTag("status_greeting")
-        )
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(
+                "Hi, $childName",
+                style = MaterialTheme.typography.headlineSmall,
+                modifier = Modifier.weight(1f).testTag("status_greeting")
+            )
+            TextButton(onClick = onOpenHelp, modifier = Modifier.testTag("status_help")) { Text("?") }
+        }
         Spacer(Modifier.height(4.dp))
         Text(
             if (permissions.allGranted) "Screen time monitoring is active." else "A few permissions are needed to finish setup.",

@@ -33,12 +33,14 @@ import org.openscreentime.kid.util.PermissionActions
 import org.openscreentime.kid.util.checkPermissions
 import org.openscreentime.shared.model.ChildProfile
 import org.openscreentime.shared.model.DailyStats
+import org.openscreentime.shared.model.HelpAudience
 import org.openscreentime.shared.model.calmParentStatusLabel
 import org.openscreentime.shared.model.computeStreak
 import org.openscreentime.shared.model.todayDateString
 import org.openscreentime.shared.repo.FirestorePaths
+import org.openscreentime.sharedui.HelpBotScreen
 
-private enum class KidScreen { STATUS, PARENT_UNLOCK, PARENT_CONTROLS, PROPOSE_CHANGE, NOTIFICATION_DIGEST }
+private enum class KidScreen { STATUS, PARENT_UNLOCK, PARENT_CONTROLS, PROPOSE_CHANGE, NOTIFICATION_DIGEST, HELP }
 
 class MainActivity : ComponentActivity() {
 
@@ -196,6 +198,7 @@ class MainActivity : ComponentActivity() {
                                 startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
                             },
                             onOpenParentMode = { screen = KidScreen.PARENT_UNLOCK },
+                            onOpenHelp = { screen = KidScreen.HELP },
                             onProposeChange = { screen = KidScreen.PROPOSE_CHANGE },
                             onOpenNotificationDigest = { screen = KidScreen.NOTIFICATION_DIGEST },
                             onRequestNotificationListener = {
@@ -205,6 +208,10 @@ class MainActivity : ComponentActivity() {
                                 pairingStore.clear()
                                 paired = false
                             }
+                        )
+                        KidScreen.HELP -> HelpBotScreen(
+                            audience = HelpAudience.KID,
+                            onBack = { screen = KidScreen.STATUS }
                         )
                         KidScreen.PARENT_UNLOCK -> ParentModeUnlockScreen(
                             child = child,

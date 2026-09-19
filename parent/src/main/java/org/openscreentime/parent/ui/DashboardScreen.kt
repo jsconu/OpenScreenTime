@@ -67,6 +67,7 @@ fun DashboardScreen(
     onOpenSettings: () -> Unit,
     onOpenAppearance: () -> Unit,
     onOpenSelfTracking: () -> Unit,
+    onOpenHelp: () -> Unit,
     onSignOut: () -> Unit
 ) {
     val parentUid = repository.currentUid ?: return
@@ -98,6 +99,12 @@ fun DashboardScreen(
             TopAppBar(
                 title = { Text("Manage Your Screen Time") },
                 actions = {
+                    TextButton(
+                        onClick = onOpenHelp,
+                        modifier = Modifier
+                            .testTag("dashboard_help")
+                            .semantics { contentDescription = "Help" }
+                    ) { Text("?") }
                     var showMenu by remember { mutableStateOf(false) }
                     TextButton(
                         onClick = { showMenu = true },

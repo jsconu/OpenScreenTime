@@ -33,7 +33,9 @@ import org.openscreentime.parent.data.AppearancePrefs
 import org.openscreentime.parent.data.SelfProfileStore
 import org.openscreentime.parent.monitor.ScreenMonitorService
 import org.openscreentime.parent.util.checkPermissions
+import org.openscreentime.shared.model.HelpAudience
 import org.openscreentime.shared.model.PasscodeInfo
+import org.openscreentime.sharedui.HelpBotScreen
 
 class MainActivity : ComponentActivity() {
 
@@ -111,6 +113,7 @@ class MainActivity : ComponentActivity() {
                                     onOpenSettings = { navController.navigate("settings") },
                                     onOpenAppearance = { navController.navigate("appearance") },
                                     onOpenSelfTracking = { navController.navigate("self") },
+                                    onOpenHelp = { navController.navigate("help") },
                                     onSignOut = {
                                         repository.signOut()
                                         AppLockState.unlockedThisSession = false
@@ -138,6 +141,12 @@ class MainActivity : ComponentActivity() {
                                 WeeklyReportScreen(
                                     repository = repository,
                                     childId = childId,
+                                    onBack = { navController.popBackStack() }
+                                )
+                            }
+                            composable("help") {
+                                HelpBotScreen(
+                                    audience = HelpAudience.PARENT,
                                     onBack = { navController.popBackStack() }
                                 )
                             }
