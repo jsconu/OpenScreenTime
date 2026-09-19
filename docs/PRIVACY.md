@@ -1,15 +1,14 @@
 # OpenScreenTime Privacy Policy
 
-*Draft - fill in the bracketed items, have it read over, and host it at a public URL (for example
-GitHub Pages) before submitting to Google Play. Last updated: [DATE].*
+*Last updated: September 19, 2026.*
 
 OpenScreenTime is a free, open-source screen-time app for families: a **parent app** and a **kid
 app** (Android), plus a parent app for iPhone that is built but not yet released. It is meant to support a conversation about healthy
 screen time, not to watch someone in secret. This policy explains what it collects, where that goes,
 and how to have it deleted.
 
-**Who runs this service:** [YOUR NAME OR ORGANIZATION], the person who operates the Firebase project
-this build connects to. Contact: [CONTACT EMAIL].
+**Who runs this service:** Justin Scoville, the person who operates the Firebase project
+this build connects to. Contact: trumpetmadnesshq@gmail.com.
 
 ## What the apps collect
 
@@ -67,13 +66,13 @@ The kid app is used by children, but only after a parent has installed it, grant
 and paired it. The child does not create an account or provide personal details; a parent enters
 the child's display name. Parents can see the child's usage; children see only a simple calm
 status indicator unless a parent chooses to show more. We do not knowingly collect information from
-children outside that parent-controlled setup. [ADD ANY REGION-SPECIFIC WORDING YOU NEED, e.g.
-COPPA/GDPR-K, after checking the laws that apply to you.]
+children outside that parent-controlled setup. If you believe a child's information has been
+collected without a parent's involvement, contact trumpetmadnesshq@gmail.com and it will be deleted.
 
 ## Retention and deletion
 
 Usage is kept per day so the app can show a four-week report. A parent can delete a child profile in
-the app, which also deletes that child's usage history and installed-apps list. To have **all** of a family's data removed, email [CONTACT EMAIL] from the parent's account
+the app, which also deletes that child's usage history and installed-apps list. To have **all** of a family's data removed, email trumpetmadnesshq@gmail.com from the parent's account
 email and it will be deleted (the account, the child profiles, their daily usage and installed-apps lists). Uninstalling the
 apps stops all collection on that phone.
 
@@ -91,4 +90,4 @@ If this policy changes, the new version will be posted at this address with an u
 
 ## Contact
 
-[CONTACT EMAIL]
+trumpetmadnesshq@gmail.com

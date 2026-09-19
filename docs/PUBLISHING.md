@@ -28,8 +28,13 @@ only you can do. Tick them off in order.
 
 ## 2. Signing key (once, on your machine)
 
-The upload key never goes in git and never passes through anyone else. Create it with the JDK that
-ships with Android Studio (its `jbr/bin/keytool`), or any JDK 17:
+The upload key never goes in git and never passes through anyone else. On Windows the easy way is the
+script, which finds the JDK that ships with Android Studio, asks for a password (typed, never shown or
+logged), creates the keystore, writes `keystore.properties`, and prints the fingerprints for Firebase:
+
+    powershell -ExecutionPolicy Bypass -File scripts\create-upload-keystore.ps1
+
+Or do it by hand with `keytool` (Android Studio's `jbr/bin/keytool`, or any JDK 17):
 
     keytool -genkeypair -v -keystore openscreentime-upload.jks -alias upload \
       -keyalg RSA -keysize 2048 -validity 10000
