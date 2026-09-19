@@ -30,4 +30,7 @@ object LiveChildState {
     @Volatile var alwaysAllowedPackages: Set<String> = emptySet()
     /** See #34 - phone numbers that can still call/text through a bedtime block. */
     @Volatile var alwaysAllowedContacts: List<String> = emptyList()
+    /** See #35 - parent-controlled tracking toggles; nothing is collected while these are off. */
+    @Volatile var trackUnlocks: Boolean = false
+    @Volatile var trackNotifications: Boolean = false
 }

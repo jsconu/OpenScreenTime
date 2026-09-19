@@ -25,7 +25,9 @@ decline, website blocking, always-allowed apps, "more time" grant/decline), pass
 settings, feedback, crash reporting. It does **not** cover self-tracking - that needs the same OS-level monitoring
 capability the iOS kid app is blocked on (see #7) - or off-screen-idea tips or an
 appearance (theme/text size) settings screen, both lower-priority and not yet ported.
-The Android parent app's **weekly report** (#29, a rolling 4-week bar chart and by-app
+The optional unlock/notification **tracking toggles** (#35) are here too, but only as switches -
+the counting happens on the Android devices and the report that displays it isn't ported. The
+Android parent app's **weekly report** (#29, a rolling 4-week bar chart and by-app
 trend) also hasn't been ported here yet - a sizable SwiftUI/Swift Charts lift on its own,
 tracked as a follow-up rather than bundled into #26's parity pass. Bedtime call/text
 blocking (#34) and uninstall protection (#31) are Android-kid-device-only features with no

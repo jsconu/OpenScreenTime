@@ -79,6 +79,8 @@ class KidApp : Application() {
             LiveChildState.temporaryUnlockUntilMs = child.temporaryUnlockUntilMs
             LiveChildState.alwaysAllowedPackages = child.alwaysAllowedPackages.toSet()
             LiveChildState.alwaysAllowedContacts = child.alwaysAllowedContacts
+            LiveChildState.trackUnlocks = child.trackUnlocks
+            LiveChildState.trackNotifications = child.trackNotifications
 
             val wasLocked = LiveChildState.lockedCache
             LiveChildState.lockedCache = child.locked

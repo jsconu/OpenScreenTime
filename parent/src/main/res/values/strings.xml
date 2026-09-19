@@ -3,4 +3,5 @@
     <string name="self_monitor_notification_title">Tracking your own screen time</string>
     <string name="self_monitor_notification_text">OpenScreenTime is tracking your screen time, same as it does for your kids.</string>
     <string name="accessibility_service_description">Lets OpenScreenTime see which app is in the foreground on this device, so it can track per-app time and show a reminder when a limit is reached. No screen content is read or recorded.</string>
+    <string name="notification_count_service_label">OpenScreenTime notification counts</string>
 </resources>

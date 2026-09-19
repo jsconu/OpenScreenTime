@@ -103,6 +103,13 @@ parent app  <---sync--->  Firebase (Firestore + Auth)  <---sync--->  kid app
   an archive to pore over. Opening it repeatedly in one day triggers its own
   "check in, not check up" prompt, the same friction-pause idea used on the
   kid side, turned back on the parent.
+- Turn on optional **unlock tracking** (which app was opened first after each
+  unlock) and **notification-count tracking** (overall and by app - counts
+  only, never content), each per kid and for the parent's own device. Off by
+  default, nothing is collected until a category is on, and each one adds to
+  the weekly report plus a day-by-day digest. A parent can also choose to
+  show today's count on the kid's phone, with a note that watching counts
+  can make phone use feel more compulsive.
 - Opt the **parent's own device** into the exact same tracking/limits a kid
   gets — reusing the same dashboard card, same stats, same lock button.
 

@@ -8,6 +8,7 @@ import org.openscreentime.kid.data.PairingStore
 import org.openscreentime.kid.data.UsageStore
 import org.openscreentime.shared.model.AppUsage
 import org.openscreentime.shared.model.DailyStats
+import org.openscreentime.shared.model.toAppCounts
 
 /** Periodically pushes the on-device usage snapshot up to Firestore. */
 class SyncWorker(context: Context, params: WorkerParameters) : CoroutineWorker(context, params) {
@@ -26,7 +27,11 @@ class SyncWorker(context: Context, params: WorkerParameters) : CoroutineWorker(c
             totalScreenTimeMs = usageStore.totalScreenTimeMs,
             unlockCount = usageStore.unlockCount,
             appUsage = appUsage,
-            lastSyncedAtMs = System.currentTimeMillis()
+            lastSyncedAtMs = System.currentTimeMillis(),
+            // See #35 - empty unless a parent turned the matching tracking toggle on.
+            notificationCount = usageStore.notificationCount,
+            notificationsByApp = toAppCounts(usageStore.notificationCountsByApp, usageStore.appNames),
+            unlockFirstApps = toAppCounts(usageStore.firstAppsAfterUnlock, usageStore.appNames)
         )
 
         val repository = (applicationContext as KidApp).repository

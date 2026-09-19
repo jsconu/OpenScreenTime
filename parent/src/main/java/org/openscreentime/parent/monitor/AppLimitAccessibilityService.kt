@@ -4,6 +4,7 @@ import android.accessibilityservice.AccessibilityService
 import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.graphics.Color
 import android.os.Handler
 import android.os.Looper
@@ -22,6 +23,8 @@ import org.openscreentime.shared.model.WARNING_THRESHOLD_MINUTES
 import org.openscreentime.shared.model.WarnKind
 import org.openscreentime.shared.model.computeStatusTier
 import org.openscreentime.shared.model.decideEnforcement
+import org.openscreentime.shared.model.hasUnlockWindowExpired
+import org.openscreentime.shared.model.isFirstAppAfterUnlock
 import org.openscreentime.shared.model.isInBedtimeWindow
 import org.openscreentime.shared.model.nowMinutesOfDay
 
@@ -67,6 +70,7 @@ class AppLimitAccessibilityService : AccessibilityService() {
     override fun onAccessibilityEvent(event: AccessibilityEvent?) {
         if (event?.eventType != AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) return
         val pkg = event.packageName?.toString() ?: return
+        recordFirstAppIfPending(pkg)
         if (pkg == packageName || pkg == currentPackage) return
 
         flushCurrent(restart = false)
@@ -75,6 +79,33 @@ class AppLimitAccessibilityService : AccessibilityService() {
         cacheAppLabel(pkg)
         checkLimits(pkg)
         updateStatusNotification()
+    }
+
+    /**
+     * See #35 - if a parent has unlock tracking on, the unlock receiver left a pending unlock
+     * behind; the first real app to come forward within the window is the one recorded. This runs
+     * before the "same app as before" early return above, since unlocking straight back into the
+     * app that was open when the screen went off is exactly a first-app-after-unlock too.
+     */
+    private fun recordFirstAppIfPending(pkg: String) {
+        val unlockedAt = usageStore.unlockAwaitingMs ?: return
+        val now = System.currentTimeMillis()
+        if (hasUnlockWindowExpired(unlockedAt, now)) {
+            usageStore.clearUnlockAwaiting()
+            return
+        }
+        if (isFirstAppAfterUnlock(pkg, packageName, ignoredFirstAppPackages, unlockedAt, now)) {
+            cacheAppLabel(pkg)
+            usageStore.recordFirstAppAfterUnlock(pkg)
+        }
+    }
+
+    /** The home launcher(s) and system UI: arriving there right after an unlock isn't opening an app. */
+    private val ignoredFirstAppPackages: Set<String> by lazy {
+        val home = Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_HOME)
+        packageManager.queryIntentActivities(home, PackageManager.MATCH_DEFAULT_ONLY)
+            .map { it.activityInfo.packageName }
+            .toSet() + "com.android.systemui"
     }
 
     /** Adds elapsed time for the current package. If [restart], keeps tracking it from now. */
@@ -221,6 +252,9 @@ class AppLimitAccessibilityService : AccessibilityService() {
         @Volatile var bedtimeEndMinutes: Int? = null
         /** See #28 - packages that bypass bedtime and every daily/app-limit check. */
         @Volatile var alwaysAllowedCache: Set<String> = emptySet()
+        /** See #35 - parent-controlled tracking toggles for this device's own self profile. */
+        @Volatile var trackUnlocks: Boolean = false
+        @Volatile var trackNotifications: Boolean = false
     }
 }
 

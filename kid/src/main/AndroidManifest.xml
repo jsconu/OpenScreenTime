@@ -13,6 +13,15 @@
          service needs to keep running reliably (see #5 - several OEMs kill it otherwise). -->
     <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
 
+    <!-- See #35 - lets the accessibility service find the home launcher, so landing there right
+         after an unlock isn't mistaken for opening an app. -->
+    <queries>
+        <intent>
+            <action android:name="android.intent.action.MAIN" />
+            <category android:name="android.intent.category.HOME" />
+        </intent>
+    </queries>
+
     <application
         android:name=".KidApp"
         android:allowBackup="false"

@@ -19,7 +19,14 @@ data class DailyStats(
     val totalScreenTimeMs: Long = 0,
     val unlockCount: Int = 0,
     val appUsage: List<AppUsage> = emptyList(),
-    val lastSyncedAtMs: Long = 0
+    val lastSyncedAtMs: Long = 0,
+    /**
+     * See #35 - only ever non-zero/non-empty while a parent has turned the matching tracking
+     * toggle on for this profile; nothing is collected on the device otherwise.
+     */
+    val notificationCount: Int = 0,
+    val notificationsByApp: List<AppCount> = emptyList(),
+    val unlockFirstApps: List<AppCount> = emptyList()
 ) {
     fun toMap(): Map<String, Any?> = mapOf(
         "totalScreenTimeMs" to totalScreenTimeMs,
@@ -31,7 +38,10 @@ data class DailyStats(
                 "foregroundTimeMs" to it.foregroundTimeMs
             )
         },
-        "lastSyncedAtMs" to lastSyncedAtMs
+        "lastSyncedAtMs" to lastSyncedAtMs,
+        "notificationCount" to notificationCount,
+        "notificationsByApp" to notificationsByApp.map(::appCountMap),
+        "unlockFirstApps" to unlockFirstApps.map(::appCountMap)
     )
 
     companion object {
@@ -50,11 +60,27 @@ data class DailyStats(
                 totalScreenTimeMs = (map["totalScreenTimeMs"] as? Long) ?: 0,
                 unlockCount = (map["unlockCount"] as? Long)?.toInt() ?: 0,
                 appUsage = appUsage,
-                lastSyncedAtMs = (map["lastSyncedAtMs"] as? Long) ?: 0
+                lastSyncedAtMs = (map["lastSyncedAtMs"] as? Long) ?: 0,
+                notificationCount = (map["notificationCount"] as? Long)?.toInt() ?: 0,
+                notificationsByApp = appCounts(map["notificationsByApp"]),
+                unlockFirstApps = appCounts(map["unlockFirstApps"])
             )
         }
+
+        @Suppress("UNCHECKED_CAST")
+        private fun appCounts(raw: Any?): List<AppCount> =
+            (raw as? List<Map<String, Any?>>)?.map {
+                AppCount(
+                    packageName = it["packageName"] as? String ?: "",
+                    appName = it["appName"] as? String ?: "",
+                    count = (it["count"] as? Long)?.toInt() ?: 0
+                )
+            } ?: emptyList()
     }
 }
+
+private fun appCountMap(c: AppCount): Map<String, Any?> =
+    mapOf("packageName" to c.packageName, "appName" to c.appName, "count" to c.count)
 
 fun todayDateString(): String =
     SimpleDateFormat("yyyy-MM-dd", Locale.US).format(Date())

@@ -12,6 +12,15 @@
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
 
+    <!-- See #35 - lets the accessibility service find the home launcher, so landing there right
+         after an unlock isn't mistaken for opening an app. -->
+    <queries>
+        <intent>
+            <action android:name="android.intent.action.MAIN" />
+            <category android:name="android.intent.category.HOME" />
+        </intent>
+    </queries>
+
     <application
         android:name=".ParentApp"
         android:allowBackup="false"
@@ -44,6 +53,16 @@
             <property
                 android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
                 android:value="Parental controls screen time self-tracking" />
+        </service>
+
+        <service
+            android:name=".monitor.NotificationCountListenerService"
+            android:exported="true"
+            android:label="@string/notification_count_service_label"
+            android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE">
+            <intent-filter>
+                <action android:name="android.service.notification.NotificationListenerService" />
+            </intent-filter>
         </service>
 
         <service

@@ -3,6 +3,7 @@ package org.openscreentime.shared.repo
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.tasks.await
 import org.openscreentime.shared.model.ChildProfile
+import org.openscreentime.shared.model.TrackingToggle
 
 /** Reading/writing a child's limits, and the kid-initiated propose/approve/decline flow (see #14). */
 internal class LimitsRepository(private val db: FirebaseFirestore) {
@@ -37,6 +38,12 @@ internal class LimitsRepository(private val db: FirebaseFirestore) {
     suspend fun updateAlwaysAllowedPackages(parentUid: String, childId: String, packages: List<String>) {
         db.document(FirestorePaths.childDoc(parentUid, childId))
             .update("alwaysAllowedPackages", packages).await()
+    }
+
+    /** See #35 - one of the parent-controlled tracking/display toggles. */
+    suspend fun setTrackingToggle(parentUid: String, childId: String, toggle: TrackingToggle, enabled: Boolean) {
+        db.document(FirestorePaths.childDoc(parentUid, childId))
+            .update(toggle.field, enabled).await()
     }
 
     /** See #34 - phone numbers that can still call/text through a bedtime block. */

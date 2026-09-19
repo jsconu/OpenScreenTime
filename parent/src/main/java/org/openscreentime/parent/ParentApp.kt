@@ -74,6 +74,8 @@ class ParentApp : Application() {
             AppLimitAccessibilityService.bedtimeStartMinutes = child.bedtimeStartMinutes
             AppLimitAccessibilityService.bedtimeEndMinutes = child.bedtimeEndMinutes
             AppLimitAccessibilityService.alwaysAllowedCache = child.alwaysAllowedPackages.toSet()
+            AppLimitAccessibilityService.trackUnlocks = child.trackUnlocks
+            AppLimitAccessibilityService.trackNotifications = child.trackNotifications
 
             val wasLocked = AppLimitAccessibilityService.lockedCache
             AppLimitAccessibilityService.lockedCache = child.locked

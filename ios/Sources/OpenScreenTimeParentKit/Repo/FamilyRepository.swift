@@ -181,6 +181,11 @@ public final class FamilyRepository {
         try await db.document(FirestorePaths.childDoc(parentUid, childId)).updateData(["blockedDomains": domains])
     }
 
+    /// Turns one parent-controlled tracking/display toggle on or off (see #35).
+    func setTrackingToggle(parentUid: String, childId: String, toggle: TrackingToggle, enabled: Bool) async throws {
+        try await db.document(FirestorePaths.childDoc(parentUid, childId)).updateData([toggle.rawValue: enabled])
+    }
+
     /// Replaces the whole always-allowed list (see #28, `ChildProfile.alwaysAllowedPackages`).
     func updateAlwaysAllowedPackages(parentUid: String, childId: String, packages: [String]) async throws {
         try await db.document(FirestorePaths.childDoc(parentUid, childId))

@@ -6,6 +6,7 @@ import com.google.firebase.firestore.ListenerRegistration
 import org.openscreentime.shared.model.ChildProfile
 import org.openscreentime.shared.model.DailyStats
 import org.openscreentime.shared.model.PasscodeInfo
+import org.openscreentime.shared.model.TrackingToggle
 
 /**
  * Single access point to Firebase Auth + Firestore for both the parent and kid apps.
@@ -97,6 +98,10 @@ class FamilyRepository(
     /** Replaces the whole always-allowed list (see #28, [ChildProfile.alwaysAllowedPackages]). */
     suspend fun updateAlwaysAllowedPackages(parentUid: String, childId: String, packages: List<String>) =
         limits.updateAlwaysAllowedPackages(parentUid, childId, packages)
+
+    /** Turns one tracking/display toggle on or off (see #35, [ChildProfile.trackUnlocks] and friends). */
+    suspend fun setTrackingToggle(parentUid: String, childId: String, toggle: TrackingToggle, enabled: Boolean) =
+        limits.setTrackingToggle(parentUid, childId, toggle, enabled)
 
     /** Replaces the whole always-allowed contacts list (see #34, [ChildProfile.alwaysAllowedContacts]). */
     suspend fun updateAlwaysAllowedContacts(parentUid: String, childId: String, contacts: List<String>) =

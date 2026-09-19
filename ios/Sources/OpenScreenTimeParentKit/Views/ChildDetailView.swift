@@ -91,6 +91,7 @@ struct ChildDetailView: View {
                     child: child,
                     newDomain: $newBlockedDomain
                 )
+                TrackingSection(repository: repository, parentUid: parentUid, childId: childId, child: child)
                 AppUsageSection(
                     repository: repository,
                     parentUid: parentUid,
@@ -387,6 +388,62 @@ private struct WebsiteBlockingSection: View {
     private func removeDomain(_ domain: String) {
         let updated = child.blockedDomains.filter { $0 != domain }
         Task { try? await repository.updateBlockedDomains(parentUid: parentUid, childId: childId, domains: updated) }
+    }
+}
+
+/// The four parent-controlled tracking toggles on a `ChildProfile`; the raw value is the Firestore field name.
+enum TrackingToggle: String {
+    case trackUnlocks
+    case trackNotifications
+    case showUnlocksOnKid
+    case showNotificationsOnKid
+}
+
+/// See #35 - optional tracking categories, off by default. Serves a kid's profile and (on Android,
+/// where self-tracking exists) the parent's own; the "show on their phone" options only apply to a
+/// kid. This app only flips the toggles - collection happens on the Android devices, and the
+/// weekly report that displays the results isn't ported to iOS yet.
+private struct TrackingSection: View {
+    let repository: FamilyRepository
+    let parentUid: String
+    let childId: String
+    let child: ChildProfile
+
+    private func binding(_ toggle: TrackingToggle, _ current: Bool) -> Binding<Bool> {
+        Binding(
+            get: { current },
+            set: { enabled in
+                Task {
+                    try? await repository.setTrackingToggle(
+                        parentUid: parentUid, childId: childId, toggle: toggle, enabled: enabled
+                    )
+                }
+            }
+        )
+    }
+
+    var body: some View {
+        Section {
+            Toggle("Track unlocks", isOn: binding(.trackUnlocks, child.trackUnlocks))
+            if !child.isSelf && child.trackUnlocks {
+                Toggle("Show unlocks on \(child.name)'s phone", isOn: binding(.showUnlocksOnKid, child.showUnlocksOnKid))
+            }
+            Toggle("Track notification counts", isOn: binding(.trackNotifications, child.trackNotifications))
+            if !child.isSelf && child.trackNotifications {
+                Toggle(
+                    "Show notification counts on \(child.name)'s phone",
+                    isOn: binding(.showNotificationsOnKid, child.showNotificationsOnKid)
+                )
+            }
+        } header: {
+            Text("Optional tracking")
+        } footer: {
+            Text(
+                "Off by default - nothing is collected until you turn a category on. Notification " +
+                "tracking counts only, never content. Anything shown on their phone carries a note " +
+                "that watching counts can make phone use feel more compulsive."
+            )
+        }
     }
 }
 

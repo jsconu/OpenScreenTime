@@ -34,6 +34,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import java.text.SimpleDateFormat
 import java.util.Locale
+import org.openscreentime.shared.model.AppCount
 import org.openscreentime.shared.model.ChildProfile
 import org.openscreentime.shared.model.DailyStats
 import org.openscreentime.shared.model.WeekSummary
@@ -97,6 +98,13 @@ fun WeeklyReportScreen(
             item { WhyOnlyHereCard() }
             item { WeeklyTotalsSection(report) }
             item { AppTrendsSection(report) }
+            val trackUnlocks = child?.trackUnlocks == true
+            val trackNotifications = child?.trackNotifications == true
+            if (trackUnlocks) item { UnlocksSection(report) }
+            if (trackNotifications) item { NotificationsSection(report) }
+            if (trackUnlocks || trackNotifications) {
+                item { DailyDigestSection(report, showUnlocks = trackUnlocks, showNotifications = trackNotifications) }
+            }
         }
     }
 }
@@ -190,6 +198,119 @@ private fun AppTrendsSection(report: WeeklyReport) {
             }
         }
     }
+}
+
+/** See #35 - only shown once a parent has turned unlock tracking on for this profile. */
+@Composable
+private fun UnlocksSection(report: WeeklyReport) {
+    val chronological = report.weeks.reversed()
+    val thisWeek = report.weeks.firstOrNull()
+    Column(Modifier.padding(16.dp)) {
+        Text("Unlocks", style = MaterialTheme.typography.labelLarge)
+        Spacer(Modifier.height(4.dp))
+        Text(
+            "Weekly total: ${thisWeek?.unlockCount ?: 0} this week",
+            style = MaterialTheme.typography.bodyMedium
+        )
+        Spacer(Modifier.height(12.dp))
+        BarChart(
+            values = chronological.map { it.unlockCount.toLong() },
+            color = MaterialTheme.colorScheme.tertiary,
+            modifier = Modifier.fillMaxWidth().height(80.dp)
+        )
+        WeekLabelsRow(chronological)
+        Spacer(Modifier.height(12.dp))
+        Text("Opened first after unlocking, this week", style = MaterialTheme.typography.bodyMedium)
+        AppCountList(
+            counts = thisWeek?.unlockFirstApps.orEmpty(),
+            emptyText = "Nothing recorded yet - this fills in once the phone has synced after tracking was turned on."
+        )
+    }
+}
+
+/** See #35 - only shown once a parent has turned notification tracking on for this profile. */
+@Composable
+private fun NotificationsSection(report: WeeklyReport) {
+    val chronological = report.weeks.reversed()
+    val thisWeek = report.weeks.firstOrNull()
+    Column(Modifier.padding(16.dp)) {
+        Text("Notifications", style = MaterialTheme.typography.labelLarge)
+        Spacer(Modifier.height(4.dp))
+        Text(
+            "Weekly total: ${thisWeek?.notificationCount ?: 0} this week",
+            style = MaterialTheme.typography.bodyMedium
+        )
+        Spacer(Modifier.height(12.dp))
+        BarChart(
+            values = chronological.map { it.notificationCount.toLong() },
+            color = MaterialTheme.colorScheme.tertiary,
+            modifier = Modifier.fillMaxWidth().height(80.dp)
+        )
+        WeekLabelsRow(chronological)
+        Spacer(Modifier.height(12.dp))
+        Text("By app, this week", style = MaterialTheme.typography.bodyMedium)
+        AppCountList(
+            counts = thisWeek?.notificationsByApp.orEmpty(),
+            emptyText = "Nothing recorded yet - this fills in once the phone has synced after tracking was turned on."
+        )
+    }
+}
+
+/** One line per day with synced data this week, newest first - the "daily digest." */
+@Composable
+private fun DailyDigestSection(report: WeeklyReport, showUnlocks: Boolean, showNotifications: Boolean) {
+    val days = report.weeks.firstOrNull()?.daily.orEmpty()
+    Column(Modifier.padding(16.dp)) {
+        Text("Daily digest", style = MaterialTheme.typography.labelLarge)
+        Spacer(Modifier.height(4.dp))
+        if (days.isEmpty()) {
+            Text("No days synced yet this week.", style = MaterialTheme.typography.bodySmall)
+        }
+        days.forEach { day ->
+            val parts = buildList {
+                if (showUnlocks) add("${day.unlockCount} unlocks")
+                if (showNotifications) add("${day.notificationCount} notifications")
+            }
+            Row(Modifier.fillMaxWidth().padding(vertical = 2.dp)) {
+                Text(formatDayLabel(day.date), style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f))
+                Text(parts.joinToString("  ·  "), style = MaterialTheme.typography.bodyMedium)
+            }
+        }
+    }
+}
+
+@Composable
+private fun WeekLabelsRow(chronological: List<WeekSummary>) {
+    Spacer(Modifier.height(4.dp))
+    Row(Modifier.fillMaxWidth()) {
+        chronological.forEach { week ->
+            Text(
+                formatWeekLabel(week),
+                style = MaterialTheme.typography.labelSmall,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.weight(1f)
+            )
+        }
+    }
+}
+
+@Composable
+private fun AppCountList(counts: List<AppCount>, emptyText: String) {
+    if (counts.isEmpty()) {
+        Text(emptyText, style = MaterialTheme.typography.bodySmall)
+        return
+    }
+    counts.take(TOP_APPS_SHOWN).forEach { app ->
+        Row(Modifier.fillMaxWidth().padding(vertical = 2.dp)) {
+            Text(app.appName, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f))
+            Text("${app.count}", style = MaterialTheme.typography.bodyMedium)
+        }
+    }
+}
+
+private fun formatDayLabel(date: String): String {
+    val parsed = SimpleDateFormat("yyyy-MM-dd", Locale.US).parse(date)
+    return parsed?.let { SimpleDateFormat("EEE, MMM d", Locale.US).format(it) } ?: date
 }
 
 /** Simple equal-width bars, tallest = the largest [values] entry. Left to right = [values] order. */

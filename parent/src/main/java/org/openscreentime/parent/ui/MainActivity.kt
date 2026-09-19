@@ -201,6 +201,9 @@ class MainActivity : ComponentActivity() {
                                             )
                                         )
                                     },
+                                    onRequestNotificationListener = {
+                                        startActivity(Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS))
+                                    },
                                     onViewMyStats = {
                                         selfProfileStore.childId?.let { navController.navigate("child/$it") }
                                     },

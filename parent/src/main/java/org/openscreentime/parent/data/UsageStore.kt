@@ -24,6 +24,9 @@ class UsageStore(context: Context) {
                 .putLong("totalScreenTimeMs", 0)
                 .putInt("unlockCount", 0)
                 .putString("appUsage", "{}")
+                .putString("notificationsByApp", "{}")
+                .putString("firstAppsAfterUnlock", "{}")
+                .remove("unlockAwaitingMs")
                 .putBoolean("warnedDaily", false)
                 .putStringSet("warnedApps", emptySet())
                 .apply()
@@ -103,6 +106,58 @@ class UsageStore(context: Context) {
         rolloverIfNeeded()
         prefs.edit().putInt("unlockCount", unlockCount + 1).apply()
     }
+
+    // --- See #35: optional tracking. Only ever written to while a parent has the matching toggle on. ---
+
+    /** Counts one notification from [packageName] today - a count only, never the notification's content. */
+    fun recordNotification(packageName: String) {
+        rolloverIfNeeded()
+        val map = notificationCountsByApp.toMutableMap()
+        map[packageName] = (map[packageName] ?: 0) + 1
+        prefs.edit().putString("notificationsByApp", json.encodeToString(map)).apply()
+    }
+
+    val notificationCountsByApp: Map<String, Int>
+        get() {
+            rolloverIfNeeded()
+            return decode(prefs.getString("notificationsByApp", "{}")!!)
+        }
+
+    val notificationCount: Int
+        get() = notificationCountsByApp.values.sum()
+
+    /** Marks an unlock at [nowMs] as still waiting to see which app is opened first. */
+    fun markUnlockAwaitingFirstApp(nowMs: Long) {
+        rolloverIfNeeded()
+        prefs.edit().putLong("unlockAwaitingMs", nowMs).apply()
+    }
+
+    val unlockAwaitingMs: Long?
+        get() {
+            val v = prefs.getLong("unlockAwaitingMs", -1)
+            return if (v < 0) null else v
+        }
+
+    fun clearUnlockAwaiting() {
+        prefs.edit().remove("unlockAwaitingMs").apply()
+    }
+
+    /** Records [packageName] as the app opened first after the pending unlock, and stops waiting. */
+    fun recordFirstAppAfterUnlock(packageName: String) {
+        rolloverIfNeeded()
+        val map = firstAppsAfterUnlock.toMutableMap()
+        map[packageName] = (map[packageName] ?: 0) + 1
+        prefs.edit()
+            .putString("firstAppsAfterUnlock", json.encodeToString(map))
+            .remove("unlockAwaitingMs")
+            .apply()
+    }
+
+    val firstAppsAfterUnlock: Map<String, Int>
+        get() {
+            rolloverIfNeeded()
+            return decode(prefs.getString("firstAppsAfterUnlock", "{}")!!)
+        }
 
     fun cacheAppName(packageName: String, name: String) {
         if (appNames[packageName] == name) return

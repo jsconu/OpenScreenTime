@@ -42,11 +42,13 @@ import org.openscreentime.kid.data.NotificationDigestStore
 import org.openscreentime.kid.data.TextSize
 import org.openscreentime.kid.data.ThemeMode
 import org.openscreentime.kid.data.TipsStore
+import org.openscreentime.kid.data.UsageStore
 import org.openscreentime.kid.data.label
 import org.openscreentime.kid.util.PermissionActions
 import org.openscreentime.kid.util.PermissionState
 import org.openscreentime.kid.util.isNotificationListenerEnabled
 import org.openscreentime.shared.model.DailyStats
+import org.openscreentime.shared.model.TRACKING_DISPLAY_NOTE
 import org.openscreentime.shared.model.currentDayIndex
 import org.openscreentime.shared.model.currentDayKidTip
 import org.openscreentime.shared.model.formatDuration
@@ -60,6 +62,8 @@ fun StatusScreen(
     streakDays: Int,
     parentStatusLabel: String?,
     parentStats: DailyStats?,
+    showUnlocks: Boolean,
+    showNotifications: Boolean,
     permissionActions: PermissionActions,
     onCycleTheme: () -> Unit,
     onCycleTextSize: () -> Unit,
@@ -97,6 +101,10 @@ fun StatusScreen(
                 style = MaterialTheme.typography.bodyMedium,
                 modifier = Modifier.testTag("status_streak")
             )
+        }
+        if (showUnlocks || showNotifications) {
+            Spacer(Modifier.height(8.dp))
+            TrackingCountsCard(showUnlocks = showUnlocks, showNotifications = showNotifications)
         }
         if (parentStatusLabel != null && parentStats != null) {
             Spacer(Modifier.height(8.dp))
@@ -208,6 +216,32 @@ fun StatusScreen(
         Spacer(Modifier.height(8.dp))
         OutlinedButton(onClick = onUnpair, modifier = Modifier.fillMaxWidth()) {
             Text("Unpair this device")
+        }
+    }
+}
+
+/**
+ * See #35 - today's unlock and/or notification count, shown only when a parent has both turned
+ * that category's tracking on and chosen to display it here. Always carries the note that
+ * watching counts can feed compulsive checking, since a running number is exactly that risk.
+ */
+@Composable
+private fun TrackingCountsCard(showUnlocks: Boolean, showNotifications: Boolean) {
+    val usageStore = remember { UsageStore(LocalContext.current) }
+    Card(modifier = Modifier.fillMaxWidth().testTag("status_tracking_counts")) {
+        Column(Modifier.padding(12.dp)) {
+            Text("Today so far", style = MaterialTheme.typography.labelMedium)
+            Spacer(Modifier.height(2.dp))
+            if (showUnlocks) Text("${usageStore.unlockCount} unlocks", style = MaterialTheme.typography.bodyMedium)
+            if (showNotifications) {
+                Text("${usageStore.notificationCount} notifications", style = MaterialTheme.typography.bodyMedium)
+            }
+            Spacer(Modifier.height(6.dp))
+            Text(
+                TRACKING_DISPLAY_NOTE,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
         }
     }
 }

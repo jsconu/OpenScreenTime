@@ -49,6 +49,16 @@ struct ChildProfile: Identifiable, Equatable {
     /// still always wins (see #28). Enforcement only runs on the Android apps today, same
     /// as every other limit field here - this app can view/edit the list regardless.
     var alwaysAllowedPackages: [String] = []
+    /// Phone numbers that can still call/text through a bedtime block (see #34). Enforced only
+    /// by the Android kid app; this app round-trips the list without editing it.
+    var alwaysAllowedContacts: [String] = []
+    /// Optional, parent-controlled tracking categories (see #35). Off by default; nothing is
+    /// collected on a device until its toggle is on. The "show on kid" flags are unused on the
+    /// parent's own self profile.
+    var trackUnlocks: Bool = false
+    var trackNotifications: Bool = false
+    var showUnlocksOnKid: Bool = false
+    var showNotificationsOnKid: Bool = false
 
     func toMap() -> [String: Any] {
         var map: [String: Any] = [
@@ -60,7 +70,12 @@ struct ChildProfile: Identifiable, Equatable {
             "locked": locked,
             "isSelf": isSelf,
             "blockedDomains": blockedDomains,
-            "alwaysAllowedPackages": alwaysAllowedPackages
+            "alwaysAllowedPackages": alwaysAllowedPackages,
+            "alwaysAllowedContacts": alwaysAllowedContacts,
+            "trackUnlocks": trackUnlocks,
+            "trackNotifications": trackNotifications,
+            "showUnlocksOnKid": showUnlocksOnKid,
+            "showNotificationsOnKid": showNotificationsOnKid
         ]
         map["deviceUid"] = deviceUid
         map["parentPasscodeHash"] = parentPasscodeHash
@@ -97,7 +112,12 @@ struct ChildProfile: Identifiable, Equatable {
             requestedExtraMinutes: map["requestedExtraMinutes"] as? Int,
             temporaryUnlockUntilMs: (map["temporaryUnlockUntilMs"] as? Int64)
                 ?? (map["temporaryUnlockUntilMs"] as? Int).map(Int64.init),
-            alwaysAllowedPackages: (map["alwaysAllowedPackages"] as? [String]) ?? []
+            alwaysAllowedPackages: (map["alwaysAllowedPackages"] as? [String]) ?? [],
+            alwaysAllowedContacts: (map["alwaysAllowedContacts"] as? [String]) ?? [],
+            trackUnlocks: map["trackUnlocks"] as? Bool ?? false,
+            trackNotifications: map["trackNotifications"] as? Bool ?? false,
+            showUnlocksOnKid: map["showUnlocksOnKid"] as? Bool ?? false,
+            showNotificationsOnKid: map["showNotificationsOnKid"] as? Bool ?? false
         )
     }
 }

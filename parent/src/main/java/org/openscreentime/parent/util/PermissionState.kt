@@ -16,6 +16,10 @@ data class PermissionState(
     val allGranted: Boolean get() = overlay && accessibility && notifications && ignoringBatteryOptimizations
 }
 
+/** Separate from [PermissionState.allGranted] - only needed for optional notification-count tracking (see #35). */
+fun isNotificationListenerEnabled(context: Context): Boolean =
+    NotificationManagerCompat.getEnabledListenerPackages(context).contains(context.packageName)
+
 fun checkPermissions(context: Context): PermissionState = PermissionState(
     overlay = Settings.canDrawOverlays(context),
     accessibility = isAccessibilityServiceEnabled(context),

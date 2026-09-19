@@ -5,6 +5,7 @@ import android.app.Person
 import android.service.notification.NotificationListenerService
 import android.service.notification.StatusBarNotification
 import org.openscreentime.kid.data.NotificationDigestStore
+import org.openscreentime.kid.data.UsageStore
 import org.openscreentime.shared.model.DigestNotification
 import org.openscreentime.shared.model.isCallAllowedDuringBedtime
 import org.openscreentime.shared.model.isInBedtimeWindow
@@ -32,6 +33,7 @@ class NotificationDigestListenerService : NotificationListenerService() {
 
     override fun onNotificationPosted(sbn: StatusBarNotification) {
         maybeMuteBedtimeMessage(sbn)
+        maybeCountNotification(sbn)
 
         val store = NotificationDigestStore(this)
         if (!store.optedIn) return
@@ -72,6 +74,23 @@ class NotificationDigestListenerService : NotificationListenerService() {
         } catch (_: Exception) {
             packageName
         }
+    }
+
+    /**
+     * See #35 - counts notifications received today, overall and by app, while a parent has
+     * notification tracking on for this device. A count only: nothing about a notification's
+     * content is kept, and this runs independently of the local digest opt-in above.
+     */
+    private fun maybeCountNotification(sbn: StatusBarNotification) {
+        if (!LiveChildState.trackNotifications) return
+        val notification = sbn.notification
+        val title = notification.extras.getCharSequence(Notification.EXTRA_TITLE)?.toString().orEmpty()
+        val text = notification.extras.getCharSequence(Notification.EXTRA_TEXT)?.toString().orEmpty()
+        val isGroupSummary = notification.flags and Notification.FLAG_GROUP_SUMMARY != 0
+        if (!shouldIncludeInDigest(sbn.packageName, packageName, sbn.isOngoing, isGroupSummary, title, text)) return
+        val usageStore = UsageStore(this)
+        usageStore.cacheAppName(sbn.packageName, appLabelFor(sbn.packageName))
+        usageStore.recordNotification(sbn.packageName)
     }
 
     private fun maybeMuteBedtimeMessage(sbn: StatusBarNotification) {

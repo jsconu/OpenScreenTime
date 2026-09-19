@@ -154,6 +154,8 @@ class MainActivity : ComponentActivity() {
                             streakDays = streakDays,
                             parentStatusLabel = parentSelfProfile?.let { calmParentStatusLabel(it, parentSelfStats) },
                             parentStats = parentSelfProfile?.let { parentSelfStats },
+                            showUnlocks = child?.let { it.trackUnlocks && it.showUnlocksOnKid } == true,
+                            showNotifications = child?.let { it.trackNotifications && it.showNotificationsOnKid } == true,
                             permissionActions = PermissionActions(
                                 onRequestOverlay = {
                                     startActivity(

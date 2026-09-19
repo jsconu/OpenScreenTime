@@ -23,7 +23,22 @@ data class WeekSummary(
     val weekEndDate: String,
     val totalScreenTimeMs: Long,
     val averageDailyScreenTimeMs: Long,
-    val byApp: List<AppWeekUsage>
+    val byApp: List<AppWeekUsage>,
+    /** See #35 - the fields below feed the optional unlock/notification sections. */
+    val unlockCount: Int = 0,
+    val notificationCount: Int = 0,
+    /** Apps opened first after an unlock, summed over the week, most-first. */
+    val unlockFirstApps: List<AppCount> = emptyList(),
+    val notificationsByApp: List<AppCount> = emptyList(),
+    /** The daily digest: one entry per day that has synced data, newest first. */
+    val daily: List<DaySummary> = emptyList()
+)
+
+/** One day's unlock and notification totals - a row of the daily digest. */
+data class DaySummary(
+    val date: String,
+    val unlockCount: Int,
+    val notificationCount: Int
 )
 
 /** Most-recent-first: `weeks.first()` is the current rolling week. */
@@ -49,7 +64,12 @@ fun computeWeeklyReport(dailyStats: List<DailyStats>, weeks: Int = 4): WeeklyRep
 
     val weekSummaries = (0 until weeks).map {
         var weekTotalMs = 0L
+        var weekUnlocks = 0
+        var weekNotifications = 0
         val appTotals = LinkedHashMap<String, AppWeekUsage>()
+        val firstApps = LinkedHashMap<String, AppCount>()
+        val notifApps = LinkedHashMap<String, AppCount>()
+        val daily = mutableListOf<DaySummary>()
         var weekEndDate = ""
         var weekStartDate = ""
         for (dayOffset in 0 until DAYS_PER_WEEK) {
@@ -58,6 +78,11 @@ fun computeWeeklyReport(dailyStats: List<DailyStats>, weeks: Int = 4): WeeklyRep
             weekStartDate = date
             byDate[date]?.let { stats ->
                 weekTotalMs += stats.totalScreenTimeMs
+                weekUnlocks += stats.unlockCount
+                weekNotifications += stats.notificationCount
+                daily += DaySummary(date, stats.unlockCount, stats.notificationCount)
+                stats.unlockFirstApps.forEach { mergeInto(firstApps, it) }
+                stats.notificationsByApp.forEach { mergeInto(notifApps, it) }
                 for (app in stats.appUsage) {
                     val existing = appTotals[app.packageName]
                     appTotals[app.packageName] = AppWeekUsage(
@@ -74,8 +99,18 @@ fun computeWeeklyReport(dailyStats: List<DailyStats>, weeks: Int = 4): WeeklyRep
             weekEndDate = weekEndDate,
             totalScreenTimeMs = weekTotalMs,
             averageDailyScreenTimeMs = weekTotalMs / DAYS_PER_WEEK,
-            byApp = appTotals.values.sortedByDescending { it.totalMs }
+            byApp = appTotals.values.sortedByDescending { it.totalMs },
+            unlockCount = weekUnlocks,
+            notificationCount = weekNotifications,
+            unlockFirstApps = firstApps.values.sortedByDescending { it.count },
+            notificationsByApp = notifApps.values.sortedByDescending { it.count },
+            daily = daily
         )
     }
     return WeeklyReport(weekSummaries)
+}
+
+private fun mergeInto(into: MutableMap<String, AppCount>, add: AppCount) {
+    val existing = into[add.packageName]
+    into[add.packageName] = AppCount(add.packageName, add.appName, (existing?.count ?: 0) + add.count)
 }

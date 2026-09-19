@@ -86,7 +86,23 @@ data class ChildProfile(
      * matched against an incoming call/text, not stored normalized, so a parent can enter
      * a number however they'd naturally type it.
      */
-    val alwaysAllowedContacts: List<String> = emptyList()
+    val alwaysAllowedContacts: List<String> = emptyList(),
+    /**
+     * Optional, parent-controlled tracking categories - see #35. Off by default, and nothing
+     * is collected on the device for a category until its toggle is on. [trackUnlocks] adds
+     * "which app was opened first after each unlock" and puts unlocks in the weekly report and
+     * daily digest; [trackNotifications] counts notifications received, overall and by app
+     * (counts only, never content). Both work the same for the parent's own self profile.
+     */
+    val trackUnlocks: Boolean = false,
+    val trackNotifications: Boolean = false,
+    /**
+     * Whether today's count for a tracked category is also shown on the kid's own phone, with
+     * a note that watching counts can feed compulsive checking. Off by default, and only
+     * meaningful while the matching track flag is on. Unused on the self profile.
+     */
+    val showUnlocksOnKid: Boolean = false,
+    val showNotificationsOnKid: Boolean = false
 ) {
     fun toMap(): Map<String, Any?> = mapOf(
         "name" to name,
@@ -108,7 +124,11 @@ data class ChildProfile(
         "requestedExtraMinutes" to requestedExtraMinutes,
         "temporaryUnlockUntilMs" to temporaryUnlockUntilMs,
         "alwaysAllowedPackages" to alwaysAllowedPackages,
-        "alwaysAllowedContacts" to alwaysAllowedContacts
+        "alwaysAllowedContacts" to alwaysAllowedContacts,
+        "trackUnlocks" to trackUnlocks,
+        "trackNotifications" to trackNotifications,
+        "showUnlocksOnKid" to showUnlocksOnKid,
+        "showNotificationsOnKid" to showNotificationsOnKid
     )
 
     companion object {
@@ -134,7 +154,11 @@ data class ChildProfile(
             requestedExtraMinutes = (map["requestedExtraMinutes"] as? Long)?.toInt(),
             temporaryUnlockUntilMs = map["temporaryUnlockUntilMs"] as? Long,
             alwaysAllowedPackages = (map["alwaysAllowedPackages"] as? List<String>) ?: emptyList(),
-            alwaysAllowedContacts = (map["alwaysAllowedContacts"] as? List<String>) ?: emptyList()
+            alwaysAllowedContacts = (map["alwaysAllowedContacts"] as? List<String>) ?: emptyList(),
+            trackUnlocks = map["trackUnlocks"] as? Boolean ?: false,
+            trackNotifications = map["trackNotifications"] as? Boolean ?: false,
+            showUnlocksOnKid = map["showUnlocksOnKid"] as? Boolean ?: false,
+            showNotificationsOnKid = map["showNotificationsOnKid"] as? Boolean ?: false
         )
     }
 }

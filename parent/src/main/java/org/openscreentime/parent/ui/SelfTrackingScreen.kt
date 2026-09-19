@@ -26,9 +26,11 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
 import org.openscreentime.parent.util.PermissionState
+import org.openscreentime.parent.util.isNotificationListenerEnabled
 
 /**
  * Self-tracking (see #8): the parent's own device, tracked and limited the same way a
@@ -46,6 +48,7 @@ fun SelfTrackingScreen(
     onRequestAccessibility: () -> Unit,
     onRequestNotifications: () -> Unit,
     onRequestBatteryExemption: () -> Unit,
+    onRequestNotificationListener: () -> Unit,
     onViewMyStats: () -> Unit,
     onBack: () -> Unit
 ) {
@@ -122,6 +125,16 @@ fun SelfTrackingScreen(
                     permissions.ignoringBatteryOptimizations,
                     onRequestBatteryExemption
                 )
+                if (!isNotificationListenerEnabled(LocalContext.current)) {
+                    PermissionRow(
+                        "Notification access (optional)",
+                        "Only needed if you turn on notification-count tracking for your own " +
+                            "screen time (from View my screen time). Counts only - nothing about " +
+                            "a notification's content is kept.",
+                        false,
+                        onRequestNotificationListener
+                    )
+                }
 
                 Spacer(Modifier.height(24.dp))
                 Button(onClick = onViewMyStats, modifier = Modifier.fillMaxWidth()) {
