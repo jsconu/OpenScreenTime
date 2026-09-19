@@ -227,7 +227,8 @@ fun StatusScreen(
  */
 @Composable
 private fun TrackingCountsCard(showUnlocks: Boolean, showNotifications: Boolean) {
-    val usageStore = remember { UsageStore(LocalContext.current) }
+    val context = LocalContext.current
+    val usageStore = remember { UsageStore(context) }
     Card(modifier = Modifier.fillMaxWidth().testTag("status_tracking_counts")) {
         Column(Modifier.padding(12.dp)) {
             Text("Today so far", style = MaterialTheme.typography.labelMedium)
