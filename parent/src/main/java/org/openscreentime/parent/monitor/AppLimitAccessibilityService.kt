@@ -15,7 +15,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import org.openscreentime.parent.ParentApp
 import org.openscreentime.parent.data.SelfProfileStore
-import org.openscreentime.parent.ParentApp
 import org.openscreentime.parent.R
 import org.openscreentime.parent.data.UsageStore
 import org.openscreentime.parent.ui.BlockOverlayActivity
