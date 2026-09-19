@@ -45,14 +45,20 @@ that as "not shared".) Data is encrypted in transit. Users can request deletion 
 | Name (child's display name, entered by parent) | Yes | App functionality | Required |
 | User IDs (Firebase anonymous / account uid) | Yes | Account management, app functionality | Required |
 | App activity - apps in use and time per app | Yes | App functionality, analytics for the parent's report | Required (core feature) |
+| App activity - **installed apps** (name and package of each app with a launcher icon, from the kid's phone) | Yes | App functionality (lets a parent set a limit on any app) | Required (kid app) |
 | App activity - unlock counts | Yes | App functionality | Required |
 | App activity - first app after unlock, notification counts per app | Yes | App functionality | **Optional** (parent turns on) |
 | Phone numbers allowed during bedtime | Yes | App functionality | Optional |
 | Crash logs and diagnostics | Yes | App stability | Required (not user-configurable) |
 | Feedback text (free text a parent sends) | Yes | App functionality | Optional |
 
+*(verify: Play's form lists "Installed apps" as its own data type under App activity - it's the one to
+tick for the row above. The parent app reads its own phone's installed apps only on the device, to build
+the limits screen, and doesn't upload them, so it collects nothing extra for that.)*
+
 Not collected: location, contacts list, messages/SMS/call history, photos, audio, files, health data,
-financial info, precise device identifiers for advertising, web browsing history.
+financial info, precise device identifiers for advertising, web browsing history. Notification content
+is never uploaded (the calm notification list on either app stays on that phone).
 
 Security practices: data encrypted in transit; you can request data be deleted. Do **not** claim an
 independent security review - there has been none.
@@ -107,9 +113,15 @@ Each answer should say *why* the permission is core to the app's purpose, and wh
 - **Purpose:** keeps the monitoring service from being killed so limits are enforced reliably. Requested
   through the standard system prompt, only from the setup checklist.
 
+### Package visibility (app list)
+- **QUERY_ALL_PACKAGES is not declared.** The apps use a narrow `<queries>` entry for the launcher
+  intent, which shows only apps that have a launcher icon. The kid app uses it to list what's on the
+  child's phone (and send that list to the parent's account); the parent app uses it to list its own
+  phone's apps on the limits screen. Purpose: parental controls - setting a limit on any installed app.
+
 ### Not used
-- Package visibility (QUERY_ALL_PACKAGES): not declared. The apps query only the home launcher.
 - Usage-stats access, SMS, call log, contacts, location, camera, microphone: not requested.
+- QUERY_ALL_PACKAGES: not declared (see "Package visibility" above).
 
 ## Content rating (IARC questionnaire)
 Utility / parenting app: no user-generated content, no violence, no purchases, no location sharing,
