@@ -86,6 +86,11 @@ final class HelpBotTests: XCTestCase {
         XCTAssertEqual(matched("How much screen time should I set for myself?"), "guidance-adults")
     }
 
+    func testForgettingTheAccountPasswordReachesTheResetEntry() {
+        XCTAssertEqual(matched("I forgot my password"), "password-reset")
+        XCTAssertEqual(matched("how do I reset my password"), "password-reset")
+    }
+
     func testAgeExtractionHandlesTheCommonPhrasings() {
         XCTAssertEqual(HelpBot.extractAgeYears("my 4 year old"), 4)
         XCTAssertEqual(HelpBot.extractAgeYears("a 9-year-old"), 9)

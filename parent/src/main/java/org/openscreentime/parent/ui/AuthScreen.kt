@@ -33,6 +33,7 @@ fun AuthScreen(repository: FamilyRepository, onSignedIn: () -> Unit) {
     var isSignUp by remember { mutableStateOf(true) }
     var loading by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
+    var info by remember { mutableStateOf<String?>(null) }
 
     Column(
         modifier = Modifier.fillMaxSize().padding(24.dp),
@@ -61,6 +62,10 @@ fun AuthScreen(repository: FamilyRepository, onSignedIn: () -> Unit) {
             Spacer(Modifier.height(8.dp))
             Text(it, color = MaterialTheme.colorScheme.error)
         }
+        info?.let {
+            Spacer(Modifier.height(8.dp))
+            Text(it, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.testTag("auth_reset_sent"))
+        }
         Spacer(Modifier.height(16.dp))
         Button(
             enabled = email.isNotBlank() && password.length >= 6 && !loading,
@@ -82,8 +87,36 @@ fun AuthScreen(repository: FamilyRepository, onSignedIn: () -> Unit) {
         ) {
             Text(if (isSignUp) "Create account" else "Sign in")
         }
+        if (!isSignUp) {
+            Spacer(Modifier.height(4.dp))
+            TextButton(
+                enabled = !loading,
+                modifier = Modifier.testTag("auth_forgot_password"),
+                onClick = {
+                    error = null
+                    info = null
+                    if (email.isBlank()) {
+                        error = "Enter your email above first, then tap Forgot password."
+                        return@TextButton
+                    }
+                    loading = true
+                    scope.launch {
+                        try {
+                            repository.sendPasswordReset(email)
+                            // Same message whether or not an account exists - see sendPasswordReset.
+                            info = "If there's an account for that email, a link to reset the password " +
+                                "is on its way. Check your spam folder too."
+                        } catch (e: Exception) {
+                            error = e.message ?: "Couldn't send the email. Check the address and your connection."
+                        } finally {
+                            loading = false
+                        }
+                    }
+                }
+            ) { Text("Forgot password?") }
+        }
         Spacer(Modifier.height(8.dp))
-        TextButton(onClick = { isSignUp = !isSignUp }) {
+        TextButton(onClick = { isSignUp = !isSignUp; error = null; info = null }) {
             Text(if (isSignUp) "Already have an account? Sign in" else "New here? Create an account")
         }
     }

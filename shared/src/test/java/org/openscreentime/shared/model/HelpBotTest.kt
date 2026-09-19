@@ -127,6 +127,12 @@ class HelpBotTest {
     }
 
     @Test
+    fun `forgetting the account password reaches the reset entry, not the family passcode one`() {
+        assertEquals("password-reset", matched("I forgot my password"))
+        assertEquals("password-reset", matched("how do I reset my password"))
+    }
+
+    @Test
     fun `age extraction handles the common phrasings`() {
         assertEquals(4, HelpBot.extractAgeYears("my 4 year old"))
         assertEquals(9, HelpBot.extractAgeYears("a 9-year-old"))

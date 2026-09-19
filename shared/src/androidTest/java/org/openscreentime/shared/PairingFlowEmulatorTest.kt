@@ -449,6 +449,19 @@ class PairingFlowEmulatorTest {
     }
 
     @Test(timeout = TEST_TIMEOUT_MS)
+    fun passwordResetSendsForExistingAccount_andLooksTheSameForUnknownOnes() = runBlocking {
+        val repo = FamilyRepository()
+        val email = uniqueEmail()
+        repo.signUpParent(email, "testpass123")
+        repo.signOut()
+
+        // Neither call may throw: an existing account gets the email, an unknown one is
+        // indistinguishable from it (no account enumeration through this screen).
+        repo.sendPasswordReset(email)
+        repo.sendPasswordReset(uniqueEmail())
+    }
+
+    @Test(timeout = TEST_TIMEOUT_MS)
     fun claimedDeviceCannotListSiblingChildren() = runBlocking {
         val parentRepo = FamilyRepository()
         val parentUid = parentRepo.signUpParent(uniqueEmail(), "testpass123")

@@ -38,6 +38,9 @@ class FamilyRepository(
 
     suspend fun signInParent(email: String, password: String): String = session.signInParent(email, password)
 
+    /** Sends a password-reset email to an existing parent account (see [SessionRepository.sendPasswordReset]). */
+    suspend fun sendPasswordReset(email: String) = session.sendPasswordReset(email)
+
     suspend fun signInAnonymously(): String = session.signInAnonymously()
 
     fun signOut() = session.signOut()

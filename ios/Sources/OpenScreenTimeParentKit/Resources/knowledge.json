@@ -185,6 +185,24 @@
       "answer": "Set a passcode in the parent app menu. It locks the parent app on launch, and it lets you open \"Parent controls\" on your child's own phone to change limits, bedtime, blocked websites, and more without needing your phone. The child's phone checks it locally against a stored hash, so it works offline."
     },
     {
+      "id": "password-reset",
+      "audience": "parent",
+      "topic": "app",
+      "question": "How do I reset my account password?",
+      "keywords": [
+        "forgot password",
+        "reset password",
+        "password reset",
+        "forgot my password",
+        "can't sign in",
+        "cant sign in",
+        "locked out of account",
+        "account password",
+        "email link"
+      ],
+      "answer": "On the sign-in screen, enter your email and tap \"Forgot password?\". If there's an account for that email, you'll get a link to choose a new password - check your spam folder if it doesn't show up. This resets your account password only. The family passcode (the PIN under the menu's Passcode) is a separate thing."
+    },
+    {
       "id": "weekly-report",
       "audience": "parent",
       "topic": "app",

@@ -37,6 +37,16 @@ public final class FamilyRepository {
         return result.user.uid
     }
 
+    /// Emails a password-reset link. A missing account looks the same as success (no account
+    /// enumeration through the sign-in screen); a malformed address or no connection still throws.
+    func sendPasswordReset(email: String) async throws {
+        do {
+            try await auth.sendPasswordReset(withEmail: email.trimmingCharacters(in: .whitespaces))
+        } catch let error as NSError where error.code == AuthErrorCode.userNotFound.rawValue {
+            // Same outcome as a real account.
+        }
+    }
+
     func signOut() throws {
         try auth.signOut()
     }
