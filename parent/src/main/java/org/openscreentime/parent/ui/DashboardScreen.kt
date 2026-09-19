@@ -161,6 +161,17 @@ fun DashboardScreen(
         },
     ) { padding ->
         LazyColumn(modifier = Modifier.fillMaxSize().padding(padding)) {
+            // First and fixed: nothing above it can appear later (like the passcode prompt below,
+            // which shows once its check finishes) and push it out from under a finger.
+            item {
+                Button(
+                    onClick = { showAddDialog = true },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 8.dp)
+                        .testTag("dashboard_add_child")
+                ) { Text("Add kid") }
+            }
             if (!hasPasscode) {
                 item {
                     PasscodePromptCard(
@@ -171,15 +182,6 @@ fun DashboardScreen(
             }
             item {
                 TipOfTheDayCard(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp))
-            }
-            item {
-                Button(
-                    onClick = { showAddDialog = true },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 8.dp)
-                        .testTag("dashboard_add_child")
-                ) { Text("Add kid") }
             }
             item {
                 StatusGuideCard(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp))
