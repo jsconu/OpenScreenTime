@@ -42,7 +42,8 @@ fun ParentModeUnlockScreen(
     onCancel: () -> Unit
 ) {
     val scope = rememberCoroutineScope()
-    val attemptStore = remember { PasscodeAttemptStore(LocalContext.current) }
+    val context = LocalContext.current
+    val attemptStore = remember { PasscodeAttemptStore(context) }
     var passcode by remember { mutableStateOf("") }
     var error by remember { mutableStateOf<String?>(null) }
     var locked by remember { mutableStateOf(attemptStore.isLocked()) }
