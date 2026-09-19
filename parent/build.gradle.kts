@@ -80,6 +80,9 @@ dependencies {
     implementation(libs.lifecycle.runtime.ktx)
     implementation(libs.lifecycle.viewmodel.compose)
     implementation(libs.activity.compose)
+    // Pins a current Fragment: an older one arrives transitively (via Firebase) and makes release lint
+    // fail on the ActivityResult APIs, though these activities are ComponentActivity, not Fragment-based.
+    implementation(libs.fragment)
     implementation(platform(libs.compose.bom))
     implementation(libs.compose.ui)
     implementation(libs.compose.ui.graphics)
