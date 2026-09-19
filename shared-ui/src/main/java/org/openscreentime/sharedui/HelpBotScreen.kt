@@ -21,6 +21,7 @@ import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
@@ -57,6 +58,7 @@ private sealed interface HelpMessage {
  * [HelpBot]: a small, offline, cited retriever, deliberately not a language model, so nothing typed
  * here leaves the phone and health answers only ever say what a public source says.
  */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HelpBotScreen(audience: HelpAudience, onBack: () -> Unit) {
     val bot = remember { HelpBot.default }
