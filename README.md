@@ -41,9 +41,13 @@ own phone, real screenshots to replace it are a very welcome contribution.
 
 | Parent: dashboard | Parent: child detail | Parent: weekly report |
 | :---: | :---: | :---: |
-| <img src="design/screenshots/parent-03-dashboard.png" width="220" alt="Parent dashboard"> | <img src="design/screenshots/parent-06-child-detail.png" width="220" alt="Parent child detail"> | <img src="design/screenshots/parent-07-weekly-report.png" width="220" alt="Parent weekly report"> |
+| <img src="design/screenshots/parent-03-dashboard.png" width="220" alt="Parent dashboard"> | <img src="design/screenshots/parent-06-child-detail.png" width="220" alt="Parent child detail"> | <img src="design/screenshots/parent-08-weekly-report.png" width="220" alt="Parent weekly report"> |
 
-All 18 screens are in [`design/screenshots/`](design/screenshots/), rendered from
+| Parent: optional tracking | Parent: unlocks and notifications | Help bot |
+| :---: | :---: | :---: |
+| <img src="design/screenshots/parent-07-optional-tracking.png" width="220" alt="Parent optional tracking toggles"> | <img src="design/screenshots/parent-09-weekly-report-unlocks-notifications.png" width="220" alt="Weekly report unlocks and notifications"> | <img src="design/screenshots/parent-13-help-parent.png" width="220" alt="Help bot"> |
+
+All 22 screens are in [`design/screenshots/`](design/screenshots/), rendered from
 the gallery above.
 
 ## How it works

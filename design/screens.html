@@ -327,6 +327,21 @@
   .bar-labels { display: flex; gap: 6px; margin-bottom: 10px; }
   .bar-labels span { flex: 1; font-size: 7.5px; color: #8c8878; text-align: center; }
 
+  .m-switch { width: 22px; height: 12px; border-radius: 8px; background: #b9b6a8; position: relative; flex: none; }
+  .m-switch::after { content: ""; position: absolute; top: 1.5px; left: 2px; width: 9px; height: 9px; border-radius: 50%; background: #fff; }
+  .m-switch.on { background: var(--app-primary); }
+  .m-switch.on::after { left: 11px; }
+  .bubble { border-radius: 10px; padding: 8px 9px; font-size: 9.5px; line-height: 1.45; margin-bottom: 7px; max-width: 92%; }
+  .bubble.bot { background: var(--app-surface-variant); color: #2a2820; }
+  .bubble.user { background: var(--app-primary); color: var(--app-on-primary); margin-left: auto; }
+  .bubble .src { display: block; color: var(--app-primary); font-size: 8.5px; margin-top: 3px; }
+  .chips { display: flex; flex-wrap: wrap; gap: 4px; margin: -2px 0 8px; }
+  .chip { border: 1px solid rgba(0,0,0,.2); border-radius: 8px; padding: 3px 7px; font-size: 8.5px; color: #3a382f; }
+  .input-row { display: flex; gap: 6px; align-items: center; margin-top: auto; padding-top: 6px; }
+  .input-row .field { flex: 1; border: 1.2px solid #8a8778; border-radius: 5px; padding: 6px 8px; font-size: 9px; color: #8c8878; }
+  .input-row .send { background: var(--app-primary); color: var(--app-on-primary); border-radius: 14px; padding: 6px 10px; font-size: 9px; font-weight: 600; }
+  .trend-row { margin: 6px 0 2px; }
+  .digest-row { display: flex; justify-content: space-between; font-size: 9px; padding: 2px 0; color: #3a382f; }
   .caption { text-align: left; }
   .screen-name { font-family: var(--font-display); font-weight: 600; font-size: .95rem; margin: 0 0 4px; }
   .screen-desc { font-size: .82rem; color: var(--ink-soft); line-height: 1.5; margin: 0 0 8px; }
@@ -369,7 +384,7 @@
     <p class="lede">
       A reproduction of the two shipped apps' actual Compose UI &mdash; real copy, real component
       states, real <code style="font-family:var(--font-mono);font-size:.92em;">Modifier.testTag</code>
-      identifiers from the codebase, not placeholder text. Nineteen screens across the kid device app
+      identifiers from the codebase, not placeholder text. Twenty-two screens across the kid device app
       and the parent app, shown in their default light theme.
     </p>
     <div class="legend">
@@ -444,6 +459,18 @@
         <p>Parental self-tracking reuses the exact same card, stats, and lock button a kid's profile gets - no separate, easier standard for the adult in the house.</p>
         <div class="p-where">Dashboard &amp; Self tracking</div>
       </div>
+      <div class="principle-card">
+        <div class="p-num">10</div>
+        <h3>Counting is opt-in - and named as a risk</h3>
+        <p>Unlock and notification tracking are off by default, collect nothing until a parent turns them on, and count only (never notification content). If a parent shows a count on the kid's phone, it carries a note that watching counts can feed compulsive checking.</p>
+        <div class="p-where">Child detail, Weekly report &amp; Status</div>
+      </div>
+      <div class="principle-card">
+        <div class="p-num">11</div>
+        <h3>Honest answers, with sources</h3>
+        <p>The help bot is a small offline retriever over a cited knowledge base, not an AI that might invent a health claim. It says so, cites WHO, the Canadian guidelines, the AAP and the UK CMOs, and says plainly when it has no answer.</p>
+        <div class="p-where">Help</div>
+      </div>
     </div>
   </section>
 
@@ -481,7 +508,7 @@
       <div class="screen-card">
         <div class="phone"><div class="phone-inner">
           <div class="body scroll" style="padding-top:12px;">
-            <div class="headline" style="margin-bottom:2px;">Hi, Mia</div>
+            <div style="display:flex;justify-content:space-between;align-items:center;"><div class="headline" style="margin-bottom:2px;">Hi, Mia</div><span class="m-text-btn" style="font-size:13px;">?</span></div>
             <p class="subtext" style="margin-bottom:6px;">Screen time monitoring is active.</p>
             <div class="label-eyebrow" style="margin-top:0;">What the status icon means</div>
             <div class="m-list-item" style="border:none;padding:3px 0;"><div class="sub" style="margin:0;">&#128077; Comfortably under today's goal</div></div>
@@ -491,6 +518,11 @@
               <p class="subtext micro" style="margin:0;">This app deliberately doesn't show exact numbers or a report here - just this signal, so screen time stays something to be aware of, not something to obsess over. Ask a parent if you want to talk through the details.</p>
             </div>
             <p class="subtext tight" style="color:var(--app-primary);font-weight:600;margin-top:8px;">5 days in a row under your goal</p>
+            <div class="card-tint">
+              <div class="label-eyebrow" style="margin:0 0 2px;">Today so far</div>
+              <p class="subtext tight" style="margin:0 0 2px;">14 unlocks</p>
+              <p class="subtext micro" style="margin:0;">Tracking numbers like these can make phone use feel more compulsive, not less - glance at them rather than checking them.</p>
+            </div>
             <div class="card-tint" style="margin-bottom:10px;">
               <div class="label-eyebrow" style="margin:0 0 2px;">Parent's screen time today</div>
               <p class="subtext tight" style="margin:0 0 2px;">Comfortably under goal</p>
@@ -509,8 +541,8 @@
         </div></div>
         <div class="caption">
           <p class="screen-name">Status</p>
-          <p class="screen-desc">Home screen once paired. The icon legend now states outright why only this signal is shown, not exact numbers (#30). A streak line appears only once it's &gt; 0 days, never a broken-streak state (#13). When a parent has opted into self-tracking, their own calm status and numbers show here too (#18) - the arrangement isn't one-directional.</p>
-          <div class="tag-row"><span class="tag">status_greeting</span><span class="tag">status_icon_legend</span><span class="tag">status_streak</span><span class="tag calm">01 calm signal</span></div>
+          <p class="screen-desc">Home screen once paired. The icon legend now states outright why only this signal is shown, not exact numbers (#30). A streak line appears only once it's &gt; 0 days, never a broken-streak state (#13). When a parent has opted into self-tracking, their own calm status and numbers show here too (#18) - the arrangement isn't one-directional. A "?" opens the help bot (#36), and "Today so far" appears only if a parent chose to show a tracked count here (#35), always with its compulsive-checking note.</p>
+          <div class="tag-row"><span class="tag">status_greeting</span><span class="tag">status_icon_legend</span><span class="tag">status_streak</span><span class="tag">status_tracking_counts</span><span class="tag calm">01 calm signal</span><span class="tag calm">10 counting is opt-in</span></div>
         </div>
       </div>
 
@@ -553,6 +585,10 @@
             <div class="m-btn-outline full">Change daily limit</div>
             <p class="subtext tight">Bedtime: 9:00 PM - 7:00 AM</p>
             <div class="m-btn-outline full">Change bedtime</div>
+            <div class="label-eyebrow">Bedtime calls</div>
+            <p class="subtext micro" style="margin:0 0 4px;">During bedtime, only the numbers below can call or text. Texts are muted, not fully blocked.</p>
+            <div class="m-list-item"><div class="head">+1 555 123 4567</div><div class="trailing">Remove</div></div>
+            <div class="m-btn-outline full" style="padding:7px 16px;">Turn on incoming-call blocking</div>
             <div class="label-eyebrow">Uninstall protection</div>
             <p class="subtext micro" style="margin:0 0 6px;">Off. Turning this on adds a warning before OpenScreenTime can be removed - a clear signal to ask a parent first.</p>
             <div class="m-btn-outline full" style="padding:7px 16px;">Turn on</div>
@@ -563,7 +599,7 @@
         </div></div>
         <div class="caption">
           <p class="screen-name">Parent controls</p>
-          <p class="screen-desc">Reached only after the passcode unlock. Now includes bedtime editing, a pending "more time" request (#23), uninstall protection (#31), and an "always allow" checkbox per app (#28) alongside its minute limit - all mirroring the parent app's own ChildDetailScreen.</p>
+          <p class="screen-desc">Reached only after the passcode unlock. Now includes bedtime editing, a pending "more time" request (#23), uninstall protection (#31), bedtime calls with an allowed-numbers list (#34), and an "always allow" checkbox per app (#28) alongside its minute limit - all mirroring the parent app's own ChildDetailScreen.</p>
           <div class="tag-row"><span class="tag">ParentControlsScreen.kt</span></div>
         </div>
       </div>
@@ -629,6 +665,26 @@
         </div>
       </div>
 
+      <!-- 8. Help (kid) -->
+      <div class="screen-card">
+        <div class="phone"><div class="phone-inner">
+          <div class="appbar"><span class="title">Help</span><span class="action">BACK</span></div>
+          <div class="body">
+            <div class="bubble bot">Ask me anything about how to use this app or what are reasonable limits for screen time.</div>
+            <div class="chips"><span class="chip">What do the status icons mean?</span><span class="chip">How do I ask for more time?</span><span class="chip">Why can't I see my exact numbers?</span></div>
+            <div class="bubble user">why can't i see my numbers</div>
+            <div class="bubble bot">Deliberately. A running number invites checking, and compulsive checking is the behavior this app is trying not to feed. So the kid app only shows the calm icon, and the detailed report stays with the parent.</div>
+            <div class="input-row"><span class="field">Ask a question</span><span class="send">Send</span></div>
+            <p class="subtext micro" style="margin:4px 0 0;">Answers come from a fixed, cited knowledge base - not AI - and nothing you type leaves this phone.</p>
+          </div>
+        </div></div>
+        <div class="caption">
+          <p class="screen-name">Help (kid)</p>
+          <p class="screen-desc">The "?" on the kid's home screen (#36). A chat-shaped front for a small offline matcher over a curated knowledge base - not an AI model - so nothing a child types leaves the phone. Kids never get parent-only setup answers.</p>
+          <div class="tag-row"><span class="tag">HelpBotScreen.kt</span><span class="tag">help_input</span><span class="tag calm">11 honest answers</span></div>
+        </div>
+      </div>
+
     </div>
   </section>
 
@@ -679,7 +735,7 @@
       <!-- 10. Dashboard -->
       <div class="screen-card">
         <div class="phone"><div class="phone-inner" style="position:relative;">
-          <div class="appbar"><span class="title">Manage Your Screen Time</span><div class="actions"><span class="action">&#8942;</span></div></div>
+          <div class="appbar"><span class="title">Manage Your Screen Time</span><div class="actions"><span class="action">?</span><span class="action">&#8942;</span></div></div>
           <div class="body scroll">
             <div class="card-tint" style="border-left:3px solid var(--app-primary);">
               <div style="font-size:11px;font-weight:600;margin-bottom:2px;">Off-screen idea</div>
@@ -711,7 +767,7 @@
         </div></div>
         <div class="caption">
           <p class="screen-name">Dashboard</p>
-          <p class="screen-desc">Header retitled from "Your children" for clarity (#27); four separate top-bar actions collapsed into one "&#8942;" menu (Style / Passcode / Feedback / Sign out). The parent's own self-tracking card now shows live numbers directly here, reusing the exact same card as a kid's (#27, #18) &mdash; walking the walk, not just saying it.</p>
+          <p class="screen-desc">Header retitled from "Your children" for clarity (#27); four separate top-bar actions collapsed into one "&#8942;" menu (Style / Passcode / Feedback / Sign out), next to a "?" that opens the help bot (#36). The parent's own self-tracking card now shows live numbers directly here, reusing the exact same card as a kid's (#27, #18) &mdash; walking the walk, not just saying it.</p>
           <div class="tag-row"><span class="tag">dashboard_add_child</span><span class="tag">dashboard_child_lock_toggle</span><span class="tag calm">09 walk the walk</span></div>
         </div>
       </div>
@@ -790,6 +846,28 @@
         </div>
       </div>
 
+      <!-- 13b. Optional tracking -->
+      <div class="screen-card">
+        <div class="phone"><div class="phone-inner">
+          <div class="appbar"><span class="title">Mia</span><span class="action">BACK</span></div>
+          <div class="body scroll">
+            <div class="label-eyebrow" style="margin-top:0;">Optional tracking</div>
+            <p class="subtext micro" style="margin:0 0 6px;">Off by default - nothing is collected until you turn a category on. Each one adds to the weekly report and its daily digest.</p>
+            <div class="m-list-item"><div><div class="head">Track unlocks</div><div class="sub">Adds which app is opened first after each unlock.</div></div><span class="m-switch on"></span></div>
+            <div class="m-list-item"><div><div class="head">Show unlocks on Mia's phone</div><div class="sub">Off by default.</div></div><span class="m-switch"></span></div>
+            <div class="m-list-item"><div><div class="head">Track notification counts</div><div class="sub">Counts only, never content. Needs notification access on the device.</div></div><span class="m-switch on"></span></div>
+            <div class="m-list-item"><div><div class="head">Show notification counts on Mia's phone</div><div class="sub">Off by default.</div></div><span class="m-switch"></span></div>
+            <p class="subtext micro" style="margin-top:6px;">If shown, they'll see: "Tracking numbers like these can make phone use feel more compulsive, not less - glance at them rather than checking them."</p>
+          </div>
+        </div></div>
+        <div class="caption">
+          <p class="screen-name">Optional tracking</p>
+          <p class="screen-desc">New (#35), on Child detail - the same four switches serve a kid and the parent's own "My screen time" profile. Categories are off by default, and the "show on their phone" options only appear once tracking is on.</p>
+          <div class="tag-row"><span class="tag">ChildDetailScreen.kt</span><span class="tag calm">10 counting is opt-in</span></div>
+        </div>
+      </div>
+
+
       <!-- 14. Weekly report -->
       <div class="screen-card">
         <div class="phone"><div class="phone-inner">
@@ -824,6 +902,32 @@
           <div class="tag-row"><span class="tag">WeeklyReportScreen.kt</span><span class="tag calm">07 short window</span><span class="tag calm">08 nudges the parent</span></div>
         </div>
       </div>
+
+      <!-- 14b. Weekly report: unlocks & notifications -->
+      <div class="screen-card">
+        <div class="phone"><div class="phone-inner">
+          <div class="appbar"><span class="title">Mia report</span><span class="action">BACK</span></div>
+          <div class="body scroll">
+            <div class="label-eyebrow" style="margin-top:0;">Unlocks</div>
+            <p class="subtext tight" style="margin:0 0 2px;">Weekly total: 142 this week</p>
+            <div class="bar-chart" style="height:34px;"><div class="bar secondary" style="height:60%"></div><div class="bar secondary" style="height:75%"></div><div class="bar secondary" style="height:55%"></div><div class="bar secondary" style="height:100%"></div></div>
+            <p class="subtext micro" style="margin:2px 0 2px;">Opened first after unlocking - top apps, oldest to newest</p>
+            <div class="trend-row"><div style="font-size:10px;">TikTok</div><div class="bar-chart" style="height:22px;margin:2px 0;"><div class="bar" style="height:30%"></div><div class="bar" style="height:50%"></div><div class="bar" style="height:60%"></div><div class="bar" style="height:100%"></div></div></div>
+            <div class="label-eyebrow">Notifications</div>
+            <p class="subtext micro" style="margin:0 0 2px;">By app - top apps, oldest to newest</p>
+            <div class="trend-row"><div style="font-size:10px;">Group chat</div><div class="bar-chart" style="height:22px;margin:2px 0;"><div class="bar" style="height:45%"></div><div class="bar" style="height:40%"></div><div class="bar" style="height:70%"></div><div class="bar" style="height:100%"></div></div></div>
+            <div class="label-eyebrow">Daily digest</div>
+            <div class="digest-row"><span>Thu, Sep 17</span><span>23 unlocks &middot; 41 notifications</span></div>
+            <div class="digest-row"><span>Wed, Sep 16</span><span>19 unlocks &middot; 33 notifications</span></div>
+          </div>
+        </div></div>
+        <div class="caption">
+          <p class="screen-name">Weekly report: unlocks &amp; notifications</p>
+          <p class="screen-desc">The report's optional sections (#35, #37), shown only for categories a parent turned on: weekly totals, a 4-week trend per app for what's opened first after unlocking and what sends the most notifications, and a day-by-day digest.</p>
+          <div class="tag-row"><span class="tag">WeeklyReportScreen.kt</span><span class="tag calm">10 counting is opt-in</span></div>
+        </div>
+      </div>
+
 
       <!-- 15. Passcode settings -->
       <div class="screen-card">
@@ -876,6 +980,7 @@
             <div class="m-list-item"><div><div class="head">Display over other apps</div></div><div class="trailing granted">Granted</div></div>
             <div class="m-list-item"><div><div class="head">Accessibility service</div></div><div class="trailing granted">Granted</div></div>
             <div class="m-list-item"><div><div class="head">Battery optimization</div></div><div class="trailing">Fix</div></div>
+            <div class="m-list-item"><div><div class="head">Notification access (optional)</div><div class="sub">Only for notification-count tracking. Counts only.</div></div><div class="trailing">Fix</div></div>
             <div style="flex:1;"></div>
             <div class="m-btn full">View my screen time</div>
             <div class="m-btn-outline full">Stop tracking my screen time</div>
@@ -885,6 +990,26 @@
           <p class="screen-name">Self tracking</p>
           <p class="screen-desc">Opt-in parental self-tracking (#8) &mdash; the core mechanic behind the "diametrical opposite of an addiction machine" goal. Once started, "View my screen time" reuses Child detail (and its weekly report) for the parent's own profile, unchanged from a kid's.</p>
           <div class="tag-row"><span class="tag">SelfTrackingScreen.kt</span><span class="tag calm">09 walk the walk</span></div>
+        </div>
+      </div>
+
+      <!-- 17b. Help (parent) -->
+      <div class="screen-card">
+        <div class="phone"><div class="phone-inner">
+          <div class="appbar"><span class="title">Help</span><span class="action">BACK</span></div>
+          <div class="body">
+            <div class="bubble bot">Ask me anything about how to use this app or what are reasonable limits for screen time.</div>
+            <div class="chips"><span class="chip">How much screen time is reasonable for my child?</span><span class="chip">How do I set a bedtime?</span></div>
+            <div class="bubble user">screen time for my 4 year old</div>
+            <div class="bubble bot">The WHO advises no more than 1 hour a day of sedentary screen time for ages 2 to 4, and adds that less is better. General guidance, not medical advice.<span class="src">Source: WHO: children under 5 (2019)</span></div>
+            <div class="input-row"><span class="field">Ask a question</span><span class="send">Send</span></div>
+            <p class="subtext micro" style="margin:4px 0 0;">Answers come from a fixed, cited knowledge base - not AI - and nothing you type leaves this phone.</p>
+          </div>
+        </div></div>
+        <div class="caption">
+          <p class="screen-name">Help (parent)</p>
+          <p class="screen-desc">The "?" on the dashboard (#36): how-to answers, the design philosophy, and cited public screen-time guidance (WHO, Canadian 24-Hour Movement Guidelines, AAP, UK CMOs), age-aware. Sources are tappable; it says plainly when it has no answer.</p>
+          <div class="tag-row"><span class="tag">HelpBotScreen.kt</span><span class="tag">dashboard_help</span><span class="tag calm">11 honest answers</span></div>
         </div>
       </div>
 
@@ -914,7 +1039,7 @@
     Reproduced from the live Jetpack Compose source in <code style="font-family:var(--font-mono);">kid/src/main/java/.../ui</code>
     and <code style="font-family:var(--font-mono);">parent/src/main/java/.../ui</code> &mdash; component shapes, copy, and color
     values match the running app; pixel-exact Material 3 tonal-palette shading is approximated. All names, codes, and figures
-    on this page are illustrative examples, not real account data. iOS parity for the weekly report is not yet built.
+    on this page are illustrative examples, not real account data. iOS has the help bot and the tracking switches but not the weekly report.
   </footer>
 
 </div>
