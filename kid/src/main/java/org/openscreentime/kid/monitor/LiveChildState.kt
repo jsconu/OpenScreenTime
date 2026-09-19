@@ -45,6 +45,8 @@ object LiveChildState {
     /** The family passcode's salted hash, so the lock screen can check a parent's PIN offline. */
     @Volatile var parentPasscodeHash: String? = null
     @Volatile var parentPasscodeSalt: String? = null
+    /** When a parent's timed unlock ends and the phone locks itself again; null = no re-lock pending. */
+    @Volatile var relockAtMs: Long? = null
 
     private const val PREFS = "live_child_state"
 
@@ -62,14 +64,24 @@ object LiveChildState {
         trackUnlocks = child.trackUnlocks
         trackNotifications = child.trackNotifications
         lockedCache = child.locked
+        // A parent locking it again (or it already being locked) cancels any pending timed re-lock.
+        if (child.locked) relockAtMs = null
         parentPasscodeHash = child.parentPasscodeHash
         parentPasscodeSalt = child.parentPasscodeSalt
         persist(context)
     }
 
     /** Applies a parent's PIN-confirmed unlock immediately, without waiting for the sync round trip. */
-    fun clearLock(context: Context) {
+    fun clearLock(context: Context, relockAtMs: Long? = null) {
         lockedCache = false
+        this.relockAtMs = relockAtMs
+        persist(context)
+    }
+
+    /** A timed unlock has run out: lock again on this phone (the caller also tells Firestore). */
+    fun relockNow(context: Context) {
+        lockedCache = true
+        relockAtMs = null
         persist(context)
     }
 
@@ -90,6 +102,7 @@ object LiveChildState {
         e.putBoolean("trackUnlocks", trackUnlocks)
         e.putBoolean("trackNotifications", trackNotifications)
         e.putBoolean("locked", lockedCache)
+        e.putLong("relockAt", relockAtMs ?: -1L)
         e.putString("pcHash", parentPasscodeHash)
         e.putString("pcSalt", parentPasscodeSalt)
         e.apply()
@@ -116,6 +129,7 @@ object LiveChildState {
         trackUnlocks = p.getBoolean("trackUnlocks", false)
         trackNotifications = p.getBoolean("trackNotifications", false)
         lockedCache = p.getBoolean("locked", false)
+        relockAtMs = p.getLong("relockAt", -1L).takeIf { it >= 0 }
         parentPasscodeHash = p.getString("pcHash", null)
         parentPasscodeSalt = p.getString("pcSalt", null)
     }
@@ -137,5 +151,6 @@ object LiveChildState {
         lockedCache = false
         parentPasscodeHash = null
         parentPasscodeSalt = null
+        relockAtMs = null
     }
 }

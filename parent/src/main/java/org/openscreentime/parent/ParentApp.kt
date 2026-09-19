@@ -79,6 +79,8 @@ class ParentApp : Application() {
 
             val wasLocked = AppLimitAccessibilityService.lockedCache
             AppLimitAccessibilityService.lockedCache = child.locked
+            // Locked again (by hand, or by an earlier timer): any pending timed re-lock is moot.
+            if (child.locked) SelfProfileStore(this).relockAtMs = null
             if (child.locked && !wasLocked) {
                 startActivity(
                     Intent(this, BlockOverlayActivity::class.java)

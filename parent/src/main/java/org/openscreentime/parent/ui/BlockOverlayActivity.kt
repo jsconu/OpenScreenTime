@@ -36,6 +36,7 @@ import org.openscreentime.parent.monitor.AppLimitAccessibilityService
 import org.openscreentime.shared.model.BlockReason
 import org.openscreentime.shared.model.blockScreenCopy
 import org.openscreentime.shared.model.randomAlternativeActivity
+import org.openscreentime.shared.model.relockAtFor
 import org.openscreentime.shared.util.PasscodeAttemptStore
 import org.openscreentime.shared.util.PasscodeHasher
 import org.openscreentime.sharedui.ParentUnlockDialog
@@ -127,7 +128,7 @@ class BlockOverlayActivity : ComponentActivity() {
                         verifying = verifying,
                         error = unlockError,
                         onDismiss = { showParentUnlock = false },
-                        onSubmit = { pin ->
+                        onSubmit = { pin, relockAfterMinutes ->
                             val attempts = PasscodeAttemptStore(this@BlockOverlayActivity)
                             if (attempts.isLocked()) {
                                 unlockError = "Too many incorrect attempts. Try again in ${attempts.minutesRemaining()} minutes."
@@ -147,6 +148,8 @@ class BlockOverlayActivity : ComponentActivity() {
                                         ok -> {
                                             attempts.recordSuccess()
                                             AppLimitAccessibilityService.lockedCache = false
+                                            SelfProfileStore(this@BlockOverlayActivity).relockAtMs =
+                                                relockAtFor(relockAfterMinutes, System.currentTimeMillis())
                                             launch { runCatching { repository.setLocked(parentUid, selfChildId, false) } }
                                             finish()
                                         }

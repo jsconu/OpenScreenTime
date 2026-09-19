@@ -10,6 +10,11 @@ import android.os.Handler
 import android.os.Looper
 import android.view.accessibility.AccessibilityEvent
 import androidx.core.app.NotificationCompat
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import org.openscreentime.parent.ParentApp
+import org.openscreentime.parent.data.SelfProfileStore
 import org.openscreentime.parent.ParentApp
 import org.openscreentime.parent.R
 import org.openscreentime.parent.data.UsageStore
@@ -28,6 +33,7 @@ import org.openscreentime.shared.model.hasUnlockWindowExpired
 import org.openscreentime.shared.model.isFirstAppAfterUnlock
 import org.openscreentime.shared.model.isInBedtimeWindow
 import org.openscreentime.shared.model.nowMinutesOfDay
+import org.openscreentime.shared.model.relockDue
 import org.openscreentime.shared.model.statusNotificationMessage
 
 /**
@@ -53,6 +59,7 @@ class AppLimitAccessibilityService : AccessibilityService() {
     private val tick = object : Runnable {
         override fun run() {
             flushCurrent(restart = true)
+            checkRelock()
             checkLimits(currentPackage)
             updateStatusNotification()
             handler.postDelayed(this, TICK_INTERVAL_MS)
@@ -155,6 +162,23 @@ class AppLimitAccessibilityService : AccessibilityService() {
                 is EnforcementEvent.Warn -> handleWarn(event.kind, pkg)
             }
         }
+    }
+
+    /** A timed "Unlock with passcode" has run out - lock this phone again, here and in Firestore. */
+    private fun checkRelock() {
+        val store = SelfProfileStore(applicationContext)
+        if (!relockDue(store.relockAtMs, System.currentTimeMillis())) return
+        store.relockAtMs = null
+        lockedCache = true
+        val repository = (application as ParentApp).repository
+        val parentUid = repository.currentUid
+        val childId = store.childId
+        if (parentUid != null && childId != null) {
+            CoroutineScope(Dispatchers.IO).launch {
+                runCatching { repository.setLocked(parentUid, childId, true) }
+            }
+        }
+        showBlockOverlay(BlockReason.PARENT_LOCK)
     }
 
     private fun handleWarn(kind: WarnKind, pkg: String?) {

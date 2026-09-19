@@ -425,6 +425,30 @@ class PairingFlowEmulatorTest {
     }
 
     @Test(timeout = TEST_TIMEOUT_MS)
+    fun pairedKidDeviceCanFlipTrackingToggles_butNotOtherFields() = runBlocking {
+        val parentRepo = FamilyRepository()
+        val parentUid = parentRepo.signUpParent(uniqueEmail(), "testpass123")
+        val child = parentRepo.createChild(parentUid, "TrackingChild")
+        parentRepo.signOut()
+
+        val kidRepo = FamilyRepository()
+        kidRepo.claimPairingCode(child.pairingCode)
+        // The passcode-gated Parent controls screen on the kid device does this.
+        kidRepo.setTrackingToggle(parentUid, child.id, org.openscreentime.shared.model.TrackingToggle.TRACK_UNLOCKS, true)
+
+        var threw = false
+        try {
+            FirebaseFirestore.getInstance()
+                .document(FirestorePaths.childDoc(parentUid, child.id))
+                .update("parentPasscodeHash", "hacked")
+                .await()
+        } catch (e: Exception) {
+            threw = true
+        }
+        assertTrue("A kid device still must not be able to write the passcode fields", threw)
+    }
+
+    @Test(timeout = TEST_TIMEOUT_MS)
     fun claimedDeviceCannotListSiblingChildren() = runBlocking {
         val parentRepo = FamilyRepository()
         val parentUid = parentRepo.signUpParent(uniqueEmail(), "testpass123")

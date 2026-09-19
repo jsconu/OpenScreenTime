@@ -10,8 +10,12 @@ import android.os.Handler
 import android.os.Looper
 import android.view.accessibility.AccessibilityEvent
 import androidx.core.app.NotificationCompat
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import org.openscreentime.kid.KidApp
 import org.openscreentime.kid.R
+import org.openscreentime.kid.data.PairingStore
 import org.openscreentime.kid.data.UsageStore
 import org.openscreentime.kid.ui.BlockOverlayActivity
 import org.openscreentime.kid.ui.MainActivity
@@ -29,6 +33,7 @@ import org.openscreentime.shared.model.hasUnlockWindowExpired
 import org.openscreentime.shared.model.isFirstAppAfterUnlock
 import org.openscreentime.shared.model.isInBedtimeWindow
 import org.openscreentime.shared.model.nowMinutesOfDay
+import org.openscreentime.shared.model.relockDue
 import org.openscreentime.shared.model.statusNotificationMessage
 
 /**
@@ -57,6 +62,7 @@ class AppLimitAccessibilityService : AccessibilityService() {
     private val tick = object : Runnable {
         override fun run() {
             flushCurrent(restart = true)
+            checkRelock()
             checkLimits(currentPackage)
             updateStatusNotification()
             handler.postDelayed(this, TICK_INTERVAL_MS)
@@ -168,6 +174,21 @@ class AppLimitAccessibilityService : AccessibilityService() {
                 is EnforcementEvent.Warn -> handleWarn(event.kind, pkg)
             }
         }
+    }
+
+    /** A parent's timed "Parent unlock" has run out - lock again, here and in Firestore. */
+    private fun checkRelock() {
+        if (!relockDue(LiveChildState.relockAtMs, System.currentTimeMillis())) return
+        LiveChildState.relockNow(applicationContext)
+        val pairing = PairingStore(applicationContext)
+        val parentUid = pairing.parentUid
+        val childId = pairing.childId
+        if (parentUid != null && childId != null) {
+            CoroutineScope(Dispatchers.IO).launch {
+                runCatching { (application as KidApp).repository.setLocked(parentUid, childId, true) }
+            }
+        }
+        showBlockOverlay(BlockReason.PARENT_LOCK)
     }
 
     private fun handleWarn(kind: WarnKind, pkg: String?) {

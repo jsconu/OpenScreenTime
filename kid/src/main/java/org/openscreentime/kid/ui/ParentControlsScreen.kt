@@ -5,7 +5,11 @@ import android.app.role.RoleManager
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
+import android.net.Uri
 import android.os.Build
+import android.provider.ContactsContract
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -40,6 +44,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
@@ -63,6 +68,7 @@ import org.openscreentime.shared.repo.FamilyRepository
 import org.openscreentime.sharedui.BedtimeWindowDialog
 import org.openscreentime.sharedui.MinutesInputDialog
 import org.openscreentime.sharedui.UnlockGoalInputDialog
+import org.openscreentime.sharedui.trackingSection
 
 /**
  * Shown after a correct passcode entry in [ParentModeUnlockScreen]. Mirrors the limit
@@ -118,6 +124,16 @@ fun ParentControlsScreen(
     var showLockConfirm by remember { mutableStateOf(false) }
     var newBlockedDomain by remember { mutableStateOf("") }
     var newAllowedContact by remember { mutableStateOf("") }
+    // The system contact picker hands back just the one number chosen, with temporary read access
+    // to that row - so no READ_CONTACTS permission is needed (or asked for).
+    val contactPicker = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+        val uri = result.data?.data ?: return@rememberLauncherForActivityResult
+        val number = readPickedPhoneNumber(context, uri) ?: return@rememberLauncherForActivityResult
+        val updated = addAllowedContact(child.alwaysAllowedContacts, number)
+        if (updated != child.alwaysAllowedContacts) {
+            scope.launch { repository.updateAlwaysAllowedContacts(parentUid, childId, updated) }
+        }
+    }
     var showUnpairConfirm by remember { mutableStateOf(false) }
 
     Scaffold(
@@ -296,6 +312,19 @@ fun ParentControlsScreen(
                             }
                         ) { Text("Allow") }
                     }
+                    Spacer(Modifier.height(4.dp))
+                    OutlinedButton(
+                        onClick = {
+                            try {
+                                contactPicker.launch(
+                                    Intent(Intent.ACTION_PICK, ContactsContract.CommonDataKinds.Phone.CONTENT_URI)
+                                )
+                            } catch (e: Exception) {
+                                // No contacts app on this phone - typing a number still works.
+                            }
+                        },
+                        modifier = Modifier.testTag("bedtime_pick_contact")
+                    ) { Text("Choose from contacts") }
                 }
             }
             if (child.alwaysAllowedContacts.isEmpty()) {
@@ -375,6 +404,12 @@ fun ParentControlsScreen(
                     }
                 )
             }
+            trackingSection(
+                child = child,
+                onToggle = { toggle, enabled ->
+                    scope.launch { repository.setTrackingToggle(parentUid, childId, toggle, enabled) }
+                }
+            )
             item {
                 Text(
                     "App limits",
@@ -510,3 +545,10 @@ fun ParentControlsScreen(
     }
 }
 
+/** The phone number of the contact row the picker returned, or null if it can't be read. */
+private fun readPickedPhoneNumber(context: Context, uri: Uri): String? = try {
+    context.contentResolver.query(uri, arrayOf(ContactsContract.CommonDataKinds.Phone.NUMBER), null, null, null)
+        ?.use { cursor -> if (cursor.moveToFirst()) cursor.getString(0) else null }
+} catch (e: Exception) {
+    null
+}

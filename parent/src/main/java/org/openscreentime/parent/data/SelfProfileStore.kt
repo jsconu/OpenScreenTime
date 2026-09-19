@@ -16,5 +16,10 @@ class SelfProfileStore(context: Context) {
 
     val isTracking: Boolean get() = childId != null
 
+    /** When a timed "Unlock with passcode" ends and this phone locks itself again; null = none pending. */
+    var relockAtMs: Long?
+        get() = prefs.getLong("relockAtMs", -1L).takeIf { it >= 0 }
+        set(value) = prefs.edit().putLong("relockAtMs", value ?: -1L).apply()
+
     fun clear() = prefs.edit().clear().apply()
 }

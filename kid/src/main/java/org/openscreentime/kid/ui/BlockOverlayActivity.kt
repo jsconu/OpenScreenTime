@@ -38,6 +38,7 @@ import org.openscreentime.kid.monitor.LiveChildState
 import org.openscreentime.shared.model.BlockReason
 import org.openscreentime.shared.model.blockScreenCopy
 import org.openscreentime.shared.model.randomAlternativeActivity
+import org.openscreentime.shared.model.relockAtFor
 import org.openscreentime.shared.util.PasscodeAttemptStore
 import org.openscreentime.shared.util.PasscodeHasher
 import org.openscreentime.sharedui.ParentUnlockDialog
@@ -163,7 +164,7 @@ class BlockOverlayActivity : ComponentActivity() {
                         verifying = verifying,
                         error = unlockError,
                         onDismiss = { showParentUnlock = false },
-                        onSubmit = { pin ->
+                        onSubmit = { pin, relockAfterMinutes ->
                             val attempts = PasscodeAttemptStore(this@BlockOverlayActivity)
                             val hash = LiveChildState.parentPasscodeHash
                             val salt = LiveChildState.parentPasscodeSalt
@@ -178,7 +179,10 @@ class BlockOverlayActivity : ComponentActivity() {
                                     verifying = false
                                     if (ok) {
                                         attempts.recordSuccess()
-                                        LiveChildState.clearLock(this@BlockOverlayActivity)
+                                        LiveChildState.clearLock(
+                                            this@BlockOverlayActivity,
+                                            relockAtFor(relockAfterMinutes, System.currentTimeMillis())
+                                        )
                                         // Best effort: if this can't reach Firestore right now the
                                         // lock is already lifted on this phone, and the write is
                                         // queued and applied when it reconnects.
