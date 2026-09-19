@@ -107,7 +107,9 @@ parent app  <---sync--->  Firebase (Firestore + Auth)  <---sync--->  kid app
   unlock) and **notification-count tracking** (overall and by app - counts
   only, never content), each per kid and for the parent's own device. Off by
   default, nothing is collected until a category is on, and each one adds to
-  the weekly report plus a day-by-day digest. A parent can also choose to
+  the weekly report - including a 4-week trend per app for which apps are
+  opened first after unlocking and which send the most notifications - plus a
+  day-by-day digest. A parent can also choose to
   show today's count on the kid's phone, with a note that watching counts
   can make phone use feel more compulsive.
 - Ask the built-in **help bot** (the "?" on the dashboard) how to use the app,

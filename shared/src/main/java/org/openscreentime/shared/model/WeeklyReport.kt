@@ -110,6 +110,38 @@ fun computeWeeklyReport(dailyStats: List<DailyStats>, weeks: Int = 4): WeeklyRep
     return WeeklyReport(weekSummaries)
 }
 
+/** One app's count in each report week, oldest week first, ready to draw as a small bar trend. */
+data class AppCountTrend(
+    val packageName: String,
+    val appName: String,
+    val weeklyCounts: List<Int>
+) {
+    val total: Int get() = weeklyCounts.sum()
+    val thisWeek: Int get() = weeklyCounts.lastOrNull() ?: 0
+}
+
+/**
+ * See #37 - the apps with the highest total across every week in [report], each with its count in
+ * every week (zero where it didn't appear), so a per-app trend - an app creeping up over the month -
+ * is visible, not just this week's ranking. [select] picks which per-app list to trend, e.g.
+ * `{ it.notificationsByApp }` or `{ it.unlockFirstApps }`.
+ */
+fun topAppCountTrends(
+    report: WeeklyReport,
+    limit: Int,
+    select: (WeekSummary) -> List<AppCount>
+): List<AppCountTrend> {
+    val chronological = report.weeks.reversed()
+    val names = LinkedHashMap<String, String>()
+    chronological.forEach { week -> select(week).forEach { names[it.packageName] = it.appName } }
+    return names.map { (pkg, name) ->
+        AppCountTrend(pkg, name, chronological.map { week -> select(week).firstOrNull { it.packageName == pkg }?.count ?: 0 })
+    }
+        .filter { it.total > 0 }
+        .sortedByDescending { it.total }
+        .take(limit)
+}
+
 private fun mergeInto(into: MutableMap<String, AppCount>, add: AppCount) {
     val existing = into[add.packageName]
     into[add.packageName] = AppCount(add.packageName, add.appName, (existing?.count ?: 0) + add.count)

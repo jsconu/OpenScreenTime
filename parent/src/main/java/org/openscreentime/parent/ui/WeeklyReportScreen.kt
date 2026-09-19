@@ -34,12 +34,13 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import java.text.SimpleDateFormat
 import java.util.Locale
-import org.openscreentime.shared.model.AppCount
+import org.openscreentime.shared.model.AppCountTrend
 import org.openscreentime.shared.model.ChildProfile
 import org.openscreentime.shared.model.DailyStats
 import org.openscreentime.shared.model.WeekSummary
 import org.openscreentime.shared.model.WeeklyReport
 import org.openscreentime.shared.model.computeWeeklyReport
+import org.openscreentime.shared.model.topAppCountTrends
 import org.openscreentime.shared.model.formatDuration
 import org.openscreentime.shared.model.todayDateString
 import org.openscreentime.shared.repo.FamilyRepository
@@ -220,9 +221,13 @@ private fun UnlocksSection(report: WeeklyReport) {
         )
         WeekLabelsRow(chronological)
         Spacer(Modifier.height(12.dp))
-        Text("Opened first after unlocking, this week", style = MaterialTheme.typography.bodyMedium)
-        AppCountList(
-            counts = thisWeek?.unlockFirstApps.orEmpty(),
+        Text("Opened first after unlocking", style = MaterialTheme.typography.bodyMedium)
+        Text(
+            "Top apps over the last $REPORT_WEEKS weeks, oldest to newest.",
+            style = MaterialTheme.typography.bodySmall
+        )
+        AppCountTrendList(
+            trends = topAppCountTrends(report, TOP_APPS_SHOWN) { it.unlockFirstApps },
             emptyText = "Nothing recorded yet - this fills in once the phone has synced after tracking was turned on."
         )
     }
@@ -248,9 +253,13 @@ private fun NotificationsSection(report: WeeklyReport) {
         )
         WeekLabelsRow(chronological)
         Spacer(Modifier.height(12.dp))
-        Text("By app, this week", style = MaterialTheme.typography.bodyMedium)
-        AppCountList(
-            counts = thisWeek?.notificationsByApp.orEmpty(),
+        Text("By app", style = MaterialTheme.typography.bodyMedium)
+        Text(
+            "Top apps over the last $REPORT_WEEKS weeks, oldest to newest.",
+            style = MaterialTheme.typography.bodySmall
+        )
+        AppCountTrendList(
+            trends = topAppCountTrends(report, TOP_APPS_SHOWN) { it.notificationsByApp },
             emptyText = "Nothing recorded yet - this fills in once the phone has synced after tracking was turned on."
         )
     }
@@ -294,16 +303,27 @@ private fun WeekLabelsRow(chronological: List<WeekSummary>) {
     }
 }
 
+/** One row per app: its name, a small bar per week (oldest to newest), and this week's count. */
 @Composable
-private fun AppCountList(counts: List<AppCount>, emptyText: String) {
-    if (counts.isEmpty()) {
+private fun AppCountTrendList(trends: List<AppCountTrend>, emptyText: String) {
+    if (trends.isEmpty()) {
+        Spacer(Modifier.height(4.dp))
         Text(emptyText, style = MaterialTheme.typography.bodySmall)
         return
     }
-    counts.take(TOP_APPS_SHOWN).forEach { app ->
-        Row(Modifier.fillMaxWidth().padding(vertical = 2.dp)) {
-            Text(app.appName, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f))
-            Text("${app.count}", style = MaterialTheme.typography.bodyMedium)
+    val barColor = MaterialTheme.colorScheme.secondary
+    trends.forEach { app ->
+        Spacer(Modifier.height(12.dp))
+        Text(app.appName, style = MaterialTheme.typography.bodyMedium)
+        Spacer(Modifier.height(4.dp))
+        Row {
+            BarChart(
+                values = app.weeklyCounts.map { it.toLong() },
+                color = barColor,
+                modifier = Modifier.weight(1f).height(40.dp)
+            )
+            Spacer(Modifier.width(8.dp))
+            Text("this week: ${app.thisWeek}", style = MaterialTheme.typography.labelSmall)
         }
     }
 }

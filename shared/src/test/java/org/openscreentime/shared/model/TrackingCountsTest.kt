@@ -134,6 +134,34 @@ class TrackingCountsTest {
     }
 
     @Test
+    fun `per-app trends give each app a count for every week, oldest first, ranked by total`() {
+        val stats = listOf(
+            DailyStats(date = dateDaysAgo(0), notificationsByApp = listOf(AppCount("com.chat", "Chat", 30), AppCount("com.mail", "Mail", 2))),
+            DailyStats(date = dateDaysAgo(7), notificationsByApp = listOf(AppCount("com.chat", "Chat", 10))),
+            DailyStats(date = dateDaysAgo(21), notificationsByApp = listOf(AppCount("com.mail", "Mail", 4)))
+        )
+        val trends = topAppCountTrends(computeWeeklyReport(stats, weeks = 4), limit = 5) { it.notificationsByApp }
+        // Weeks oldest -> newest: 21 days ago, 14 days ago, 7 days ago, this week.
+        assertEquals(listOf(0, 0, 10, 30), trends.first { it.packageName == "com.chat" }.weeklyCounts)
+        assertEquals(listOf(4, 0, 0, 2), trends.first { it.packageName == "com.mail" }.weeklyCounts)
+        assertEquals(listOf("com.chat", "com.mail"), trends.map { it.packageName })
+        assertEquals(30, trends.first().thisWeek)
+        assertEquals(40, trends.first().total)
+    }
+
+    @Test
+    fun `per-app trends respect the limit and drop apps with nothing recorded`() {
+        val stats = listOf(
+            DailyStats(
+                date = dateDaysAgo(0),
+                unlockFirstApps = listOf(AppCount("com.a", "A", 3), AppCount("com.b", "B", 2), AppCount("com.zero", "Zero", 0))
+            )
+        )
+        val trends = topAppCountTrends(computeWeeklyReport(stats, weeks = 4), limit = 1) { it.unlockFirstApps }
+        assertEquals(listOf("com.a"), trends.map { it.packageName })
+    }
+
+    @Test
     fun `the daily digest lists only days with data, newest first`() {
         val stats = listOf(
             DailyStats(date = dateDaysAgo(2), unlockCount = 3, notificationCount = 7),
