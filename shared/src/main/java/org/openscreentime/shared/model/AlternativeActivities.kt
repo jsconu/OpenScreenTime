@@ -8,7 +8,7 @@ package org.openscreentime.shared.model
  */
 val ALTERNATIVE_ACTIVITIES = listOf(
     "Go for a walk",
-    "Text a friend",
+    "Talk with someone nearby",
     "Read for a bit",
     "Stretch",
     "Draw something",

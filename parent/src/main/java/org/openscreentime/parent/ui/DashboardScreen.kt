@@ -180,11 +180,21 @@ fun DashboardScreen(
                     )
                 }
             }
-            item {
-                TipOfTheDayCard(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp))
-            }
-            item {
-                StatusGuideCard(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp))
+            if (children.isEmpty()) {
+                item {
+                    Box(Modifier.fillMaxWidth().padding(32.dp), contentAlignment = Alignment.Center) {
+                        Text("Add your first child to get started.")
+                    }
+                }
+            } else {
+                items(children, key = { it.id }) { child ->
+                    ChildSummaryCard(
+                        repository = repository,
+                        parentUid = parentUid,
+                        child = child,
+                        onClick = { onOpenChild(child.id) }
+                    )
+                }
             }
             item {
                 val trackedSelf = selfProfile
@@ -222,21 +232,11 @@ fun DashboardScreen(
                     }
                 }
             }
-            if (children.isEmpty()) {
-                item {
-                    Box(Modifier.fillMaxWidth().padding(32.dp), contentAlignment = Alignment.Center) {
-                        Text("Add your first child to get started.")
-                    }
-                }
-            } else {
-                items(children, key = { it.id }) { child ->
-                    ChildSummaryCard(
-                        repository = repository,
-                        parentUid = parentUid,
-                        child = child,
-                        onClick = { onOpenChild(child.id) }
-                    )
-                }
+            item {
+                TipOfTheDayCard(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp))
+            }
+            item {
+                StatusGuideCard(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp))
             }
             item {
                 NotificationDigestCard(
