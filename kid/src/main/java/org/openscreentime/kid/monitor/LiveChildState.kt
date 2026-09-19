@@ -42,6 +42,9 @@ object LiveChildState {
     /** See #35 - parent-controlled tracking toggles; nothing is collected while these are off. */
     @Volatile var trackUnlocks: Boolean = false
     @Volatile var trackNotifications: Boolean = false
+    /** The family passcode's salted hash, so the lock screen can check a parent's PIN offline. */
+    @Volatile var parentPasscodeHash: String? = null
+    @Volatile var parentPasscodeSalt: String? = null
 
     private const val PREFS = "live_child_state"
 
@@ -59,6 +62,14 @@ object LiveChildState {
         trackUnlocks = child.trackUnlocks
         trackNotifications = child.trackNotifications
         lockedCache = child.locked
+        parentPasscodeHash = child.parentPasscodeHash
+        parentPasscodeSalt = child.parentPasscodeSalt
+        persist(context)
+    }
+
+    /** Applies a parent's PIN-confirmed unlock immediately, without waiting for the sync round trip. */
+    fun clearLock(context: Context) {
+        lockedCache = false
         persist(context)
     }
 
@@ -79,6 +90,8 @@ object LiveChildState {
         e.putBoolean("trackUnlocks", trackUnlocks)
         e.putBoolean("trackNotifications", trackNotifications)
         e.putBoolean("locked", lockedCache)
+        e.putString("pcHash", parentPasscodeHash)
+        e.putString("pcSalt", parentPasscodeSalt)
         e.apply()
     }
 
@@ -103,6 +116,8 @@ object LiveChildState {
         trackUnlocks = p.getBoolean("trackUnlocks", false)
         trackNotifications = p.getBoolean("trackNotifications", false)
         lockedCache = p.getBoolean("locked", false)
+        parentPasscodeHash = p.getString("pcHash", null)
+        parentPasscodeSalt = p.getString("pcSalt", null)
     }
 
     /** Forgets everything - used when this device is unpaired. */
@@ -120,5 +135,7 @@ object LiveChildState {
         trackUnlocks = false
         trackNotifications = false
         lockedCache = false
+        parentPasscodeHash = null
+        parentPasscodeSalt = null
     }
 }

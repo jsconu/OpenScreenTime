@@ -19,6 +19,7 @@ import org.openscreentime.kid.ui.PauseOverlayActivity
 import org.openscreentime.shared.model.BlockReason
 import org.openscreentime.shared.model.EnforcementEvent
 import org.openscreentime.shared.model.EnforcementInput
+import org.openscreentime.shared.model.STATUS_NOTIFICATION_TITLE
 import org.openscreentime.shared.model.StatusTier
 import org.openscreentime.shared.model.WARNING_THRESHOLD_MINUTES
 import org.openscreentime.shared.model.WarnKind
@@ -28,6 +29,7 @@ import org.openscreentime.shared.model.hasUnlockWindowExpired
 import org.openscreentime.shared.model.isFirstAppAfterUnlock
 import org.openscreentime.shared.model.isInBedtimeWindow
 import org.openscreentime.shared.model.nowMinutesOfDay
+import org.openscreentime.shared.model.statusNotificationMessage
 
 /**
  * Watches foreground app changes to (a) attribute time per app and (b) enforce
@@ -219,17 +221,8 @@ class AppLimitAccessibilityService : AccessibilityService() {
      * just reflects current state whenever it's glanced at.
      */
     private fun updateStatusNotification() {
-        val isInBedtime = isInBedtimeWindow(
-            nowMinutesOfDay(), LiveChildState.bedtimeStartMinutes, LiveChildState.bedtimeEndMinutes
-        )
-        val tier = computeStatusTier(
-            locked = LiveChildState.lockedCache,
-            isInBedtime = isInBedtime,
-            dailyLimitMinutes = LiveChildState.dailyLimitMinutes,
-            liveTotalScreenTimeMs = usageStore.liveTotalScreenTimeMs,
-            dailyUnlockGoal = LiveChildState.dailyUnlockGoal,
-            unlockCount = usageStore.unlockCount
-        )
+        val status = currentStatus(usageStore)
+        val tier = status.tier
         val iconRes = when (tier) {
             StatusTier.STOP -> R.drawable.ic_status_stop
             StatusTier.CAUTION -> R.drawable.ic_status_caution
@@ -248,8 +241,8 @@ class AppLimitAccessibilityService : AccessibilityService() {
             // pulled-down notification shade, tinting the icon's background circle
             // there to match the tier, since that's the one place color can show at all.
             .setColor(statusTierColor(tier))
-            .setContentTitle(getString(R.string.monitor_notification_title))
-            .setContentText(getString(R.string.monitor_notification_text))
+            .setContentTitle(STATUS_NOTIFICATION_TITLE)
+            .setContentText(statusNotificationMessage(tier, status.pausedByLockOrBedtime))
             .setContentIntent(openIntent)
             .setOngoing(true)
             .setOnlyAlertOnce(true)

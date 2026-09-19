@@ -18,6 +18,7 @@ import org.openscreentime.parent.ui.MainActivity
 import org.openscreentime.shared.model.BlockReason
 import org.openscreentime.shared.model.EnforcementEvent
 import org.openscreentime.shared.model.EnforcementInput
+import org.openscreentime.shared.model.STATUS_NOTIFICATION_TITLE
 import org.openscreentime.shared.model.StatusTier
 import org.openscreentime.shared.model.WARNING_THRESHOLD_MINUTES
 import org.openscreentime.shared.model.WarnKind
@@ -27,6 +28,7 @@ import org.openscreentime.shared.model.hasUnlockWindowExpired
 import org.openscreentime.shared.model.isFirstAppAfterUnlock
 import org.openscreentime.shared.model.isInBedtimeWindow
 import org.openscreentime.shared.model.nowMinutesOfDay
+import org.openscreentime.shared.model.statusNotificationMessage
 
 /**
  * Self-tracking equivalent of the kid app's AppLimitAccessibilityService (see #8) -
@@ -225,8 +227,8 @@ class AppLimitAccessibilityService : AccessibilityService() {
             // status-bar icon to a flat white silhouette regardless of setColor() -
             // this only reaches the pulled-down notification shade's icon circle.
             .setColor(statusTierColor(tier))
-            .setContentTitle(getString(R.string.self_monitor_notification_title))
-            .setContentText(getString(R.string.self_monitor_notification_text))
+            .setContentTitle(STATUS_NOTIFICATION_TITLE)
+            .setContentText(statusNotificationMessage(tier, pausedByLockOrBedtime = lockedCache || isInBedtime))
             .setContentIntent(openIntent)
             .setOngoing(true)
             .setOnlyAlertOnce(true)

@@ -1,9 +1,10 @@
-package org.openscreentime.kid.data
+package org.openscreentime.shared.util
 
 import android.content.Context
 
 /**
- * Failed-passcode counter for the kid device's "Parent controls" gate. Kept on disk, not in
+ * Failed-passcode counter for the app's passcode gates (the kid device's "Parent controls" and the
+ * lock screens' parent unlock), shared so they count together. Kept on disk, not in
  * Compose state: the earlier in-memory counter reset every time the screen was left and
  * re-entered, so it didn't slow anyone down. After [MAX_ATTEMPTS] misses the gate is closed
  * for [LOCKOUT_MS], and the count only clears on a correct passcode.

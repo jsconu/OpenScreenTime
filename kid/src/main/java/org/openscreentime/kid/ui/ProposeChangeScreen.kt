@@ -28,6 +28,8 @@ import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
 import org.openscreentime.kid.data.UsageStore
 import org.openscreentime.shared.model.AppUsage
+import org.openscreentime.shared.model.mergeUsageWithInstalled
+import org.openscreentime.shared.util.listLaunchableApps
 import org.openscreentime.shared.model.ChildProfile
 import org.openscreentime.shared.repo.FamilyRepository
 import org.openscreentime.sharedui.MinutesInputDialog
@@ -49,10 +51,14 @@ fun ProposeChangeScreen(
     val scope = rememberCoroutineScope()
     val usageStore = remember { UsageStore(context) }
 
+    // Every app on the phone, not only ones already used today - so a limit can be suggested for any.
     val appUsage = remember {
-        usageStore.appUsageMs.map { (pkg, ms) ->
-            AppUsage(packageName = pkg, appName = usageStore.appNames[pkg] ?: pkg, foregroundTimeMs = ms)
-        }.sortedByDescending { it.foregroundTimeMs }
+        mergeUsageWithInstalled(
+            usage = usageStore.appUsageMs.map { (pkg, ms) ->
+                AppUsage(packageName = pkg, appName = usageStore.appNames[pkg] ?: pkg, foregroundTimeMs = ms)
+            },
+            installed = listLaunchableApps(context)
+        )
     }
 
     var showLimitDialog by remember { mutableStateOf(false) }
@@ -106,7 +112,7 @@ fun ProposeChangeScreen(
             if (appUsage.isEmpty()) {
                 item {
                     Text(
-                        "No app usage recorded yet today.",
+                        "No apps found on this phone.",
                         style = MaterialTheme.typography.bodySmall,
                         modifier = Modifier.padding(horizontal = 16.dp)
                     )
@@ -141,7 +147,7 @@ fun ProposeChangeScreen(
     }
 
     editingApp?.let { pkg ->
-        val appName = usageStore.appNames[pkg] ?: pkg
+        val appName = appUsage.firstOrNull { it.packageName == pkg }?.appName ?: pkg
         MinutesInputDialog(
             title = "Suggest a limit for $appName",
             initialMinutes = (child.proposedAppLimits ?: child.appLimits)[pkg] ?: 60,

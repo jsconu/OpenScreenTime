@@ -52,6 +52,8 @@ import org.openscreentime.shared.model.computeStreak
 import org.openscreentime.shared.model.formatDuration
 import org.openscreentime.shared.model.removeBlockedDomain
 import org.openscreentime.shared.model.formatMinutesOfDay
+import org.openscreentime.shared.model.mergeUsageWithInstalled
+import org.openscreentime.shared.util.listLaunchableApps
 import org.openscreentime.shared.model.todayDateString
 import org.openscreentime.shared.repo.FamilyRepository
 import org.openscreentime.sharedui.BedtimeWindowDialog
@@ -104,6 +106,17 @@ fun ChildDetailScreen(
     }
 
     val currentChild = child ?: return
+
+    // On the parent's own "Me" profile this phone *is* the device, so every app installed here can be
+    // listed for limits, not only the ones already used today. For a paired kid's phone the parent
+    // app can only see what the kid device has synced (usage), since it can't see that phone's apps.
+    val displayedApps = remember(currentChild.isSelf, stats.appUsage) {
+        if (currentChild.isSelf) {
+            mergeUsageWithInstalled(stats.appUsage, listLaunchableApps(context))
+        } else {
+            stats.appUsage
+        }
+    }
 
     LaunchedEffect(childId, currentChild.dailyLimitMinutes, currentChild.dailyUnlockGoal) {
         val recent = repository.getRecentDailyStats(parentUid, childId, STREAK_LOOKBACK_DAYS)
@@ -175,7 +188,7 @@ fun ChildDetailScreen(
                 }
             )
             appUsageSection(
-                appUsage = stats.appUsage,
+                appUsage = displayedApps,
                 appLimits = currentChild.appLimits,
                 alwaysAllowedPackages = currentChild.alwaysAllowedPackages,
                 onEditApp = { editingApp = it },
@@ -288,7 +301,7 @@ fun ChildDetailScreen(
     }
 
     editingApp?.let { pkg ->
-        val appName = stats.appUsage.firstOrNull { it.packageName == pkg }?.appName ?: pkg
+        val appName = displayedApps.firstOrNull { it.packageName == pkg }?.appName ?: pkg
         MinutesInputDialog(
             title = "Daily limit for $appName",
             initialMinutes = currentChild.appLimits[pkg] ?: 60,
@@ -613,7 +626,7 @@ private fun LazyListScope.appUsageSection(
     if (appUsage.isEmpty()) {
         item {
             Text(
-                "No app usage synced yet.",
+                "No apps to show yet.",
                 style = MaterialTheme.typography.bodySmall,
                 modifier = Modifier.padding(horizontal = 16.dp)
             )

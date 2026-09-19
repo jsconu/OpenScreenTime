@@ -1,4 +1,4 @@
-package org.openscreentime.kid.ui
+package org.openscreentime.sharedui
 
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -20,13 +20,11 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
-import org.openscreentime.kid.data.NotificationDigestStore
 import org.openscreentime.shared.model.DigestAppGroup
 import org.openscreentime.shared.model.DigestNotification
 import org.openscreentime.shared.model.groupDigestByApp
@@ -35,20 +33,19 @@ import java.util.Date
 import java.util.Locale
 
 /**
- * Read-only, text-only digest of today's notifications on this device (see #20).
+ * Read-only, text-only digest of today's notifications on this device (see #20), shared by the
+ * kid and parent apps - each supplies its own on-device [loadEntries]. Nothing here is synced.
  * Tapping a row does nothing on purpose - this is not a launcher back into the source app.
  */
 @Composable
-fun NotificationDigestScreen(onDone: () -> Unit) {
-    val context = LocalContext.current
-    val store = remember { NotificationDigestStore(context) }
-    var groups by remember { mutableStateOf(groupDigestByApp(store.entries)) }
+fun NotificationDigestScreen(loadEntries: () -> List<DigestNotification>, onDone: () -> Unit) {
+    var groups by remember { mutableStateOf(groupDigestByApp(loadEntries())) }
     val lifecycleOwner = LocalLifecycleOwner.current
 
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
             if (event == Lifecycle.Event.ON_RESUME) {
-                groups = groupDigestByApp(store.entries)
+                groups = groupDigestByApp(loadEntries())
             }
         }
         lifecycleOwner.lifecycle.addObserver(observer)

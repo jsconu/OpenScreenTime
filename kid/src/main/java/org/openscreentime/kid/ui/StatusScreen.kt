@@ -45,11 +45,15 @@ import org.openscreentime.kid.data.TextSize
 import org.openscreentime.kid.data.ThemeMode
 import org.openscreentime.kid.data.TipsStore
 import org.openscreentime.kid.data.UsageStore
+import org.openscreentime.kid.monitor.currentStatus
 import org.openscreentime.kid.data.label
 import org.openscreentime.kid.util.PermissionActions
 import org.openscreentime.kid.util.PermissionState
 import org.openscreentime.kid.util.isNotificationListenerEnabled
 import org.openscreentime.shared.model.DailyStats
+import org.openscreentime.shared.model.StatusTier
+import org.openscreentime.shared.model.statusNotificationMessage
+import org.openscreentime.sharedui.StatusIconGuide
 import org.openscreentime.shared.model.TRACKING_DISPLAY_NOTE
 import org.openscreentime.shared.model.currentDayIndex
 import org.openscreentime.shared.model.currentDayKidTip
@@ -98,6 +102,8 @@ fun StatusScreen(
             if (permissions.allGranted) "Screen time monitoring is active." else "A few permissions are needed to finish setup.",
             style = MaterialTheme.typography.bodyMedium
         )
+        Spacer(Modifier.height(12.dp))
+        MyScreenTimeCard()
         Spacer(Modifier.height(12.dp))
         StatusIconLegend()
         Spacer(Modifier.height(12.dp))
@@ -266,44 +272,67 @@ private fun TrackingCountsCard(showUnlocks: Boolean, showNotifications: Boolean)
 }
 
 /**
- * Explains the ongoing notification's status icon (see #9's calm status indicator) - the
- * icon itself only ever appears in the system notification, so this is the one place in
- * the app that says what it actually means, for whenever it's glanced at without opening
- * the app. See #30 - also says *why* this is the only signal shown here (no exact numbers,
- * no report), since an unexplained limitation reads as arbitrary or secretive otherwise.
+ * "My screen time" - the same thumbs up / open hand / stop that sits in the top-left of the status
+ * bar, with the same short message the notification shade shows. It comes from [currentStatus], the
+ * one function the status-bar icon also uses, so the two always match. Deliberately no numbers: a
+ * child sees the calm signal only (see the guide below); the details are for a parent.
  */
 @Composable
-private fun StatusIconLegend() {
-    Column(modifier = Modifier.testTag("status_icon_legend")) {
-        Text("What the status icon means", style = MaterialTheme.typography.labelLarge)
-        Spacer(Modifier.height(6.dp))
-        StatusIconLegendRow(R.drawable.ic_status_good, "Comfortably under today's goal")
-        StatusIconLegendRow(R.drawable.ic_status_caution, "Approaching today's goal")
-        StatusIconLegendRow(R.drawable.ic_status_stop, "At or over today's goal")
-        Spacer(Modifier.height(6.dp))
-        Text(
-            "This app deliberately doesn't show exact numbers or a detailed report here - " +
-                "just this simple signal, so screen time stays something to be aware of, not " +
-                "something to obsess over checking. Ask a parent if you want to talk through " +
-                "the details.",
-            style = MaterialTheme.typography.bodySmall,
-            modifier = Modifier.testTag("status_icon_legend_why")
-        )
+private fun MyScreenTimeCard() {
+    val context = LocalContext.current
+    val usageStore = remember { UsageStore(context) }
+    val status by produceState(currentStatus(usageStore)) {
+        while (true) {
+            delay(10_000)
+            value = currentStatus(usageStore)
+        }
+    }
+    val iconRes = when (status.tier) {
+        StatusTier.STOP -> R.drawable.ic_status_stop
+        StatusTier.CAUTION -> R.drawable.ic_status_caution
+        StatusTier.GOOD -> R.drawable.ic_status_good
+    }
+    Card(modifier = Modifier.fillMaxWidth().testTag("status_my_screen_time")) {
+        Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
+            Icon(
+                painter = painterResource(iconRes),
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurface,
+                modifier = Modifier.size(36.dp)
+            )
+            Spacer(Modifier.width(12.dp))
+            Column {
+                Text("My screen time", style = MaterialTheme.typography.labelMedium)
+                Spacer(Modifier.height(2.dp))
+                Text(
+                    statusNotificationMessage(status.tier, status.pausedByLockOrBedtime),
+                    style = MaterialTheme.typography.bodyMedium,
+                    modifier = Modifier.testTag("status_my_screen_time_message")
+                )
+            }
+        }
     }
 }
 
+/**
+ * Explains the calm status icons (see #9) - where they appear (top-left of the status bar), what
+ * thumbs up / open hand / stop mean, and what pulling the shade down shows. The icons only ever
+ * appear in the system status bar, so this is the one place in the app that says what they mean.
+ * See #30 - also says *why* this is the only signal shown here (no exact numbers, no report), since
+ * an unexplained limitation reads as arbitrary or secretive otherwise. The parent app shows the
+ * same guide, from the same shared composable.
+ */
 @Composable
-private fun StatusIconLegendRow(iconRes: Int, label: String) {
-    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(vertical = 2.dp)) {
-        Icon(
-            painter = painterResource(iconRes),
-            contentDescription = null,
-            tint = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.size(18.dp)
-        )
-        Spacer(Modifier.width(8.dp))
-        Text(label, style = MaterialTheme.typography.bodySmall)
-    }
+private fun StatusIconLegend() {
+    StatusIconGuide(
+        goodIcon = R.drawable.ic_status_good,
+        cautionIcon = R.drawable.ic_status_caution,
+        stopIcon = R.drawable.ic_status_stop,
+        footnote = "This app deliberately doesn't show exact numbers or a detailed report here - " +
+            "just this simple signal, so screen time stays something to be aware of, not " +
+            "something to obsess over checking. Ask a parent if you want to talk through " +
+            "the details."
+    )
 }
 
 /**
@@ -372,7 +401,7 @@ private fun NotificationDigestCard(
     ListItem(
         headlineContent = { Text("Calm notification list") },
         supportingContent = {
-            Text("A plain, read-only digest of today's notifications on this phone, grouped by app. Nothing is sent to a parent.")
+            Text("A plain, read-only digest of today's notifications on this phone, grouped by app.")
         },
         trailingContent = {
             Switch(

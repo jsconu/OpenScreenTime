@@ -12,19 +12,33 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import org.openscreentime.parent.ParentApp
+import org.openscreentime.parent.data.SelfProfileStore
 import org.openscreentime.parent.monitor.AppLimitAccessibilityService
 import org.openscreentime.shared.model.BlockReason
 import org.openscreentime.shared.model.blockScreenCopy
 import org.openscreentime.shared.model.randomAlternativeActivity
+import org.openscreentime.shared.util.PasscodeAttemptStore
+import org.openscreentime.shared.util.PasscodeHasher
+import org.openscreentime.sharedui.ParentUnlockDialog
 
 /**
  * Self-tracking equivalent of the kid app's BlockOverlayActivity (see #8) - shown when
@@ -43,8 +57,17 @@ class BlockOverlayActivity : ComponentActivity() {
             defaultMessage = "This is your own limit, from your own goals."
         )
 
+        val repository = (application as ParentApp).repository
+        val parentUid = repository.currentUid
+        val selfChildId = SelfProfileStore(this).childId
+
         setContent {
             OpenScreenTimeTheme {
+                val scope = rememberCoroutineScope()
+                var showParentUnlock by remember { mutableStateOf(false) }
+                var unlockError by remember { mutableStateOf<String?>(null) }
+                var verifying by remember { mutableStateOf(false) }
+
                 // See the kid app's BlockOverlayActivity for why: the back gesture/button
                 // used to just finish this activity and reveal the blocked app underneath.
                 BackHandler {}
@@ -76,6 +99,14 @@ class BlockOverlayActivity : ComponentActivity() {
                                 color = MaterialTheme.colorScheme.primary
                             )
                         }
+                        // The parent's own "Lock now": the family passcode lifts it right here.
+                        if (reason == BlockReason.PARENT_LOCK && parentUid != null && selfChildId != null) {
+                            Spacer(Modifier.height(24.dp))
+                            OutlinedButton(
+                                onClick = { unlockError = null; showParentUnlock = true },
+                                modifier = Modifier.testTag("block_parent_unlock")
+                            ) { Text("Unlock with passcode") }
+                        }
                         Spacer(Modifier.height(32.dp))
                         Button(onClick = {
                             startActivity(
@@ -89,6 +120,46 @@ class BlockOverlayActivity : ComponentActivity() {
                             Text("OK")
                         }
                     }
+                }
+
+                if (showParentUnlock && parentUid != null && selfChildId != null) {
+                    ParentUnlockDialog(
+                        verifying = verifying,
+                        error = unlockError,
+                        onDismiss = { showParentUnlock = false },
+                        onSubmit = { pin ->
+                            val attempts = PasscodeAttemptStore(this@BlockOverlayActivity)
+                            if (attempts.isLocked()) {
+                                unlockError = "Too many incorrect attempts. Try again in ${attempts.minutesRemaining()} minutes."
+                            } else {
+                                verifying = true
+                                scope.launch {
+                                    val info = try {
+                                        repository.getParentPasscode(parentUid)
+                                    } catch (e: Exception) {
+                                        null
+                                    }
+                                    val ok = info != null &&
+                                        withContext(Dispatchers.Default) { PasscodeHasher.verify(pin, info.salt, info.hash) }
+                                    verifying = false
+                                    when {
+                                        info == null -> unlockError = "Couldn't check the passcode. Check your connection and try again."
+                                        ok -> {
+                                            attempts.recordSuccess()
+                                            AppLimitAccessibilityService.lockedCache = false
+                                            launch { runCatching { repository.setLocked(parentUid, selfChildId, false) } }
+                                            finish()
+                                        }
+                                        else -> unlockError = if (attempts.recordFailure()) {
+                                            "Too many incorrect attempts. Try again in ${attempts.minutesRemaining()} minutes."
+                                        } else {
+                                            "Incorrect passcode."
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    )
                 }
             }
         }

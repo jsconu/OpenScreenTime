@@ -26,8 +26,8 @@ import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import org.openscreentime.kid.data.PasscodeAttemptStore
 import org.openscreentime.shared.model.ChildProfile
+import org.openscreentime.shared.util.PasscodeAttemptStore
 import org.openscreentime.shared.util.PasscodeHasher
 
 /**

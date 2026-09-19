@@ -29,6 +29,7 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import org.openscreentime.parent.AppLockState
 import org.openscreentime.parent.ParentApp
+import org.openscreentime.parent.data.NotificationDigestStore
 import org.openscreentime.parent.data.AppearancePrefs
 import org.openscreentime.parent.data.SelfProfileStore
 import org.openscreentime.parent.monitor.ScreenMonitorService
@@ -37,6 +38,7 @@ import org.openscreentime.shared.model.HelpAudience
 import org.openscreentime.shared.model.PasscodeInfo
 import org.openscreentime.sharedui.AccessibilityDisclosureDialog
 import org.openscreentime.sharedui.HelpBotScreen
+import org.openscreentime.sharedui.NotificationDigestScreen
 
 class MainActivity : ComponentActivity() {
 
@@ -126,6 +128,10 @@ class MainActivity : ComponentActivity() {
                                     onOpenAppearance = { navController.navigate("appearance") },
                                     onOpenSelfTracking = { navController.navigate("self") },
                                     onOpenHelp = { navController.navigate("help") },
+                                    onOpenDigest = { navController.navigate("digest") },
+                                    onRequestNotificationListener = {
+                                        startActivity(Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS))
+                                    },
                                     onSignOut = {
                                         repository.signOut()
                                         AppLockState.unlockedThisSession = false
@@ -154,6 +160,13 @@ class MainActivity : ComponentActivity() {
                                     repository = repository,
                                     childId = childId,
                                     onBack = { navController.popBackStack() }
+                                )
+                            }
+                            composable("digest") {
+                                val digestStore = remember { NotificationDigestStore(this@MainActivity) }
+                                NotificationDigestScreen(
+                                    loadEntries = { digestStore.entries },
+                                    onDone = { navController.popBackStack() }
                                 )
                             }
                             composable("help") {

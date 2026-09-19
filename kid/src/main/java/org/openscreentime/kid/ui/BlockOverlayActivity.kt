@@ -28,13 +28,19 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.platform.testTag
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import org.openscreentime.kid.KidApp
 import org.openscreentime.kid.data.PairingStore
 import org.openscreentime.kid.monitor.LiveChildState
 import org.openscreentime.shared.model.BlockReason
 import org.openscreentime.shared.model.blockScreenCopy
 import org.openscreentime.shared.model.randomAlternativeActivity
+import org.openscreentime.shared.util.PasscodeAttemptStore
+import org.openscreentime.shared.util.PasscodeHasher
+import org.openscreentime.sharedui.ParentUnlockDialog
 
 /** Full-screen interruption shown when a daily or per-app limit is reached. */
 class BlockOverlayActivity : ComponentActivity() {
@@ -56,6 +62,9 @@ class BlockOverlayActivity : ComponentActivity() {
             OpenScreenTimeTheme {
                 val scope = rememberCoroutineScope()
                 var requestedExtraMinutes by remember { mutableStateOf<Int?>(null) }
+                var showParentUnlock by remember { mutableStateOf(false) }
+                var unlockError by remember { mutableStateOf<String?>(null) }
+                var verifying by remember { mutableStateOf(false) }
 
                 // The system back gesture/button used to just finish this activity, which
                 // (since it's the root of its own task - see the FLAG_ACTIVITY_NEW_TASK
@@ -122,6 +131,18 @@ class BlockOverlayActivity : ComponentActivity() {
                                 }
                             )
                         }
+                        // A parent standing next to the phone can lift a "Lock now" with the family
+                        // passcode, without reaching for their own phone. Only offered once a
+                        // passcode exists on this device to check against.
+                        if (reason == BlockReason.PARENT_LOCK && parentUid != null && childId != null &&
+                            LiveChildState.parentPasscodeHash != null
+                        ) {
+                            Spacer(Modifier.height(24.dp))
+                            OutlinedButton(
+                                onClick = { unlockError = null; showParentUnlock = true },
+                                modifier = Modifier.testTag("block_parent_unlock")
+                            ) { Text("Parent unlock") }
+                        }
                         Spacer(Modifier.height(32.dp))
                         Button(onClick = {
                             startActivity(
@@ -135,6 +156,45 @@ class BlockOverlayActivity : ComponentActivity() {
                             Text("OK")
                         }
                     }
+                }
+
+                if (showParentUnlock && parentUid != null && childId != null) {
+                    ParentUnlockDialog(
+                        verifying = verifying,
+                        error = unlockError,
+                        onDismiss = { showParentUnlock = false },
+                        onSubmit = { pin ->
+                            val attempts = PasscodeAttemptStore(this@BlockOverlayActivity)
+                            val hash = LiveChildState.parentPasscodeHash
+                            val salt = LiveChildState.parentPasscodeSalt
+                            if (attempts.isLocked()) {
+                                unlockError = "Too many incorrect attempts. Try again in ${attempts.minutesRemaining()} minutes."
+                            } else if (hash == null || salt == null) {
+                                unlockError = "No family passcode is set yet."
+                            } else {
+                                verifying = true
+                                scope.launch {
+                                    val ok = withContext(Dispatchers.Default) { PasscodeHasher.verify(pin, salt, hash) }
+                                    verifying = false
+                                    if (ok) {
+                                        attempts.recordSuccess()
+                                        LiveChildState.clearLock(this@BlockOverlayActivity)
+                                        // Best effort: if this can't reach Firestore right now the
+                                        // lock is already lifted on this phone, and the write is
+                                        // queued and applied when it reconnects.
+                                        launch { runCatching { repository.setLocked(parentUid, childId, false) } }
+                                        finish()
+                                    } else {
+                                        unlockError = if (attempts.recordFailure()) {
+                                            "Too many incorrect attempts. Try again in ${attempts.minutesRemaining()} minutes."
+                                        } else {
+                                            "Incorrect passcode."
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    )
                 }
             }
         }

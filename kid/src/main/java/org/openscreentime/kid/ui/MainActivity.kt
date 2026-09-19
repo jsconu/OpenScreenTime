@@ -27,6 +27,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import org.openscreentime.kid.KidApp
 import org.openscreentime.kid.data.AppearancePrefs
+import org.openscreentime.kid.data.NotificationDigestStore
 import org.openscreentime.kid.data.PairingStore
 import org.openscreentime.kid.monitor.DnsSinkholeVpnService
 import org.openscreentime.kid.monitor.LiveChildState
@@ -42,6 +43,7 @@ import org.openscreentime.shared.model.todayDateString
 import org.openscreentime.shared.repo.FirestorePaths
 import org.openscreentime.sharedui.AccessibilityDisclosureDialog
 import org.openscreentime.sharedui.HelpBotScreen
+import org.openscreentime.sharedui.NotificationDigestScreen
 
 private enum class KidScreen { STATUS, PARENT_UNLOCK, PARENT_CONTROLS, PROPOSE_CHANGE, NOTIFICATION_DIGEST, HELP }
 
@@ -268,9 +270,13 @@ class MainActivity : ComponentActivity() {
                                 )
                             }
                         }
-                        KidScreen.NOTIFICATION_DIGEST -> NotificationDigestScreen(
-                            onDone = { screen = KidScreen.STATUS }
-                        )
+                        KidScreen.NOTIFICATION_DIGEST -> {
+                            val digestStore = remember { NotificationDigestStore(this@MainActivity) }
+                            NotificationDigestScreen(
+                                loadEntries = { digestStore.entries },
+                                onDone = { screen = KidScreen.STATUS }
+                            )
+                        }
                     }
                 }
               }

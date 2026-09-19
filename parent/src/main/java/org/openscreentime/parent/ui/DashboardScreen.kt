@@ -20,7 +20,8 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.Button
+import androidx.compose.material3.Switch
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
@@ -40,12 +41,19 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.testTagsAsResourceId
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
 import kotlinx.coroutines.launch
+import org.openscreentime.parent.R
+import org.openscreentime.parent.data.NotificationDigestStore
+import org.openscreentime.parent.util.isNotificationListenerEnabled
+import org.openscreentime.sharedui.StatusIconGuide
 import org.openscreentime.parent.BuildConfig
 import org.openscreentime.parent.data.TipsStore
 import org.openscreentime.shared.model.ChildProfile
@@ -68,6 +76,8 @@ fun DashboardScreen(
     onOpenAppearance: () -> Unit,
     onOpenSelfTracking: () -> Unit,
     onOpenHelp: () -> Unit,
+    onOpenDigest: () -> Unit,
+    onRequestNotificationListener: () -> Unit,
     onSignOut: () -> Unit
 ) {
     val parentUid = repository.currentUid ?: return
@@ -131,18 +141,22 @@ fun DashboardScreen(
                 }
             )
         },
-        floatingActionButton = {
-            FloatingActionButton(
-                onClick = { showAddDialog = true },
-                modifier = Modifier
-                    .testTag("dashboard_add_child")
-                    .semantics { contentDescription = "Add a child" }
-            ) { Text("+") }
-        }
     ) { padding ->
         LazyColumn(modifier = Modifier.fillMaxSize().padding(padding)) {
             item {
                 TipOfTheDayCard(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp))
+            }
+            item {
+                Button(
+                    onClick = { showAddDialog = true },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 8.dp)
+                        .testTag("dashboard_add_child")
+                ) { Text("Add kid") }
+            }
+            item {
+                StatusGuideCard(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp))
             }
             item {
                 val trackedSelf = selfProfile
@@ -154,7 +168,8 @@ fun DashboardScreen(
                         repository = repository,
                         parentUid = parentUid,
                         child = trackedSelf,
-                        onClick = onOpenSelfTracking
+                        onClick = onOpenSelfTracking,
+                        onCustomizeGoals = onOpenSelfTracking
                     )
                 } else {
                     Card(
@@ -170,6 +185,11 @@ fun DashboardScreen(
                                 "Track and limit your own screen time on this device too.",
                                 style = MaterialTheme.typography.bodySmall
                             )
+                            Spacer(Modifier.height(8.dp))
+                            OutlinedButton(
+                                onClick = onOpenSelfTracking,
+                                modifier = Modifier.fillMaxWidth().testTag("dashboard_self_customize_goals")
+                            ) { Text("Customize Screen Time goals") }
                         }
                     }
                 }
@@ -189,6 +209,13 @@ fun DashboardScreen(
                         onClick = { onOpenChild(child.id) }
                     )
                 }
+            }
+            item {
+                NotificationDigestCard(
+                    onOpen = onOpenDigest,
+                    onRequestListener = onRequestNotificationListener,
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp)
+                )
             }
         }
     }
@@ -275,7 +302,9 @@ private fun ChildSummaryCard(
     repository: FamilyRepository,
     parentUid: String,
     child: ChildProfile,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    /** Only passed for the parent's own "Me" tile - a shortcut to its goals. */
+    onCustomizeGoals: (() -> Unit)? = null
 ) {
     val scope = rememberCoroutineScope()
     var stats by remember { mutableStateOf(DailyStats(date = todayDateString())) }
@@ -357,6 +386,13 @@ private fun ChildSummaryCard(
                         style = MaterialTheme.typography.labelMedium,
                         color = MaterialTheme.colorScheme.error
                     )
+                }
+                if (onCustomizeGoals != null) {
+                    Spacer(Modifier.height(8.dp))
+                    OutlinedButton(
+                        onClick = onCustomizeGoals,
+                        modifier = Modifier.fillMaxWidth().testTag("dashboard_self_customize_goals")
+                    ) { Text("Customize Screen Time goals") }
                 }
             }
         }
@@ -516,4 +552,89 @@ private fun FeedbackDialog(onDismiss: () -> Unit, onSubmit: (text: String, onErr
         },
         dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } }
     )
+}
+
+/**
+ * The same explanation of the calm status icons the kid app shows - where they appear, what thumbs
+ * up / open hand / stop mean - from the same shared composable, so both apps say the same thing.
+ */
+@Composable
+private fun StatusGuideCard(modifier: Modifier = Modifier) {
+    Card(modifier = modifier) {
+        StatusIconGuide(
+            goodIcon = R.drawable.ic_status_good,
+            cautionIcon = R.drawable.ic_status_caution,
+            stopIcon = R.drawable.ic_status_stop,
+            footnote = "Your kids' phones show these same icons instead of exact numbers, so screen time " +
+                "stays something to notice, not something to keep checking - the details are here, " +
+                "for you. On this phone the icons appear once you turn on My screen time.",
+            modifier = Modifier.padding(16.dp)
+        )
+    }
+}
+
+/**
+ * The parent's own calm notification list - the same opt-in, on-device-only list the kid app has.
+ * Off until switched on here and notification access is granted in system settings.
+ */
+@Composable
+private fun NotificationDigestCard(
+    onOpen: () -> Unit,
+    onRequestListener: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val context = LocalContext.current
+    val store = remember { NotificationDigestStore(context) }
+    var optedIn by remember { mutableStateOf(store.optedIn) }
+    var listenerGranted by remember { mutableStateOf(isNotificationListenerEnabled(context)) }
+    val lifecycleOwner = LocalLifecycleOwner.current
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) listenerGranted = isNotificationListenerEnabled(context)
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+    }
+
+    Card(modifier = modifier) {
+        Column(Modifier.padding(16.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column(Modifier.weight(1f)) {
+                    Text("Calm notification list", style = MaterialTheme.typography.titleMedium)
+                    Spacer(Modifier.height(4.dp))
+                    Text(
+                        "A plain, read-only list of today's notifications on this phone, grouped by app. " +
+                            "It stays on this phone.",
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                }
+                Switch(
+                    checked = optedIn,
+                    onCheckedChange = { checked ->
+                        optedIn = checked
+                        store.optedIn = checked
+                        if (checked && !listenerGranted) onRequestListener()
+                    },
+                    modifier = Modifier.testTag("dashboard_digest_toggle")
+                )
+            }
+            if (optedIn && !listenerGranted) {
+                Spacer(Modifier.height(8.dp))
+                OutlinedButton(onClick = onRequestListener, modifier = Modifier.fillMaxWidth()) {
+                    Text("Allow notification access")
+                }
+            }
+            if (optedIn && listenerGranted) {
+                Spacer(Modifier.height(8.dp))
+                OutlinedButton(
+                    onClick = onOpen,
+                    modifier = Modifier.fillMaxWidth().testTag("dashboard_open_digest")
+                ) { Text("Today's notifications") }
+            }
+        }
+    }
 }
