@@ -4,6 +4,9 @@ object FirestorePaths {
     const val PARENTS = "parents"
     const val CHILDREN = "children"
     const val DAILY_STATS = "dailyStats"
+    /** The apps installed on a paired kid device, so the parent app can offer limits for all of them. */
+    const val DEVICE_INFO = "deviceInfo"
+    const val INSTALLED_APPS_DOC = "installedApps"
     const val PAIRING_CODES = "pairingCodes"
     /** See #22 - in-app feedback. Write-only from the client; reviewed via the Firebase console. */
     const val FEEDBACK = "feedback"
@@ -21,4 +24,7 @@ object FirestorePaths {
     fun dailyStatsCollection(parentUid: String, childId: String) = "${childDoc(parentUid, childId)}/$DAILY_STATS"
     fun dailyStatsDoc(parentUid: String, childId: String, date: String) =
         "${dailyStatsCollection(parentUid, childId)}/$date"
+    fun deviceInfoCollection(parentUid: String, childId: String) = "${childDoc(parentUid, childId)}/$DEVICE_INFO"
+    fun installedAppsDoc(parentUid: String, childId: String) =
+        "${deviceInfoCollection(parentUid, childId)}/$INSTALLED_APPS_DOC"
 }

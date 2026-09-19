@@ -104,6 +104,8 @@ internal class ChildrenRepository(
             }
             batch.commit().await()
         }
+        // Same for the installed-apps doc (a plain delete, so a child that never had one is fine).
+        db.document(FirestorePaths.installedAppsDoc(parentUid, childId)).delete().await()
         db.document(FirestorePaths.childDoc(parentUid, childId)).delete().await()
     }
 

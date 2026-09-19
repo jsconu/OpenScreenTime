@@ -45,6 +45,7 @@ import org.openscreentime.parent.data.ReportOpenTracker
 import org.openscreentime.shared.model.AppUsage
 import org.openscreentime.shared.model.ChildProfile
 import org.openscreentime.shared.model.DailyStats
+import org.openscreentime.shared.model.InstalledApp
 import org.openscreentime.shared.model.TRACKING_DISPLAY_NOTE
 import org.openscreentime.shared.model.TrackingToggle
 import org.openscreentime.shared.model.addBlockedDomain
@@ -93,29 +94,32 @@ fun ChildDetailScreen(
     var showLockConfirm by remember { mutableStateOf(false) }
     var showDeleteConfirm by remember { mutableStateOf(false) }
     var newBlockedDomain by remember { mutableStateOf("") }
+    var kidInstalledApps by remember { mutableStateOf<List<InstalledApp>>(emptyList()) }
 
     DisposableEffect(childId) {
         val reg1 = repository.listenChildren(parentUid) { list ->
             child = list.firstOrNull { it.id == childId }
         }
         val reg2 = repository.listenDailyStats(parentUid, childId, todayDateString()) { stats = it }
+        // What the kid's phone last reported as installed (empty until it has synced once).
+        val reg3 = repository.listenInstalledApps(parentUid, childId) { kidInstalledApps = it }
         onDispose {
             reg1.remove()
             reg2.remove()
+            reg3.remove()
         }
     }
 
     val currentChild = child ?: return
 
-    // On the parent's own "Me" profile this phone *is* the device, so every app installed here can be
-    // listed for limits, not only the ones already used today. For a paired kid's phone the parent
-    // app can only see what the kid device has synced (usage), since it can't see that phone's apps.
-    val displayedApps = remember(currentChild.isSelf, stats.appUsage) {
-        if (currentChild.isSelf) {
-            mergeUsageWithInstalled(stats.appUsage, listLaunchableApps(context))
-        } else {
-            stats.appUsage
-        }
+    // Every app on the device, not only ones already used today. On the parent's own "Me" profile this
+    // phone is the device; for a paired kid it's the list their phone last published (see
+    // SyncWorker), which is empty until that phone has synced once.
+    val displayedApps = remember(currentChild.isSelf, stats.appUsage, kidInstalledApps) {
+        mergeUsageWithInstalled(
+            stats.appUsage,
+            if (currentChild.isSelf) listLaunchableApps(context) else kidInstalledApps
+        )
     }
 
     LaunchedEffect(childId, currentChild.dailyLimitMinutes, currentChild.dailyUnlockGoal) {

@@ -19,6 +19,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.openscreentime.shared.model.ChildProfile
 import org.openscreentime.shared.model.DailyStats
+import org.openscreentime.shared.model.InstalledApp
 import org.openscreentime.shared.repo.FamilyRepository
 import org.openscreentime.shared.repo.FirestorePaths
 
@@ -367,6 +368,60 @@ class PairingFlowEmulatorTest {
                 "(it holds the family passcode hash)",
             threw
         )
+    }
+
+    @Test(timeout = TEST_TIMEOUT_MS)
+    fun pairedKidPublishesInstalledApps_parentReadsThemBack() = runBlocking {
+        val parentRepo = FamilyRepository()
+        val parentEmail = uniqueEmail()
+        val parentUid = parentRepo.signUpParent(parentEmail, "testpass123")
+        val child = parentRepo.createChild(parentUid, "AppsChild")
+        parentRepo.signOut()
+
+        val kidRepo = FamilyRepository()
+        kidRepo.claimPairingCode(child.pairingCode)
+        kidRepo.pushInstalledApps(
+            parentUid, child.id,
+            listOf(InstalledApp("a.one", "One"), InstalledApp("b.two", "Two"))
+        )
+        kidRepo.signOut()
+
+        parentRepo.signInParent(parentEmail, "testpass123")
+        val raw = FirebaseFirestore.getInstance()
+            .document(FirestorePaths.installedAppsDoc(parentUid, child.id))
+            .get().await()
+        assertEquals(2, (raw.get("apps") as List<*>).size)
+    }
+
+    @Test(timeout = TEST_TIMEOUT_MS)
+    fun installedAppsWriteIsRejectedWhenOversizedOrFromAStranger() = runBlocking {
+        val parentRepo = FamilyRepository()
+        val parentUid = parentRepo.signUpParent(uniqueEmail(), "testpass123")
+        val child = parentRepo.createChild(parentUid, "AppsCapChild")
+        parentRepo.signOut()
+
+        // A stranger with just anonymous auth can't write another family's installed-apps doc.
+        val strangerRepo = FamilyRepository()
+        strangerRepo.signInAnonymously()
+        var strangerThrew = false
+        try {
+            strangerRepo.pushInstalledApps(parentUid, child.id, listOf(InstalledApp("x.y", "X")))
+        } catch (e: Exception) {
+            strangerThrew = true
+        }
+        assertTrue("A stranger must not be able to publish installed apps", strangerThrew)
+        strangerRepo.signOut()
+
+        // The real paired device can, but not more than the cap allows.
+        val kidRepo = FamilyRepository()
+        kidRepo.claimPairingCode(child.pairingCode)
+        var oversizedThrew = false
+        try {
+            kidRepo.pushInstalledApps(parentUid, child.id, (1..501).map { InstalledApp("p.$it", "App $it") })
+        } catch (e: Exception) {
+            oversizedThrew = true
+        }
+        assertTrue("More than 500 apps must be rejected", oversizedThrew)
     }
 
     @Test(timeout = TEST_TIMEOUT_MS)

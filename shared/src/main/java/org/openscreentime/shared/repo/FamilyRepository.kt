@@ -5,6 +5,7 @@ import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.ListenerRegistration
 import org.openscreentime.shared.model.ChildProfile
 import org.openscreentime.shared.model.DailyStats
+import org.openscreentime.shared.model.InstalledApp
 import org.openscreentime.shared.model.PasscodeInfo
 import org.openscreentime.shared.model.TrackingToggle
 
@@ -177,6 +178,16 @@ class FamilyRepository(
 
     suspend fun pushDailyStats(parentUid: String, childId: String, stats: DailyStats) =
         this.stats.pushDailyStats(parentUid, childId, stats)
+
+    /** Kid device: publish the apps installed here, so a parent can set limits on any of them. */
+    suspend fun pushInstalledApps(parentUid: String, childId: String, apps: List<InstalledApp>) =
+        stats.pushInstalledApps(parentUid, childId, apps)
+
+    fun listenInstalledApps(
+        parentUid: String,
+        childId: String,
+        onChange: (List<InstalledApp>) -> Unit
+    ): ListenerRegistration = stats.listenInstalledApps(parentUid, childId, onChange)
 
     /** See #22 - write-only; nobody can read feedback back through the app. */
     suspend fun submitFeedback(parentUid: String, text: String, appVersion: String, device: String) =

@@ -10,6 +10,7 @@ import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Locale
 import org.openscreentime.shared.model.DailyStats
+import org.openscreentime.shared.model.InstalledApp
 
 /** Reading and writing per-day usage stats. */
 internal class StatsRepository(private val db: FirebaseFirestore) {
@@ -45,4 +46,35 @@ internal class StatsRepository(private val db: FirebaseFirestore) {
         db.document(FirestorePaths.dailyStatsDoc(parentUid, childId, stats.date))
             .set(stats.toMap(), SetOptions.merge()).await()
     }
+
+    /** The kid device's launchable apps (name and package only), replaced wholesale each time. */
+    suspend fun pushInstalledApps(parentUid: String, childId: String, apps: List<InstalledApp>) {
+        db.document(FirestorePaths.installedAppsDoc(parentUid, childId)).set(
+            mapOf(
+                "apps" to apps.map { mapOf("packageName" to it.packageName, "appName" to it.label) },
+                "updatedAtMs" to System.currentTimeMillis()
+            )
+        ).await()
+    }
+
+    /**
+     * Reads leniently: a doc written by another device is data, not a promise, so anything that
+     * isn't a well-formed entry is skipped rather than allowed to crash the parent app.
+     */
+    fun listenInstalledApps(
+        parentUid: String,
+        childId: String,
+        onChange: (List<InstalledApp>) -> Unit
+    ): ListenerRegistration =
+        db.document(FirestorePaths.installedAppsDoc(parentUid, childId))
+            .addSnapshotListener { snap, error ->
+                if (error != null || snap == null) return@addSnapshotListener
+                val raw = (snap.data?.get("apps") as? List<*>).orEmpty()
+                onChange(
+                    raw.filterIsInstance<Map<*, *>>().mapNotNull {
+                        val pkg = it["packageName"] as? String ?: return@mapNotNull null
+                        InstalledApp(pkg, it["appName"] as? String ?: pkg)
+                    }
+                )
+            }
 }
