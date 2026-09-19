@@ -1,3 +1,5 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
@@ -7,6 +9,14 @@ plugins {
     alias(libs.plugins.firebase.crashlytics)
 }
 
+// Release signing comes from an untracked keystore.properties at the repo root (see
+// docs/PUBLISHING.md) or from OST_* environment variables - never from a file in git. With neither
+// present the release build is simply left unsigned, so CI and contributors can still build it.
+val keystoreProps = Properties().apply {
+    rootProject.file("keystore.properties").takeIf { it.exists() }?.inputStream()?.use { load(it) }
+}
+fun signingValue(key: String, env: String): String? = keystoreProps.getProperty(key) ?: System.getenv(env)
+
 android {
     namespace = "org.openscreentime.kid"
     compileSdk = 35
@@ -15,8 +25,8 @@ android {
         applicationId = "org.openscreentime.kid"
         minSdk = 26
         targetSdk = 35
-        versionCode = 1
-        versionName = "0.1.0"
+        versionCode = 2
+        versionName = "0.2.0"
         // Opt-in flag for the E2E workflow only (-PuseFirebaseEmulator=true) - points
         // Firebase at the local emulator suite instead of real Google servers. Off by
         // default, so a normal debug/release build is unaffected.
@@ -27,9 +37,21 @@ android {
         )
     }
 
+    signingConfigs {
+        create("release") {
+            signingValue("storeFile", "OST_KEYSTORE_FILE")?.let { storeFile = rootProject.file(it) }
+            storePassword = signingValue("storePassword", "OST_KEYSTORE_PASSWORD")
+            keyAlias = signingValue("keyAlias", "OST_KEY_ALIAS")
+            keyPassword = signingValue("keyPassword", "OST_KEY_PASSWORD")
+        }
+    }
+
     buildTypes {
         release {
-            isMinifyEnabled = false
+            isMinifyEnabled = true
+            isShrinkResources = true
+            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+            signingConfig = signingConfigs.getByName("release").takeIf { it.storeFile != null }
         }
     }
 

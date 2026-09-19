@@ -35,6 +35,7 @@ import org.openscreentime.parent.monitor.ScreenMonitorService
 import org.openscreentime.parent.util.checkPermissions
 import org.openscreentime.shared.model.HelpAudience
 import org.openscreentime.shared.model.PasscodeInfo
+import org.openscreentime.sharedui.AccessibilityDisclosureDialog
 import org.openscreentime.sharedui.HelpBotScreen
 
 class MainActivity : ComponentActivity() {
@@ -68,6 +69,17 @@ class MainActivity : ComponentActivity() {
               // Lets UiAutomator (used by the :e2e module) match Modifier.testTag(...) as a
               // resource-id, since it can't drive Compose's own semantics tree directly.
               Box(modifier = Modifier.fillMaxSize().semantics { testTagsAsResourceId = true }) {
+                var showAccessibilityDisclosure by remember { mutableStateOf(false) }
+                if (showAccessibilityDisclosure) {
+                    AccessibilityDisclosureDialog(
+                        onKidDevice = false,
+                        onAgree = {
+                            showAccessibilityDisclosure = false
+                            startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
+                        },
+                        onDismiss = { showAccessibilityDisclosure = false }
+                    )
+                }
                 val navController = rememberNavController()
                 var signedIn by remember { mutableStateOf(repository.currentUid != null) }
 
@@ -194,9 +206,7 @@ class MainActivity : ComponentActivity() {
                                             )
                                         )
                                     },
-                                    onRequestAccessibility = {
-                                        startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
-                                    },
+                                    onRequestAccessibility = { showAccessibilityDisclosure = true },
                                     onRequestNotifications = {
                                         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
                                             notificationPermissionLauncher.launch(android.Manifest.permission.POST_NOTIFICATIONS)

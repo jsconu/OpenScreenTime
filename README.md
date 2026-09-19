@@ -287,6 +287,14 @@ access** (also powers muting non-allowed texts during bedtime), and, from
 the passcode-gated Parent controls screen, **uninstall protection** and
 **bedtime call blocking** (Android 10+ only for the latter).
 
+## Publishing your own build
+
+Building a signed release, and putting it on a private Google Play internal-testing track, is
+covered step by step in [docs/PUBLISHING.md](docs/PUBLISHING.md). Draft answers for Play Console's
+forms are in [docs/PLAY_CONSOLE_ANSWERS.md](docs/PLAY_CONSOLE_ANSWERS.md), and a privacy policy
+template to fill in and host is in [docs/PRIVACY.md](docs/PRIVACY.md). Whoever publishes a build
+is the operator of the Firebase project it talks to, and responsible for the data in it.
+
 ## Security & privacy notes for anyone deploying this
 
 - The kid app never reads screen *content* — the accessibility service only

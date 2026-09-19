@@ -40,6 +40,7 @@ import org.openscreentime.shared.model.calmParentStatusLabel
 import org.openscreentime.shared.model.computeStreak
 import org.openscreentime.shared.model.todayDateString
 import org.openscreentime.shared.repo.FirestorePaths
+import org.openscreentime.sharedui.AccessibilityDisclosureDialog
 import org.openscreentime.sharedui.HelpBotScreen
 
 private enum class KidScreen { STATUS, PARENT_UNLOCK, PARENT_CONTROLS, PROPOSE_CHANGE, NOTIFICATION_DIGEST, HELP }
@@ -74,6 +75,17 @@ class MainActivity : ComponentActivity() {
               // Lets UiAutomator (used by the :e2e module) match Modifier.testTag(...) as a
               // resource-id, since it can't drive Compose's own semantics tree directly.
               Box(modifier = Modifier.fillMaxSize().semantics { testTagsAsResourceId = true }) {
+                var showAccessibilityDisclosure by remember { mutableStateOf(false) }
+                if (showAccessibilityDisclosure) {
+                    AccessibilityDisclosureDialog(
+                        onKidDevice = true,
+                        onAgree = {
+                            showAccessibilityDisclosure = false
+                            startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
+                        },
+                        onDismiss = { showAccessibilityDisclosure = false }
+                    )
+                }
                 var paired by remember { mutableStateOf(pairingStore.isPaired) }
                 var permissions by remember { mutableStateOf(checkPermissions(this@MainActivity)) }
                 var screen by remember { mutableStateOf(KidScreen.STATUS) }
@@ -171,9 +183,7 @@ class MainActivity : ComponentActivity() {
                                         )
                                     )
                                 },
-                                onRequestAccessibility = {
-                                    startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
-                                },
+                                onRequestAccessibility = { showAccessibilityDisclosure = true },
                                 onRequestNotifications = {
                                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
                                         notificationPermissionLauncher.launch(android.Manifest.permission.POST_NOTIFICATIONS)
