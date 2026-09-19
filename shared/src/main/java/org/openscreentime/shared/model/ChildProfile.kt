@@ -18,6 +18,9 @@ data class ChildProfile(
      * A copy of the parent's passcode hash/salt (see [org.openscreentime.shared.util.PasscodeHasher]),
      * denormalized onto every child so the paired kid device can verify a passcode entered locally
      * ("parent mode") without needing read access to the parent's own account document.
+     * Never stored on the parent's own self profile, which every linked kid device can read (#18).
+     * Because a paired kid device can read this, a 4-6 digit passcode is guessable offline - the
+     * passcode is a deterrent, not a boundary (see the note at the top of firestore.rules).
      */
     val parentPasscodeHash: String? = null,
     val parentPasscodeSalt: String? = null,
@@ -65,9 +68,10 @@ data class ChildProfile(
     val requestedExtraMinutes: Int? = null,
     /**
      * Epoch milliseconds until which the kid is temporarily let through bedtime and any
-     * daily/app-limit block - never a parent lock, which stays absolute. Set only by a
-     * parent granting a [requestedExtraMinutes] request, never by the kid device itself.
-     * See #23 and [decideEnforcement].
+     * daily/app-limit block - never a parent lock, which stays absolute. By design set only
+     * by a parent granting a [requestedExtraMinutes] request - but that's enforced by the apps,
+     * not by the security rules: a paired kid device's own credentials can technically write it
+     * (see the note at the top of firestore.rules). See #23 and [decideEnforcement].
      */
     val temporaryUnlockUntilMs: Long? = null,
     /**
@@ -88,11 +92,12 @@ data class ChildProfile(
      */
     val alwaysAllowedContacts: List<String> = emptyList(),
     /**
-     * Optional, parent-controlled tracking categories - see #35. Off by default, and nothing
-     * is collected on the device for a category until its toggle is on. [trackUnlocks] adds
-     * "which app was opened first after each unlock" and puts unlocks in the weekly report and
-     * daily digest; [trackNotifications] counts notifications received, overall and by app
-     * (counts only, never content). Both work the same for the parent's own self profile.
+     * Optional, parent-controlled tracking categories - see #35. Off by default. [trackUnlocks]
+     * adds "which app was opened first after each unlock" and shows unlocks in the weekly report
+     * and daily digest (the plain daily unlock count is always kept, for the unlock goal);
+     * [trackNotifications] counts notifications received, overall and by app (counts only, never
+     * content) - nothing about notifications is collected until it's on. Both work the same for
+     * the parent's own self profile.
      */
     val trackUnlocks: Boolean = false,
     val trackNotifications: Boolean = false,
@@ -132,6 +137,14 @@ data class ChildProfile(
     )
 
     companion object {
+        /**
+         * A kid device can write these fields directly (see firestore.rules), so a wrong-typed value
+         * must degrade to "ignored," never throw - a ClassCastException inside a Firestore snapshot
+         * listener would crash the parent app on every load until the document was repaired.
+         */
+        private fun Map<*, *>.toIntMap(): Map<String, Int> =
+            entries.mapNotNull { (k, v) -> if (k is String && v is Number) k to v.toInt() else null }.toMap()
+
         @Suppress("UNCHECKED_CAST")
         fun fromMap(id: String, map: Map<String, Any?>): ChildProfile = ChildProfile(
             id = id,
@@ -139,22 +152,22 @@ data class ChildProfile(
             pairingCode = map["pairingCode"] as? String ?: "",
             paired = map["paired"] as? Boolean ?: false,
             deviceUid = map["deviceUid"] as? String,
-            dailyLimitMinutes = (map["dailyLimitMinutes"] as? Long)?.toInt() ?: 120,
-            appLimits = (map["appLimits"] as? Map<String, Long>)?.mapValues { it.value.toInt() } ?: emptyMap(),
+            dailyLimitMinutes = (map["dailyLimitMinutes"] as? Number)?.toInt() ?: 120,
+            appLimits = (map["appLimits"] as? Map<*, *>)?.toIntMap() ?: emptyMap(),
             locked = map["locked"] as? Boolean ?: false,
             parentPasscodeHash = map["parentPasscodeHash"] as? String,
             parentPasscodeSalt = map["parentPasscodeSalt"] as? String,
             isSelf = map["isSelf"] as? Boolean ?: false,
-            dailyUnlockGoal = (map["dailyUnlockGoal"] as? Long)?.toInt(),
-            proposedDailyLimitMinutes = (map["proposedDailyLimitMinutes"] as? Long)?.toInt(),
-            proposedAppLimits = (map["proposedAppLimits"] as? Map<String, Long>)?.mapValues { it.value.toInt() },
-            bedtimeStartMinutes = (map["bedtimeStartMinutes"] as? Long)?.toInt(),
-            bedtimeEndMinutes = (map["bedtimeEndMinutes"] as? Long)?.toInt(),
-            blockedDomains = (map["blockedDomains"] as? List<String>) ?: emptyList(),
-            requestedExtraMinutes = (map["requestedExtraMinutes"] as? Long)?.toInt(),
-            temporaryUnlockUntilMs = map["temporaryUnlockUntilMs"] as? Long,
-            alwaysAllowedPackages = (map["alwaysAllowedPackages"] as? List<String>) ?: emptyList(),
-            alwaysAllowedContacts = (map["alwaysAllowedContacts"] as? List<String>) ?: emptyList(),
+            dailyUnlockGoal = (map["dailyUnlockGoal"] as? Number)?.toInt(),
+            proposedDailyLimitMinutes = (map["proposedDailyLimitMinutes"] as? Number)?.toInt(),
+            proposedAppLimits = (map["proposedAppLimits"] as? Map<*, *>)?.toIntMap(),
+            bedtimeStartMinutes = (map["bedtimeStartMinutes"] as? Number)?.toInt(),
+            bedtimeEndMinutes = (map["bedtimeEndMinutes"] as? Number)?.toInt(),
+            blockedDomains = (map["blockedDomains"] as? List<*>)?.filterIsInstance<String>() ?: emptyList(),
+            requestedExtraMinutes = (map["requestedExtraMinutes"] as? Number)?.toInt(),
+            temporaryUnlockUntilMs = (map["temporaryUnlockUntilMs"] as? Number)?.toLong(),
+            alwaysAllowedPackages = (map["alwaysAllowedPackages"] as? List<*>)?.filterIsInstance<String>() ?: emptyList(),
+            alwaysAllowedContacts = (map["alwaysAllowedContacts"] as? List<*>)?.filterIsInstance<String>() ?: emptyList(),
             trackUnlocks = map["trackUnlocks"] as? Boolean ?: false,
             trackNotifications = map["trackNotifications"] as? Boolean ?: false,
             showUnlocksOnKid = map["showUnlocksOnKid"] as? Boolean ?: false,

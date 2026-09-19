@@ -3,6 +3,7 @@ package org.openscreentime.shared.repo
 import com.google.firebase.Timestamp
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.FirebaseFirestoreException
 import com.google.firebase.firestore.SetOptions
 import kotlinx.coroutines.tasks.await
 import org.openscreentime.shared.model.ChildProfile
@@ -16,7 +17,8 @@ internal class PairingRepository(
         val uid = session.signInAnonymously()
         val codeRef = db.collection(FirestorePaths.PAIRING_CODES).document(code)
 
-        val (parentUid, childId) = db.runTransaction { txn ->
+        val (parentUid, childId) = try {
+            db.runTransaction { txn ->
             val codeSnap = txn.get(codeRef)
             require(codeSnap.exists()) { "That code doesn't match any account." }
             val used = codeSnap.getBoolean("used") ?: false
@@ -39,7 +41,15 @@ internal class PairingRepository(
             val parentRef = db.document("${FirestorePaths.PARENTS}/$parentUid")
             txn.set(parentRef, mapOf("linkedDeviceUids" to FieldValue.arrayUnion(uid)), SetOptions.merge())
             parentUid to childId
-        }.await()
+            }.await()
+        } catch (e: FirebaseFirestoreException) {
+            // Expired, used, or nonexistent codes aren't readable at all (see firestore.rules),
+            // so they surface as a permission error rather than one of the messages above.
+            if (e.code == FirebaseFirestoreException.Code.PERMISSION_DENIED) {
+                throw IllegalStateException("That code isn't active. Ask the parent for a new one.")
+            }
+            throw e
+        }
 
         val childSnap = db.document(FirestorePaths.childDoc(parentUid, childId)).get().await()
         val child = ChildProfile.fromMap(childId, childSnap.data ?: emptyMap())

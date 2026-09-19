@@ -166,7 +166,7 @@
       "topic": "app",
       "question": "How do I block calls and texts at bedtime except from parents?",
       "keywords": ["calls", "call", "texts", "text", "sms", "messages", "contacts", "phone number", "block calls", "screen calls", "unknown numbers", "reachable"],
-      "answer": "On the kid's phone, open Parent controls (passcode) and find \"Bedtime calls\". Add the numbers that may get through (like yours), then turn on incoming- and outgoing-call blocking (Android 10 or newer). During bedtime, calls from or to any other number are blocked. Texts are muted rather than blocked - opening the messaging app can still show one - and that needs Notification access granted."
+      "answer": "On the kid's phone, open Parent controls (passcode) and find \"Bedtime calls\". Add the numbers that may get through (like yours), then turn on incoming- and outgoing-call blocking (Android 10 or newer). During bedtime, calls from or to any other number are blocked. Texts can't be blocked, only quieted: with Notification access granted, the notification for a text from another number may be muted, but opening the messaging app still shows it, and it doesn't work with every messaging app. Calls from saved contacts may also ring through on some phones, so try it once with a test call."
     },
     {
       "id": "lock-now",
@@ -190,7 +190,8 @@
       "topic": "app",
       "question": "What is the weekly report?",
       "keywords": ["report", "weekly", "weekly report", "trend", "average", "four weeks", "4 weeks", "history", "chart", "by app"],
-      "answer": "Open your child and tap \"View weekly report\". It shows a rolling 4-week bar chart of total screen time, a weekly average, and a by-app trend for the top apps. It's capped at four weeks on purpose - enough to notice a trend, not an archive to pore over - and it never appears on the child's phone."
+      "answer": "Open your child and tap \"View weekly report\". It shows a rolling 4-week bar chart of total screen time, a weekly average, and a by-app trend for the top apps. It's capped at four weeks on purpose - enough to notice a trend, not an archive to pore over - and it never appears on the child's phone.",
+      "iosAnswer": "The weekly report isn't on the iPhone parent app yet - it's an Android parent app feature today, and porting it is one of the open items for the community. The iPhone app still shows each child's day-by-day numbers, limits, bedtime and tracking toggles."
     },
     {
       "id": "report-nudge",
@@ -198,7 +199,8 @@
       "topic": "philosophy",
       "question": "Why does it ask if I'm sure before opening the report?",
       "keywords": ["are you sure", "check in", "check up", "nudge", "too many times", "open again", "prompt", "obsessive", "checking often", "warning"],
-      "answer": "After you've opened a report a few times in one day, it asks \"Check in, not check up\" before opening it again. It's the same friction-pause idea used on the kid side, turned on the parent: constant checking can become its own source of stress. You can still tap \"Open anyway\". The count is local to your phone and resets daily."
+      "answer": "After you've opened a report a few times in one day, it asks \"Check in, not check up\" before opening it again. It's the same friction-pause idea used on the kid side, turned on the parent: constant checking can become its own source of stress. You can still tap \"Open anyway\". The count is local to your phone and resets daily.",
+      "iosAnswer": "The weekly report, and so this pause, are Android parent app features today. The idea behind it applies anywhere, though: constant checking can become its own source of stress, so it's worth checking in on a rhythm rather than repeatedly."
     },
     {
       "id": "tracking-toggles",
@@ -206,7 +208,8 @@
       "topic": "app",
       "question": "How do I turn on unlock or notification tracking?",
       "keywords": ["track", "tracking", "unlocks", "unlock tracking", "notifications", "notification count", "toggle", "optional", "turn on", "digest"],
-      "answer": "Open your child (or your own \"My screen time\") and find \"Optional tracking\". Turn on Track unlocks and/or Track notification counts. Both are off by default and nothing is collected until you enable one. Each adds a section to the weekly report plus a day-by-day digest. Notification tracking counts only - never the content - and needs Notification access granted on that phone."
+      "answer": "Open your child (or your own \"My screen time\") and find \"Optional tracking\". Turn on Track unlocks and/or Track notification counts. Both are off by default. Track unlocks adds which app opens first after each unlock and puts unlocks in the weekly report and day-by-day digest (the plain daily unlock count is always kept, for the unlock goal). Nothing about notifications is collected until you turn that one on. Notification tracking counts only - never the content - and needs Notification access granted on that phone.",
+      "iosAnswer": "Open your child and find \"Optional tracking\". Turn on Track unlocks and/or Track notification counts. Both are off by default. The setting is saved for that child, and the kid's Android phone starts counting, but the iPhone parent app doesn't show the weekly report or day-by-day digest yet - that's an Android parent app feature today. Notification tracking counts only, never the content."
     },
     {
       "id": "first-app-after-unlock",

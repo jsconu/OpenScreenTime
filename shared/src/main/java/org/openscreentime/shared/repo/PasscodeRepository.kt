@@ -24,7 +24,15 @@ internal class PasscodeRepository(private val db: FirebaseFirestore) {
         if (children.isEmpty) return
         val batch = db.batch()
         for (doc in children.documents) {
-            batch.update(doc.reference, mapOf("parentPasscodeHash" to hash, "parentPasscodeSalt" to salt))
+            // The parent's own self profile has no kid device that needs to verify a passcode
+            // locally, and it's readable by every linked kid device (#18) - so the verifier is
+            // never stored there (and any earlier copy is cleared here).
+            val fields = if (doc.id == FirestorePaths.SELF_CHILD_ID) {
+                mapOf("parentPasscodeHash" to null, "parentPasscodeSalt" to null)
+            } else {
+                mapOf("parentPasscodeHash" to hash, "parentPasscodeSalt" to salt)
+            }
+            batch.update(doc.reference, fields)
         }
         batch.commit().await()
     }

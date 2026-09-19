@@ -439,7 +439,8 @@ private struct TrackingSection: View {
             Text("Optional tracking")
         } footer: {
             Text(
-                "Off by default - nothing is collected until you turn a category on. Notification " +
+                "Off by default. The plain daily unlock count is always kept for the unlock goal; " +
+                "turning a category on adds more detail. Notification " +
                 "tracking counts only, never content. Anything shown on their phone carries a note " +
                 "that watching counts can make phone use feel more compulsive."
             )

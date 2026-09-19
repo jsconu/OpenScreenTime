@@ -81,7 +81,7 @@ struct HelpBotView: View {
                     if !reply.sources.isEmpty {
                         Text("Sources").font(.caption).bold()
                         ForEach(reply.sources, id: \.url) { source in
-                            if let url = URL(string: source.url) {
+                            if let url = URL(string: source.url), url.scheme == "https" {
                                 Link(source.title, destination: url).font(.footnote)
                             }
                         }

@@ -110,7 +110,8 @@ parent app  <---sync--->  Firebase (Firestore + Auth)  <---sync--->  kid app
 - Turn on optional **unlock tracking** (which app was opened first after each
   unlock) and **notification-count tracking** (overall and by app - counts
   only, never content), each per kid and for the parent's own device. Off by
-  default, nothing is collected until a category is on, and each one adds to
+  default (the plain daily unlock count is always kept for the unlock goal; a
+  category adds more detail), and each one adds to
   the weekly report - including a 4-week trend per app for which apps are
   opened first after unlocking and which send the most notifications - plus a
   day-by-day digest. A parent can also choose to
@@ -291,11 +292,31 @@ the passcode-gated Parent controls screen, **uninstall protection** and
 - The kid app never reads screen *content* — the accessibility service only
   observes which app's window is in front, nothing more
   (`canRetrieveWindowContent="false"`).
-- Firestore security rules (`firebase/firestore.rules`) are written so a kid
-  device can only ever read/write the one child record it claimed via
-  pairing — never another family's data. Please review them yourself before
-  relying on this for anything sensitive; this is a community project, not
-  an audited product.
+- Firestore security rules (`firebase/firestore.rules`) keep one family's
+  data from another's: a kid device can only touch the one child record it
+  claimed via a live, unexpired pairing code, and what it may write there
+  is limited to a fixed set of fields with bounded types and sizes. Please
+  review them yourself before relying on this for anything sensitive; this
+  is a community project, not an audited product.
+- **The passcode is a deterrent, not a lock.** Because there is no server,
+  the family passcode is checked on the device, and the paired kid device
+  holds its own Firebase credentials and can read the passcode hash (a
+  short numeric passcode can be guessed offline) and write the limit fields.
+  Someone with the skill and physical access to that phone could change
+  their own limits without it. "Requests are never self-granted" and "uninstall
+  needs approval" are likewise app behavior, not something the rules can
+  enforce. This is fine for its purpose - a conversation-starting friction
+  for a curious kid - but don't rely on it against a determined teenager.
+  Closing it fully would need a small server that verifies the passcode
+  with a lockout, which this project deliberately doesn't have. On the
+  kid device, repeated wrong passcodes lock the screen for 15 minutes.
+- If you track your own device, its per-app numbers live in the same Firebase
+  project, where devices linked to your family can technically read them;
+  the kid app only ever shows a calm status from them.
+- Bedtime call blocking blocks calls from numbers that aren't on your list,
+  but Android may not consult the app for numbers saved in the phone's
+  contacts, and texts can only be quieted (notification muted), not blocked -
+  test both on your own devices.
 - This kind of app is inherently powerful (it can see app usage and block
   apps). Use it thoughtfully and talk to your kid about it — it's meant to
   support a conversation about healthy screen time, not to be sprung on

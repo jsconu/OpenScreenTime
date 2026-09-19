@@ -2,6 +2,8 @@ package org.openscreentime.kid.monitor
 
 import android.app.Notification
 import android.app.Person
+import android.os.Build
+import androidx.annotation.RequiresApi
 import android.service.notification.NotificationListenerService
 import android.service.notification.StatusBarNotification
 import org.openscreentime.kid.data.NotificationDigestStore
@@ -99,6 +101,8 @@ class NotificationDigestListenerService : NotificationListenerService() {
             nowMinutesOfDay(), LiveChildState.bedtimeStartMinutes, LiveChildState.bedtimeEndMinutes
         )
         if (!isInBedtime) return
+        // Notification.EXTRA_PEOPLE_LIST holds android.app.Person, which is API 28+.
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.P) return
         val senderNumber = extractSenderPhoneNumber(sbn.notification) ?: return
         val allowed = isCallAllowedDuringBedtime(
             phoneNumber = senderNumber,
@@ -111,6 +115,7 @@ class NotificationDigestListenerService : NotificationListenerService() {
     }
 
     /** Modern messaging notifications (RCS/SMS via Google Messages, etc.) attach a `tel:` Person URI per sender. */
+    @RequiresApi(Build.VERSION_CODES.P)
     @Suppress("DEPRECATION")
     private fun extractSenderPhoneNumber(notification: Notification): String? {
         val people = notification.extras.getParcelableArrayList<Person>(Notification.EXTRA_PEOPLE_LIST) ?: return null

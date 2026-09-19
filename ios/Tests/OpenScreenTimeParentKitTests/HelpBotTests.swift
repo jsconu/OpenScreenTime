@@ -11,6 +11,12 @@ final class HelpBotTests: XCTestCase {
         bot.reply(to: query, audience: audience).matchedEntryId
     }
 
+    func testIPhoneParentsAreToldTheWeeklyReportIsAndroidOnly() {
+        let reply = bot.reply(to: "what is the weekly report", audience: .parent)
+        XCTAssertEqual(reply.matchedEntryId, "weekly-report")
+        XCTAssertTrue(reply.text.contains("iPhone parent app yet"), "iOS must not describe a screen it does not have")
+    }
+
     // MARK: - The knowledge base itself
 
     func testPackagedKnowledgeBaseLoads() {
@@ -87,6 +93,20 @@ final class HelpBotTests: XCTestCase {
         XCTAssertEqual(HelpBot.extractAgeYears("my 7yo"), 7)
         XCTAssertEqual(HelpBot.extractAgeYears("my 8 month old"), 0)
         XCTAssertNil(HelpBot.extractAgeYears("how do I set a bedtime"))
+    }
+
+    func testAgeExtractionHandlesCompoundAgesAndIgnoresLookAlikes() {
+        XCTAssertEqual(HelpBot.extractAgeYears("my 1 year 6 months old"), 1)
+        XCTAssertEqual(HelpBot.extractAgeYears("a 2 years and 3 months old"), 2)
+        XCTAssertEqual(HelpBot.extractAgeYears("my 24 month old"), 2)
+        XCTAssertNil(HelpBot.extractAgeYears("in 2024 year old phones are common"))
+        XCTAssertNil(HelpBot.extractAgeYears("usage 10 hours"))
+    }
+
+    func testPluralsStemToTheSameTokenAsTheirSingular() {
+        XCTAssertEqual(HelpBot.tokenize("time"), HelpBot.tokenize("times"))
+        XCTAssertEqual(HelpBot.tokenize("note"), HelpBot.tokenize("notes"))
+        XCTAssertEqual(HelpBot.tokenize("watch"), HelpBot.tokenize("watches"))
     }
 
     // MARK: - How-to, philosophy, audience, fallback

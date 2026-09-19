@@ -1,8 +1,10 @@
 package org.openscreentime.kid.monitor
 
 import android.net.Uri
+import android.os.Build
 import android.telecom.CallRedirectionService
 import android.telecom.PhoneAccountHandle
+import androidx.annotation.RequiresApi
 import org.openscreentime.shared.model.isCallAllowedDuringBedtime
 import org.openscreentime.shared.model.nowMinutesOfDay
 
@@ -12,6 +14,7 @@ import org.openscreentime.shared.model.nowMinutesOfDay
  * [LiveChildState.alwaysAllowedContacts]. Only active once a parent requests the
  * ROLE_CALL_REDIRECTION role (Android 10+).
  */
+@RequiresApi(Build.VERSION_CODES.Q)
 class BedtimeCallRedirectionService : CallRedirectionService() {
     override fun onPlaceCall(handle: Uri, initialPhoneAccount: PhoneAccountHandle, allowInteractiveResponse: Boolean) {
         val allowed = isCallAllowedDuringBedtime(

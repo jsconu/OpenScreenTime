@@ -12,19 +12,23 @@ rules_version = '2';
 //
 // The kid app never has a normal account: it signs in anonymously and "claims"
 // a pairing code, which atomically stamps its anonymous uid onto the child
-// document as deviceUid. After that, these rules let that specific uid read
-// the child's limits, write that child's dailyStats, and write its own
-// dailyLimitMinutes/appLimits/locked fields.
+// document as deviceUid (the child claim below is bound to that code - a device
+// can't claim a child without having claimed its unexpired code in the same
+// transaction). After that, these rules let that specific uid read the child's
+// limits, write that child's dailyStats (validated), and write the fields in the
+// "parent mode" allowlist below.
 //
-// That last one deliberately gives a paired kid device the same write access
-// a parent has to its OWN child's limits. The security boundary here is
-// "only the one device that claimed this child" - not "only the parent app" -
-// because the "parent mode" flow in the kid app (gated by the shared family
-// passcode, verified locally) needs to write those same fields from the kid
-// device. A kid with physical access to their own device can already disable
-// the accessibility service or uninstall the app, so this doesn't weaken the
-// real security boundary (one family's data from another's); it only affects
-// how much a kid can self-modify their own limits without a parent's app.
+// IMPORTANT - what this does and doesn't enforce. The family passcode and the
+// "requests are never self-granted" behavior are CLIENT-SIDE gates: the paired kid
+// device holds its own Firebase credentials, and the "parent mode" rule below has no
+// passcode check (Firestore rules can't run PBKDF2), so anything on that allowlist -
+// including locked, limits, bedtime, and temporaryUnlockUntilMs - is writable by
+// whoever can extract that device's token. The real boundaries are: (1) one family's
+// data from another's, and (2) the kid device only touching its own child doc. A kid
+// with physical access can already disable the accessibility service or uninstall the
+// app, so this is documented as a deterrent, not a lock. Closing it fully would need
+// a server (e.g. a Cloud Function verifying the passcode with a lockout), which this
+// project deliberately doesn't have.
 
 service cloud.firestore {
   match /databases/{database}/documents {
@@ -33,17 +37,35 @@ service cloud.firestore {
     // through the app - it's reviewed via the Firebase console, which has admin access
     // that bypasses these rules entirely.
     match /feedback/{feedbackId} {
-      allow create: if request.auth != null && request.auth.uid == request.resource.data.parentUid;
+      allow create: if request.auth != null
+        && request.auth.uid == request.resource.data.parentUid
+        && request.resource.data.keys().hasOnly(['parentUid', 'text', 'appVersion', 'device', 'createdAt'])
+        && request.resource.data.text is string
+        && request.resource.data.text.size() > 0 && request.resource.data.text.size() <= 4000
+        && request.resource.data.get('appVersion', '') is string
+        && request.resource.data.get('appVersion', '').size() <= 64
+        && request.resource.data.get('device', '') is string
+        && request.resource.data.get('device', '').size() <= 200
+        && request.resource.data.createdAt == request.time;
       allow read, update, delete: if false;
     }
 
     match /pairingCodes/{code} {
-      allow get: if request.auth != null;
+      // A code is only readable while it's live (unused and inside its TTL), or by the
+      // device that claimed it. Previously any signed-in user could read ANY code doc,
+      // ever - 6 digits is enumerable, and each doc leaks parentUid/childId - so this is
+      // what keeps the code space from doubling as a directory of families.
+      allow get: if request.auth != null
+        && ((resource.data.used == false
+             && request.time < resource.data.createdAt + duration.value(30, 'm'))
+            || resource.data.get('claimedByUid', '') == request.auth.uid);
       allow list: if false;
       // createdAt must be the server's own clock (via FieldValue.serverTimestamp()),
       // not a client-supplied value, so a claimant can't extend its own window.
       allow create: if request.auth != null
         && request.auth.uid == request.resource.data.parentUid
+        && request.resource.data.keys().hasOnly(['parentUid', 'childId', 'used', 'createdAt'])
+        && request.resource.data.used == false
         && request.resource.data.createdAt == request.time;
       // A code can only be claimed within PAIRING_CODE_TTL of creation. This bounds
       // how long a guessed/brute-forced code is actually exploitable - see #2.
@@ -71,11 +93,13 @@ service cloud.firestore {
       allow update: if request.auth != null
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['linkedDeviceUids'])
         && request.resource.data.linkedDeviceUids.hasAll(resource.data.get('linkedDeviceUids', []))
+        && request.resource.data.linkedDeviceUids.size() <= 10
         && request.auth.uid in request.resource.data.linkedDeviceUids;
       // Same as above, for the case where this is the family's first-ever claimed
       // device and the parent doc doesn't exist yet (e.g. no passcode set).
       allow create: if request.auth != null
         && request.resource.data.keys().hasOnly(['linkedDeviceUids'])
+        && request.resource.data.linkedDeviceUids.size() <= 10
         && request.auth.uid in request.resource.data.linkedDeviceUids;
 
       match /children/{childId} {
@@ -93,12 +117,18 @@ service cloud.firestore {
           && request.auth.uid in
              get(/databases/$(database)/documents/parents/$(parentUid)).data.get('linkedDeviceUids', []);
 
-        // One-time claim: only allowed while deviceUid is still unset, and only
-        // deviceUid/paired may change.
+        // One-time claim: only allowed while deviceUid is still unset, only deviceUid/paired
+        // may change, and only as part of the same transaction that claims this child's own
+        // live pairing code (getAfter sees the post-transaction code doc). So a stranger
+        // can't claim an unpaired child without its unexpired code.
         allow update: if request.auth != null
           && resource.data.deviceUid == null
           && request.resource.data.deviceUid == request.auth.uid
-          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['deviceUid', 'paired']);
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['deviceUid', 'paired'])
+          && getAfter(/databases/$(database)/documents/pairingCodes/$(resource.data.pairingCode)).data.claimedByUid == request.auth.uid
+          && getAfter(/databases/$(database)/documents/pairingCodes/$(resource.data.pairingCode)).data.used == true
+          && getAfter(/databases/$(database)/documents/pairingCodes/$(resource.data.pairingCode)).data.childId == childId
+          && getAfter(/databases/$(database)/documents/pairingCodes/$(resource.data.pairingCode)).data.parentUid == parentUid;
 
         // "Parent mode" on an already-paired kid device: the linked device may
         // change its own limits/lock state (never the passcode fields or pairing
@@ -122,10 +152,30 @@ service cloud.firestore {
           && request.resource.data.diff(resource.data).affectedKeys()
                .hasOnly(['proposedDailyLimitMinutes', 'proposedAppLimits', 'requestedExtraMinutes']);
 
+        // What a paired kid device may write to its own dailyStats: a fixed set of fields,
+        // with types and sizes bounded, so a device can't stuff arbitrary or huge data
+        // (which would also poison the parent app's parsing, and cost the operator money).
+        function validDeviceStats(date) {
+          let d = request.resource.data;
+          return date.matches('[0-9]{4}-[0-9]{2}-[0-9]{2}')
+            && d.keys().hasOnly(['totalScreenTimeMs', 'unlockCount', 'appUsage', 'lastSyncedAtMs',
+                                 'notificationCount', 'notificationsByApp', 'unlockFirstApps'])
+            && d.get('totalScreenTimeMs', 0) is int
+            && d.get('unlockCount', 0) is int
+            && d.get('lastSyncedAtMs', 0) is int
+            && d.get('notificationCount', 0) is int
+            && d.get('appUsage', []) is list && d.get('appUsage', []).size() <= 500
+            && d.get('notificationsByApp', []) is list && d.get('notificationsByApp', []).size() <= 500
+            && d.get('unlockFirstApps', []) is list && d.get('unlockFirstApps', []).size() <= 500;
+        }
+
         match /dailyStats/{date} {
           allow read, write: if request.auth != null && request.auth.uid == parentUid;
-          allow read, write: if request.auth != null &&
+          allow read: if request.auth != null &&
             get(/databases/$(database)/documents/parents/$(parentUid)/children/$(childId)).data.deviceUid == request.auth.uid;
+          allow create, update: if request.auth != null &&
+            get(/databases/$(database)/documents/parents/$(parentUid)/children/$(childId)).data.deviceUid == request.auth.uid &&
+            validDeviceStats(date);
           // Mirrors the isSelf get() rule above, for the daily numbers behind it (#18).
           allow read: if request.auth != null &&
             get(/databases/$(database)/documents/parents/$(parentUid)/children/$(childId)).data.isSelf == true &&

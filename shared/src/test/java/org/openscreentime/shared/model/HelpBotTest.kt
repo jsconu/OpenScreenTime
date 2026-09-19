@@ -136,6 +136,22 @@ class HelpBotTest {
         assertNull(HelpBot.extractAgeYears("how do I set a bedtime"))
     }
 
+    @Test
+    fun `age extraction handles compound ages and ignores look-alikes`() {
+        assertEquals(1, HelpBot.extractAgeYears("my 1 year 6 months old"))
+        assertEquals(2, HelpBot.extractAgeYears("a 2 years and 3 months old"))
+        assertEquals(2, HelpBot.extractAgeYears("my 24 month old"))
+        assertNull(HelpBot.extractAgeYears("in 2024 year old phones are common"))
+        assertNull(HelpBot.extractAgeYears("usage 10 hours"))
+    }
+
+    @Test
+    fun `plurals stem to the same token as their singular`() {
+        assertEquals(HelpBot.tokenize("time"), HelpBot.tokenize("times"))
+        assertEquals(HelpBot.tokenize("note"), HelpBot.tokenize("notes"))
+        assertEquals(HelpBot.tokenize("watch"), HelpBot.tokenize("watches"))
+    }
+
     // --- How-to and philosophy ---
 
     @Test

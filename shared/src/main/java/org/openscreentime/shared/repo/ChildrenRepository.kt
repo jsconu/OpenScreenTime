@@ -45,31 +45,43 @@ internal class ChildrenRepository(
 
     fun listenChildren(parentUid: String, onChange: (List<ChildProfile>) -> Unit): ListenerRegistration =
         db.collection(FirestorePaths.childrenCollection(parentUid))
-            .addSnapshotListener { snap, _ ->
-                val list = snap?.documents?.map { ChildProfile.fromMap(it.id, it.data ?: emptyMap()) } ?: emptyList()
-                onChange(list)
+            .addSnapshotListener { snap, error ->
+                // An error snapshot isn't "no children" - ignore it and keep what's on screen.
+                if (error != null || snap == null) return@addSnapshotListener
+                onChange(snap.documents.map { ChildProfile.fromMap(it.id, it.data ?: emptyMap()) })
             }
 
     fun listenChild(parentUid: String, childId: String, onChange: (ChildProfile) -> Unit): ListenerRegistration =
         db.document(FirestorePaths.childDoc(parentUid, childId))
-            .addSnapshotListener { snap, _ ->
-                onChange(ChildProfile.fromMap(childId, snap?.data ?: emptyMap()))
+            .addSnapshotListener { snap, error ->
+                // An error snapshot must not be delivered as an all-defaults profile: the kid
+                // device would read that as "not locked, no bedtime" and drop enforcement.
+                if (error != null || snap == null) return@addSnapshotListener
+                onChange(ChildProfile.fromMap(childId, snap.data ?: emptyMap()))
             }
 
     suspend fun getOrCreateSelfProfile(parentUid: String, name: String): ChildProfile {
         val docRef = db.document(FirestorePaths.childDoc(parentUid, FirestorePaths.SELF_CHILD_ID))
         val existing = docRef.get().await()
-        if (existing.exists()) return ChildProfile.fromMap(existing.id, existing.data ?: emptyMap())
+        if (existing.exists()) {
+            // Older versions copied the passcode verifier onto this doc, which every linked kid
+            // device can read (#18). Clear it if it's still there.
+            if (existing.getString("parentPasscodeHash") != null) {
+                try {
+                    docRef.update(mapOf("parentPasscodeHash" to null, "parentPasscodeSalt" to null)).await()
+                } catch (e: Exception) {
+                    // Best effort - the next passcode change clears it too.
+                }
+            }
+            return ChildProfile.fromMap(existing.id, existing.data ?: emptyMap())
+        }
 
-        val existingPasscode = passcodes.getParentPasscode(parentUid)
         val self = ChildProfile(
             id = FirestorePaths.SELF_CHILD_ID,
             name = name,
             paired = true,
             deviceUid = parentUid,
-            isSelf = true,
-            parentPasscodeHash = existingPasscode?.hash,
-            parentPasscodeSalt = existingPasscode?.salt
+            isSelf = true
         )
         docRef.set(self.toMap()).await()
         return self

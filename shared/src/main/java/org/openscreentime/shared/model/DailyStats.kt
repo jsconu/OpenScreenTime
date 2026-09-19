@@ -47,21 +47,21 @@ data class DailyStats(
     companion object {
         @Suppress("UNCHECKED_CAST")
         fun fromMap(date: String, map: Map<String, Any?>): DailyStats {
-            val rawList = map["appUsage"] as? List<Map<String, Any?>> ?: emptyList()
+            val rawList = (map["appUsage"] as? List<*>)?.filterIsInstance<Map<*, *>>() ?: emptyList()
             val appUsage = rawList.map {
                 AppUsage(
                     packageName = it["packageName"] as? String ?: "",
                     appName = it["appName"] as? String ?: "",
-                    foregroundTimeMs = (it["foregroundTimeMs"] as? Long) ?: 0
+                    foregroundTimeMs = (it["foregroundTimeMs"] as? Number)?.toLong() ?: 0
                 )
             }
             return DailyStats(
                 date = date,
-                totalScreenTimeMs = (map["totalScreenTimeMs"] as? Long) ?: 0,
-                unlockCount = (map["unlockCount"] as? Long)?.toInt() ?: 0,
+                totalScreenTimeMs = (map["totalScreenTimeMs"] as? Number)?.toLong() ?: 0,
+                unlockCount = (map["unlockCount"] as? Number)?.toInt() ?: 0,
                 appUsage = appUsage,
-                lastSyncedAtMs = (map["lastSyncedAtMs"] as? Long) ?: 0,
-                notificationCount = (map["notificationCount"] as? Long)?.toInt() ?: 0,
+                lastSyncedAtMs = (map["lastSyncedAtMs"] as? Number)?.toLong() ?: 0,
+                notificationCount = (map["notificationCount"] as? Number)?.toInt() ?: 0,
                 notificationsByApp = appCounts(map["notificationsByApp"]),
                 unlockFirstApps = appCounts(map["unlockFirstApps"])
             )
@@ -69,11 +69,11 @@ data class DailyStats(
 
         @Suppress("UNCHECKED_CAST")
         private fun appCounts(raw: Any?): List<AppCount> =
-            (raw as? List<Map<String, Any?>>)?.map {
+            (raw as? List<*>)?.filterIsInstance<Map<*, *>>()?.map {
                 AppCount(
                     packageName = it["packageName"] as? String ?: "",
                     appName = it["appName"] as? String ?: "",
-                    count = (it["count"] as? Long)?.toInt() ?: 0
+                    count = (it["count"] as? Number)?.toInt() ?: 0
                 )
             } ?: emptyList()
     }

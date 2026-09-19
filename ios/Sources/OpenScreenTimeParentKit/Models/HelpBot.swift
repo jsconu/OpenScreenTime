@@ -16,6 +16,8 @@ struct HelpEntry: Codable, Equatable {
     let question: String
     let keywords: [String]
     let answer: String
+    /// Shown instead of `answer` here, for the few answers that describe an Android-only screen.
+    let iosAnswer: String?
     let sources: [HelpSource]
 
     init(from decoder: Decoder) throws {
@@ -26,11 +28,12 @@ struct HelpEntry: Codable, Equatable {
         question = try c.decode(String.self, forKey: .question)
         keywords = try c.decode([String].self, forKey: .keywords)
         answer = try c.decode(String.self, forKey: .answer)
+        iosAnswer = try c.decodeIfPresent(String.self, forKey: .iosAnswer)
         sources = try c.decodeIfPresent([HelpSource].self, forKey: .sources) ?? []
     }
 
     private enum CodingKeys: String, CodingKey {
-        case id, audience, topic, question, keywords, answer, sources
+        case id, audience, topic, question, keywords, answer, iosAnswer, sources
     }
 }
 
@@ -38,6 +41,24 @@ struct HelpKnowledge: Codable, Equatable {
     let version: Int
     let entries: [HelpEntry]
     let suggestions: [String: [String]]
+
+    init(version: Int, entries: [HelpEntry], suggestions: [String: [String]]) {
+        self.version = version
+        self.entries = entries
+        self.suggestions = suggestions
+    }
+
+    /// `suggestions` is optional in the file, as it is in the Kotlin model.
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        version = try c.decode(Int.self, forKey: .version)
+        entries = try c.decode([HelpEntry].self, forKey: .entries)
+        suggestions = try c.decodeIfPresent([String: [String]].self, forKey: .suggestions) ?? [:]
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case version, entries, suggestions
+    }
 }
 
 enum HelpAudience: String {
@@ -83,16 +104,18 @@ final class HelpBot {
         if let age, aboutLimits { ageEntryId = Self.guidanceEntryId(forAge: age) }
         let normalizedQuery = " " + ordered.joined(separator: " ") + " "
 
-        var scored: [(entry: HelpEntry, score: Int)] = []
-        for entry in visible {
+        var scored: [(entry: HelpEntry, score: Int, order: Int)] = []
+        for (index, entry) in visible.enumerated() {
             let total = score(entry, tokens, normalizedQuery) + (entry.id == ageEntryId ? Self.ageBoost : 0)
-            if total >= Self.minScore { scored.append((entry, total)) }
+            if total >= Self.minScore { scored.append((entry, total, index)) }
         }
-        scored.sort { $0.score > $1.score }
+        // Ties keep knowledge-base order, exactly like Kotlin's stable sortedByDescending -
+        // Swift's sort makes no such promise, and both apps must answer identically.
+        scored.sort { $0.score != $1.score ? $0.score > $1.score : $0.order < $1.order }
 
         guard let best = scored.first else { return fallback(audience) }
         return HelpReply(
-            text: best.entry.answer,
+            text: best.entry.iosAnswer ?? best.entry.answer,
             sources: best.entry.sources,
             relatedQuestions: scored.dropFirst().prefix(Self.maxRelated).map { $0.entry.question },
             matchedEntryId: best.entry.id
@@ -168,30 +191,38 @@ final class HelpBot {
     private static func stem(_ word: String) -> String {
         if word.count > 5 && word.hasSuffix("ing") { return String(word.dropLast(3)) }
         if word.count > 4 && word.hasSuffix("ies") { return String(word.dropLast(3)) + "y" }
-        if word.count > 4 && word.hasSuffix("es") { return String(word.dropLast(2)) }
+        // Only the sibilant plurals ("boxes", "watches", "classes") lose "es" - otherwise
+        // "times"/"notes"/"sites" would stem to "tim"/"not"/"sit" and stop matching "time"/"note".
+        if word.count > 4 && ["sses", "xes", "ches", "shes"].contains(where: { word.hasSuffix($0) }) {
+            return String(word.dropLast(2))
+        }
         if word.count > 3 && word.hasSuffix("s") && !word.hasSuffix("ss") { return String(word.dropLast(1)) }
         return word
     }
 
+    // Every pattern starts with \b so "2024 year old" or "usage 10" can't be misread as an age.
+    // The first allows a trailing months part ("1 year 6 months old" is 1, not an infant).
     private static let agePatterns: [NSRegularExpression] = [
-        #"(\d{1,2})\s*-?\s*(?:year|yr)s?\s*-?\s*old"#,
-        #"(?:age|aged)\s*(\d{1,2})"#,
-        #"(\d{1,2})\s*(?:yo|y/o)\b"#,
-        #"(\d{1,2})\s*(?:month)s?\s*-?\s*old"#
+        #"\b(\d{1,2})\s*-?\s*(?:year|yr)s?(?:\s*(?:and\s*)?\d{1,2}\s*months?)?\s*-?\s*old"#,
+        #"\b(?:age|aged)\s*(\d{1,2})\b"#,
+        #"\b(\d{1,2})\s*(?:yo|y/o)\b"#,
+        #"\b(\d{1,2})\s*-?\s*months?\s*-?\s*old"#
     ].map { try! NSRegularExpression(pattern: $0) }
 
-    /// "my 4 year old", "aged 7", "a 9yo" -> the age in years; months give 0 (an infant).
+    private static func firstNumber(_ pattern: NSRegularExpression, in q: String) -> Int? {
+        let range = NSRange(q.startIndex..., in: q)
+        guard let m = pattern.firstMatch(in: q, range: range),
+              let r = Range(m.range(at: 1), in: q) else { return nil }
+        return Int(q[r])
+    }
+
+    /// "my 4 year old", "aged 7", "a 9yo" -> the age in years; "8 months old" is 0 (an infant).
     static func extractAgeYears(_ query: String) -> Int? {
         let q = query.lowercased()
-        let range = NSRange(q.startIndex..., in: q)
-        if agePatterns[3].firstMatch(in: q, range: range) != nil { return 0 }
         for pattern in agePatterns.prefix(3) {
-            if let m = pattern.firstMatch(in: q, range: range),
-               let r = Range(m.range(at: 1), in: q),
-               let n = Int(q[r]), (0...99).contains(n) {
-                return n
-            }
+            if let n = firstNumber(pattern, in: q), (0...99).contains(n) { return n }
         }
+        if let months = firstNumber(agePatterns[3], in: q), (0...1200).contains(months) { return months / 12 }
         return nil
     }
 

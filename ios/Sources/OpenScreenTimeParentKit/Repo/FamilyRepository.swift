@@ -86,7 +86,12 @@ public final class FamilyRepository {
         guard !children.documents.isEmpty else { return }
         let batch = db.batch()
         for doc in children.documents {
-            batch.updateData(["parentPasscodeHash": hash, "parentPasscodeSalt": salt], forDocument: doc.reference)
+            // The parent's own "self" profile is readable by every linked kid device and has no kid
+            // device that needs to verify a passcode, so it never carries the verifier (see #18).
+            let fields: [String: Any] = doc.documentID == "self"
+                ? ["parentPasscodeHash": NSNull(), "parentPasscodeSalt": NSNull()]
+                : ["parentPasscodeHash": hash, "parentPasscodeSalt": salt]
+            batch.updateData(fields, forDocument: doc.reference)
         }
         try await batch.commit()
     }

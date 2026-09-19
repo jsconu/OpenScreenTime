@@ -73,7 +73,8 @@ fun ParentControlsScreen(
     parentUid: String,
     childId: String,
     child: ChildProfile,
-    onDone: () -> Unit
+    onDone: () -> Unit,
+    onUnpair: () -> Unit
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -111,6 +112,7 @@ fun ParentControlsScreen(
     var showLockConfirm by remember { mutableStateOf(false) }
     var newBlockedDomain by remember { mutableStateOf("") }
     var newAllowedContact by remember { mutableStateOf("") }
+    var showUnpairConfirm by remember { mutableStateOf(false) }
 
     Scaffold(
         topBar = {
@@ -224,12 +226,13 @@ fun ParentControlsScreen(
                     Text("Bedtime calls", style = MaterialTheme.typography.labelLarge)
                     Spacer(Modifier.height(4.dp))
                     Text(
-                        "During bedtime, only the numbers below can call or text - " +
-                            "everyone else is blocked until bedtime ends. Add a parent's " +
-                            "number so this device is never truly unreachable overnight. " +
-                            "Texts are muted, not fully blocked - opening Messages directly " +
-                            "can still show one - and also needs \"Notification access\" " +
-                            "granted from the main screen.",
+                        "During bedtime, calls from or to any number not listed below are " +
+                            "blocked. Add a parent's number so this device is never truly " +
+                            "unreachable overnight. Some phones let calls from saved contacts " +
+                            "through, so test it once. Texts can't be blocked, only quieted: " +
+                            "the notification for a text from another number may be muted (it " +
+                            "needs \"Notification access\" and doesn't work with every " +
+                            "messaging app), but opening Messages still shows it.",
                         style = MaterialTheme.typography.bodySmall
                     )
                     if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
@@ -415,7 +418,23 @@ fun ParentControlsScreen(
                     }
                 )
             }
+            item {
+                OutlinedButton(
+                    onClick = { showUnpairConfirm = true },
+                    modifier = Modifier.fillMaxWidth().padding(16.dp)
+                ) { Text("Unpair this device") }
+            }
         }
+    }
+
+    if (showUnpairConfirm) {
+        AlertDialog(
+            onDismissRequest = { showUnpairConfirm = false },
+            title = { Text("Unpair this device?") },
+            text = { Text("Limits and reporting stop until a parent pairs it again with a new code.") },
+            confirmButton = { TextButton(onClick = onUnpair) { Text("Unpair") } },
+            dismissButton = { TextButton(onClick = { showUnpairConfirm = false }) { Text("Cancel") } }
+        )
     }
 
     if (showBedtimeDialog) {

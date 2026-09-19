@@ -13,6 +13,10 @@ on:
       - 'firebase.json'
       - '.github/workflows/e2e.yml'
 
+# Read-only token: nothing here pushes, comments, or publishes.
+permissions:
+  contents: read
+
 jobs:
   e2e:
     runs-on: ubuntu-latest

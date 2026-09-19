@@ -32,6 +32,8 @@ class KidApp : Application() {
         // Never report CI/E2E-emulator crashes to the real Crashlytics dashboard (see #21) -
         // same flag that already points Firebase itself at the local emulator suite.
         FirebaseCrashlytics.getInstance().setCrashlyticsCollectionEnabled(!BuildConfig.USE_FIREBASE_EMULATOR)
+        // Before anything that enforces or syncs can run - see LiveChildState.
+        LiveChildState.restore(this)
         createNotificationChannels()
         scheduleSync()
         startLimitsListener()
@@ -70,20 +72,8 @@ class KidApp : Application() {
         if (parentUid == null || childId == null) return
 
         repository.listenChild(parentUid, childId) { child ->
-            LiveChildState.limitsCache = child.appLimits
-            LiveChildState.dailyLimitMinutes = child.dailyLimitMinutes
-            LiveChildState.dailyUnlockGoal = child.dailyUnlockGoal
-            LiveChildState.bedtimeStartMinutes = child.bedtimeStartMinutes
-            LiveChildState.bedtimeEndMinutes = child.bedtimeEndMinutes
-            LiveChildState.blockedDomains = child.blockedDomains
-            LiveChildState.temporaryUnlockUntilMs = child.temporaryUnlockUntilMs
-            LiveChildState.alwaysAllowedPackages = child.alwaysAllowedPackages.toSet()
-            LiveChildState.alwaysAllowedContacts = child.alwaysAllowedContacts
-            LiveChildState.trackUnlocks = child.trackUnlocks
-            LiveChildState.trackNotifications = child.trackNotifications
-
             val wasLocked = LiveChildState.lockedCache
-            LiveChildState.lockedCache = child.locked
+            LiveChildState.update(this, child)
             if (child.locked && !wasLocked) {
                 // Don't wait for the next app switch or tick - interrupt right away.
                 startActivity(

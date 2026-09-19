@@ -18,6 +18,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.style.TextAlign
@@ -25,10 +26,9 @@ import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import org.openscreentime.kid.data.PasscodeAttemptStore
 import org.openscreentime.shared.model.ChildProfile
 import org.openscreentime.shared.util.PasscodeHasher
-
-private const val MAX_ATTEMPTS = 5
 
 /**
  * Gate in front of [ParentControlsScreen]: verifies the family passcode entered on
@@ -42,14 +42,14 @@ fun ParentModeUnlockScreen(
     onCancel: () -> Unit
 ) {
     val scope = rememberCoroutineScope()
+    val attemptStore = remember { PasscodeAttemptStore(LocalContext.current) }
     var passcode by remember { mutableStateOf("") }
     var error by remember { mutableStateOf<String?>(null) }
-    var attempts by remember { mutableStateOf(0) }
+    var locked by remember { mutableStateOf(attemptStore.isLocked()) }
     var verifying by remember { mutableStateOf(false) }
 
     val hash = child?.parentPasscodeHash
     val salt = child?.parentPasscodeSalt
-    val locked = attempts >= MAX_ATTEMPTS
 
     Column(
         modifier = Modifier.fillMaxSize().padding(24.dp),
@@ -93,12 +93,13 @@ fun ParentModeUnlockScreen(
                         val ok = withContext(Dispatchers.Default) { PasscodeHasher.verify(passcode, salt, hash) }
                         verifying = false
                         if (ok) {
+                            attemptStore.recordSuccess()
                             onUnlocked()
                         } else {
-                            attempts++
+                            locked = attemptStore.recordFailure()
                             passcode = ""
-                            error = if (attempts >= MAX_ATTEMPTS) {
-                                "Too many incorrect attempts. Come back later."
+                            error = if (locked) {
+                                "Too many incorrect attempts. Try again in ${attemptStore.minutesRemaining()} minutes."
                             } else {
                                 "Incorrect passcode."
                             }

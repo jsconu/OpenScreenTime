@@ -7,6 +7,7 @@ import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Box
@@ -28,6 +29,7 @@ import org.openscreentime.kid.KidApp
 import org.openscreentime.kid.data.AppearancePrefs
 import org.openscreentime.kid.data.PairingStore
 import org.openscreentime.kid.monitor.DnsSinkholeVpnService
+import org.openscreentime.kid.monitor.LiveChildState
 import org.openscreentime.kid.monitor.ScreenMonitorService
 import org.openscreentime.kid.util.PermissionActions
 import org.openscreentime.kid.util.checkPermissions
@@ -147,6 +149,8 @@ class MainActivity : ComponentActivity() {
                         }
                     )
                 } else {
+                    // System back from any sub-screen returns to the status screen instead of leaving the app.
+                    BackHandler(enabled = screen != KidScreen.STATUS) { screen = KidScreen.STATUS }
                     when (screen) {
                         KidScreen.STATUS -> StatusScreen(
                             childName = pairingStore.childName ?: "",
@@ -204,8 +208,10 @@ class MainActivity : ComponentActivity() {
                             onRequestNotificationListener = {
                                 startActivity(Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS))
                             },
+                            showUnpair = child?.parentPasscodeHash == null,
                             onUnpair = {
                                 pairingStore.clear()
+                                LiveChildState.clear(this@MainActivity)
                                 paired = false
                             }
                         )
@@ -228,7 +234,13 @@ class MainActivity : ComponentActivity() {
                                     parentUid = parentUid,
                                     childId = childId,
                                     child = currentChild,
-                                    onDone = { screen = KidScreen.STATUS }
+                                    onDone = { screen = KidScreen.STATUS },
+                                    onUnpair = {
+                                        pairingStore.clear()
+                                        LiveChildState.clear(this@MainActivity)
+                                        paired = false
+                                        screen = KidScreen.STATUS
+                                    }
                                 )
                             }
                         }

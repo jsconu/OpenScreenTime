@@ -20,6 +20,11 @@ data class HelpEntry(
     val question: String,
     val keywords: List<String>,
     val answer: String,
+    /**
+     * Read only by the iOS app (see HelpBot.swift): for the few answers that describe an Android-only
+     * screen, the iPhone parent app shows this instead. Android never uses it.
+     */
+    val iosAnswer: String? = null,
     val sources: List<HelpSource> = emptyList()
 )
 
@@ -135,27 +140,32 @@ class HelpBot(private val knowledge: HelpKnowledge) {
         private fun stem(word: String): String = when {
             word.length > 5 && word.endsWith("ing") -> word.dropLast(3)
             word.length > 4 && word.endsWith("ies") -> word.dropLast(3) + "y"
-            word.length > 4 && word.endsWith("es") -> word.dropLast(2)
+            // Only the sibilant plurals ("boxes", "watches", "classes") lose "es" - otherwise
+            // "times"/"notes"/"sites" would stem to "tim"/"not"/"sit" and stop matching "time"/"note".
+            word.length > 4 && (word.endsWith("sses") || word.endsWith("xes") ||
+                word.endsWith("ches") || word.endsWith("shes")) -> word.dropLast(2)
             word.length > 3 && word.endsWith("s") && !word.endsWith("ss") -> word.dropLast(1)
             else -> word
         }
 
+        // Every pattern starts with \b so "2024 year old" or "usage 10" can't be misread as an age.
+        // The first allows a trailing months part ("1 year 6 months old" is 1, not an infant).
         private val AGE_PATTERNS = listOf(
-            Regex("""(\d{1,2})\s*-?\s*(?:year|yr)s?\s*-?\s*old"""),
-            Regex("""(?:age|aged)\s*(\d{1,2})"""),
-            Regex("""(\d{1,2})\s*(?:yo|y/o)\b"""),
-            Regex("""(\d{1,2})\s*(?:month)s?\s*-?\s*old""")
+            Regex("""\b(\d{1,2})\s*-?\s*(?:year|yr)s?(?:\s*(?:and\s*)?\d{1,2}\s*months?)?\s*-?\s*old"""),
+            Regex("""\b(?:age|aged)\s*(\d{1,2})\b"""),
+            Regex("""\b(\d{1,2})\s*(?:yo|y/o)\b"""),
+            Regex("""\b(\d{1,2})\s*-?\s*months?\s*-?\s*old""")
         )
 
-        /** "my 4 year old", "aged 7", "a 9yo" -> the age in years; months give 0 (an infant). */
+        /** "my 4 year old", "aged 7", "a 9yo" -> the age in years; "8 months old" is 0 (an infant). */
         fun extractAgeYears(query: String): Int? {
             val q = query.lowercase()
-            if (AGE_PATTERNS[3].containsMatchIn(q)) return 0
             for (pattern in AGE_PATTERNS.take(3)) {
                 val n = pattern.find(q)?.groupValues?.get(1)?.toIntOrNull()
                 if (n != null && n in 0..99) return n
             }
-            return null
+            val months = AGE_PATTERNS[3].find(q)?.groupValues?.get(1)?.toIntOrNull()
+            return if (months != null && months in 0..1200) months / 12 else null
         }
 
         /** Which guidance entry answers "how much screen time" for a child this age. */

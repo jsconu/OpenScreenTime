@@ -8,6 +8,10 @@ on:
     branches: [main]
     paths: ["ios/**", ".github/workflows/ios-ci.yml"]
 
+# Read-only token: nothing here pushes, comments, or publishes.
+permissions:
+  contents: read
+
 jobs:
   build:
     # Only a macOS runner has the Swift/iOS SDK toolchain needed to build this at all.

@@ -28,10 +28,19 @@ class SyncWorker(context: Context, params: WorkerParameters) : CoroutineWorker(c
             unlockCount = usageStore.unlockCount,
             appUsage = appUsage,
             lastSyncedAtMs = System.currentTimeMillis(),
-            // See #35 - empty unless a parent turned the matching tracking toggle on.
-            notificationCount = usageStore.notificationCount,
-            notificationsByApp = toAppCounts(usageStore.notificationCountsByApp, usageStore.appNames),
-            unlockFirstApps = toAppCounts(usageStore.firstAppsAfterUnlock, usageStore.appNames)
+            // See #35 - only uploaded while a parent has the matching tracking toggle on, so
+            // turning one off also stops any counts already on the device from being sent.
+            notificationCount = if (LiveChildState.trackNotifications) usageStore.notificationCount else 0,
+            notificationsByApp = if (LiveChildState.trackNotifications) {
+                toAppCounts(usageStore.notificationCountsByApp, usageStore.appNames)
+            } else {
+                emptyList()
+            },
+            unlockFirstApps = if (LiveChildState.trackUnlocks) {
+                toAppCounts(usageStore.firstAppsAfterUnlock, usageStore.appNames)
+            } else {
+                emptyList()
+            }
         )
 
         val repository = (applicationContext as KidApp).repository

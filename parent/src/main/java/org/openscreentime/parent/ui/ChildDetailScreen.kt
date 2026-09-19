@@ -457,7 +457,8 @@ private fun LazyListScope.weeklyReportSection(onOpenReport: () -> Unit) {
  * See #35 - optional, parent-controlled tracking categories, off by default. The same four
  * toggles serve a kid's profile and the parent's own self profile (which is just a profile with
  * isSelf = true); the "show on their phone" options only make sense for a kid, so they're hidden
- * for self. Nothing is collected on a device until its category's toggle is on.
+ * for self. The plain daily unlock count is always kept (it drives the unlock goal); everything
+ * beyond that - first-app-after-unlock, notification counts, and their reporting - waits for a toggle.
  */
 private fun LazyListScope.trackingSection(
     child: ChildProfile,
@@ -468,8 +469,9 @@ private fun LazyListScope.trackingSection(
             Text("Optional tracking", style = MaterialTheme.typography.labelLarge)
             Spacer(Modifier.height(4.dp))
             Text(
-                "Off by default - nothing is collected until you turn a category on. Each one " +
-                    "adds to the weekly report and its daily digest.",
+                "Off by default. The plain daily unlock count is always kept for the unlock goal; " +
+                    "turning a category on adds more detail, and shows it in the weekly report and " +
+                    "its daily digest.",
                 style = MaterialTheme.typography.bodySmall
             )
         }

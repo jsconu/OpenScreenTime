@@ -1,5 +1,8 @@
 package org.openscreentime.kid.monitor
 
+import android.content.Context
+import org.openscreentime.shared.model.ChildProfile
+
 /**
  * The kid device's live view of the paired child's Firestore-synced settings - limits,
  * lock state, bedtime window, and the blocked-domains list. Written from one place
@@ -12,6 +15,12 @@ package org.openscreentime.kid.monitor
  * read from whichever thread each reader's own work happens on ([AppLimitAccessibilityService]
  * reads from its Handler's thread; [DnsSinkholeVpnService] reads [blockedDomains] from its
  * own background packet-processing thread).
+ *
+ * The values are also persisted ([persist]) and restored ([restore]) by KidApp, because this
+ * object is otherwise empty after every process restart - and the call-screening services,
+ * SyncWorker and the accessibility service can all be the first thing to run in a fresh
+ * process, before Firestore's listener has delivered anything. Without that they would
+ * enforce the defaults below (no bedtime, no lock, no tracking) until the first snapshot.
  */
 object LiveChildState {
     @Volatile var limitsCache: Map<String, Int> = emptyMap()
@@ -33,4 +42,83 @@ object LiveChildState {
     /** See #35 - parent-controlled tracking toggles; nothing is collected while these are off. */
     @Volatile var trackUnlocks: Boolean = false
     @Volatile var trackNotifications: Boolean = false
+
+    private const val PREFS = "live_child_state"
+
+    /** Copies a freshly-received profile into memory and to disk. */
+    fun update(context: Context, child: ChildProfile) {
+        limitsCache = child.appLimits
+        dailyLimitMinutes = child.dailyLimitMinutes
+        dailyUnlockGoal = child.dailyUnlockGoal
+        bedtimeStartMinutes = child.bedtimeStartMinutes
+        bedtimeEndMinutes = child.bedtimeEndMinutes
+        blockedDomains = child.blockedDomains
+        temporaryUnlockUntilMs = child.temporaryUnlockUntilMs
+        alwaysAllowedPackages = child.alwaysAllowedPackages.toSet()
+        alwaysAllowedContacts = child.alwaysAllowedContacts
+        trackUnlocks = child.trackUnlocks
+        trackNotifications = child.trackNotifications
+        lockedCache = child.locked
+        persist(context)
+    }
+
+    private fun persist(context: Context) {
+        val e = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit()
+        e.putBoolean("has", true)
+        // Maps/lists are stored as newline-joined strings; package names, numbers and domains
+        // never contain a newline.
+        e.putString("limits", limitsCache.entries.joinToString("\n") { "${it.key}=${it.value}" })
+        e.putInt("daily", dailyLimitMinutes)
+        e.putInt("goal", dailyUnlockGoal ?: -1)
+        e.putInt("bedStart", bedtimeStartMinutes ?: -1)
+        e.putInt("bedEnd", bedtimeEndMinutes ?: -1)
+        e.putString("domains", blockedDomains.joinToString("\n"))
+        e.putLong("tempUnlock", temporaryUnlockUntilMs ?: -1L)
+        e.putString("packages", alwaysAllowedPackages.joinToString("\n"))
+        e.putString("contacts", alwaysAllowedContacts.joinToString("\n"))
+        e.putBoolean("trackUnlocks", trackUnlocks)
+        e.putBoolean("trackNotifications", trackNotifications)
+        e.putBoolean("locked", lockedCache)
+        e.apply()
+    }
+
+    /** Loads the last-known state from disk, if there is any; call once at process start. */
+    fun restore(context: Context) {
+        val p = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+        if (!p.getBoolean("has", false)) return
+        fun lines(key: String) = (p.getString(key, "") ?: "").split("\n").filter { it.isNotEmpty() }
+        limitsCache = lines("limits").mapNotNull {
+            val i = it.lastIndexOf('=')
+            val minutes = if (i > 0) it.substring(i + 1).toIntOrNull() else null
+            if (minutes == null) null else it.substring(0, i) to minutes
+        }.toMap()
+        dailyLimitMinutes = p.getInt("daily", Int.MAX_VALUE)
+        dailyUnlockGoal = p.getInt("goal", -1).takeIf { it >= 0 }
+        bedtimeStartMinutes = p.getInt("bedStart", -1).takeIf { it >= 0 }
+        bedtimeEndMinutes = p.getInt("bedEnd", -1).takeIf { it >= 0 }
+        blockedDomains = lines("domains")
+        temporaryUnlockUntilMs = p.getLong("tempUnlock", -1L).takeIf { it >= 0 }
+        alwaysAllowedPackages = lines("packages").toSet()
+        alwaysAllowedContacts = lines("contacts")
+        trackUnlocks = p.getBoolean("trackUnlocks", false)
+        trackNotifications = p.getBoolean("trackNotifications", false)
+        lockedCache = p.getBoolean("locked", false)
+    }
+
+    /** Forgets everything - used when this device is unpaired. */
+    fun clear(context: Context) {
+        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit().clear().apply()
+        limitsCache = emptyMap()
+        dailyLimitMinutes = Int.MAX_VALUE
+        dailyUnlockGoal = null
+        bedtimeStartMinutes = null
+        bedtimeEndMinutes = null
+        blockedDomains = emptyList()
+        temporaryUnlockUntilMs = null
+        alwaysAllowedPackages = emptySet()
+        alwaysAllowedContacts = emptyList()
+        trackUnlocks = false
+        trackNotifications = false
+        lockedCache = false
+    }
 }

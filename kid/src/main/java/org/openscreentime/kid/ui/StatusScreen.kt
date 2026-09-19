@@ -27,6 +27,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -37,6 +38,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.delay
 import org.openscreentime.kid.R
 import org.openscreentime.kid.data.NotificationDigestStore
 import org.openscreentime.kid.data.TextSize
@@ -73,6 +75,8 @@ fun StatusScreen(
     onProposeChange: () -> Unit,
     onOpenNotificationDigest: () -> Unit,
     onRequestNotificationListener: () -> Unit,
+    /** Only offered here while no family passcode is set; otherwise it lives in Parent controls. */
+    showUnpair: Boolean,
     onUnpair: () -> Unit
 ) {
     Column(
@@ -217,9 +221,11 @@ fun StatusScreen(
         ) {
             Text("Parent controls")
         }
-        Spacer(Modifier.height(8.dp))
-        OutlinedButton(onClick = onUnpair, modifier = Modifier.fillMaxWidth()) {
-            Text("Unpair this device")
+        if (showUnpair) {
+            Spacer(Modifier.height(8.dp))
+            OutlinedButton(onClick = onUnpair, modifier = Modifier.fillMaxWidth()) {
+                Text("Unpair this device")
+            }
         }
     }
 }
@@ -233,13 +239,21 @@ fun StatusScreen(
 private fun TrackingCountsCard(showUnlocks: Boolean, showNotifications: Boolean) {
     val context = LocalContext.current
     val usageStore = remember { UsageStore(context) }
+    // The stores aren't Compose state, so re-read them on a slow tick rather than showing whatever
+    // they held when this card first composed. (Slow on purpose: it's not a live counter.)
+    val counts by produceState(usageStore.unlockCount to usageStore.notificationCount) {
+        while (true) {
+            delay(15_000)
+            value = usageStore.unlockCount to usageStore.notificationCount
+        }
+    }
     Card(modifier = Modifier.fillMaxWidth().testTag("status_tracking_counts")) {
         Column(Modifier.padding(12.dp)) {
             Text("Today so far", style = MaterialTheme.typography.labelMedium)
             Spacer(Modifier.height(2.dp))
-            if (showUnlocks) Text("${usageStore.unlockCount} unlocks", style = MaterialTheme.typography.bodyMedium)
+            if (showUnlocks) Text("${counts.first} unlocks", style = MaterialTheme.typography.bodyMedium)
             if (showNotifications) {
-                Text("${usageStore.notificationCount} notifications", style = MaterialTheme.typography.bodyMedium)
+                Text("${counts.second} notifications", style = MaterialTheme.typography.bodyMedium)
             }
             Spacer(Modifier.height(6.dp))
             Text(

@@ -166,7 +166,7 @@ private fun BotBubble(reply: HelpReply, onAsk: (String) -> Unit) {
                             color = MaterialTheme.colorScheme.primary,
                             modifier = Modifier
                                 .padding(vertical = 2.dp)
-                                .clickable { uriHandler.openUri(source.url) }
+                                .clickable { if (source.url.startsWith("https://")) uriHandler.openUri(source.url) }
                         )
                     }
                 }
