@@ -12,8 +12,8 @@ Both apps: `org.openscreentime.kid` (child's phone) and `org.openscreentime.pare
 > OpenScreenTime is a free, open-source screen-time app for families. A parent sets daily and
 > per-app limits, a bedtime and blocked websites; the child's phone shows a calm reminder and a
 > block screen when time is up. Children see only a simple status icon - detailed reports are for
-> parents. **This is a beta.** The parent app for iPhone can manage Android kids, but there is no
-> iPhone kid app yet.
+> parents. **This is a beta.** An iPhone parent app is built but not yet in the App Store, and there
+> is no iPhone kid app yet (a future project the community is welcome to take on).
 >
 > It needs several sensitive permissions (see below) and a parent's Firebase account.
 

@@ -4,7 +4,7 @@
 GitHub Pages) before submitting to Google Play. Last updated: [DATE].*
 
 OpenScreenTime is a free, open-source screen-time app for families: a **parent app** and a **kid
-app** (Android), plus a parent app for iPhone. It is meant to support a conversation about healthy
+app** (Android), plus a parent app for iPhone that is built but not yet released. It is meant to support a conversation about healthy
 screen time, not to watch someone in secret. This policy explains what it collects, where that goes,
 and how to have it deleted.
 

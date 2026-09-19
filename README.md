@@ -1,19 +1,28 @@
 # OpenScreenTime
 
-> **Beta.** Functional and real-device-tested on Android, but young: no security audit,
-> limited device/OEM coverage, and two known gaps the community could pick up (see
-> [What's missing](#whats-missing-and-could-use-a-contributor) below) - an iOS kid app and
-> smartwatch tracking/limits.
+> **Beta.** The Android apps are ready to use, but young: no security audit and limited
+> device/OEM coverage. The iOS parent app is built but not yet in the App Store, and an iOS kid app
+> and smartwatch tracking are open opportunities for the community. Details in the
+> [status table](#current-status) below.
 
 OpenScreenTime is a free, open-source, no-nonsense screen time platform for families. The project is designed to work across Android and iOS, starting with a functional Android implementation for parents and kids.
 
 No account fees, no ads, no dark patterns. MIT licensed — fork it, self-host
 your own backend, send patches back.
 
-Android pairing, screen-time tracking, limits, locking, and parent controls
-are implemented and have been through multiple rounds of real-device testing
-(see [Project status](#project-status)). The iOS app covers the *parent*
-side only - see the iOS note below and [`ios/README.md`](ios/README.md).
+## Current status
+
+| App | Platform | Status | Notes |
+| --- | --- | --- | --- |
+| **Parent** | Android | ✅ **Ready** | Pairing, limits, bedtime, locking, weekly report, optional tracking, help bot. Build it from source; not on Google Play yet. |
+| **Kid** | Android | ✅ **Ready** | Calm status icon, block screen, friction pause, enforcement, parent controls. Build it from source; not on Google Play yet. |
+| **Parent** | iOS | 🛠 **Built, not yet in the App Store** | Manages Android kids, limits, bedtime and tracking toggles. Build it yourself with Xcode. No weekly report yet. |
+| **Kid** | iOS | 🌱 **Future project - community welcome** | Needs Apple's Family Controls entitlement, which this project doesn't have. See [issue #7](https://github.com/jsconu/OpenScreenTime/issues/7). |
+
+"Ready" means feature-complete and used day to day on real Android devices - it is still a beta: no
+independent security audit and limited phone-maker coverage (see [Project status](#project-status)).
+A child's phone must be Android for now. Smartwatch tracking is another open community item (see
+[What's missing](#whats-missing-and-could-use-a-contributor)).
 
 **iOS note:** the iOS app is parent-only. There is no OpenScreenTime Kid for iPhone yet — Apple hasn't granted this project the Family Controls entitlement a kid-side app on iOS requires. A child must be paired using OpenScreenTime Kid on an Android phone; the iOS app can then manage that same child (and share access with another parent on Android or iOS), but can't pair or self-track on an iPhone itself. See [`ios/README.md`](ios/README.md) for details.
 
@@ -61,8 +70,8 @@ the gallery above.
 - **`shared`** — the data models, Firestore access code, and enforcement
   logic both apps use.
 - **`ios`** — an iOS build of the parent app (Swift/SwiftUI), for a parent on
-  an iPhone pairing with an Android kid device. See [`ios/README.md`](ios/README.md)
-  for setup and current scope; there is no iOS kid app yet (see
+  an iPhone pairing with an Android kid device. Built, but not yet in the App Store. See
+  [`ios/README.md`](ios/README.md) for setup and current scope; there is no iOS kid app yet (see
   [issue #7](https://github.com/jsconu/OpenScreenTime/issues/7) and
   [What's missing](#whats-missing-and-could-use-a-contributor) below).
 
@@ -208,7 +217,8 @@ Everything resets at local midnight on the kid's device.
 
 ## Project status
 
-The Android apps (kid and parent) are functional and have been through
+The Android apps (kid and parent) are ready to use - see the [status table](#current-status)
+above - and have been through
 several rounds of real-device installation, pairing, and day-to-day use,
 with bugs found that way fixed as they came up (see the closed issues for
 specifics). That's still one household's worth of devices, not broad OEM
@@ -225,7 +235,8 @@ Two things are explicitly out of scope for now, not because they're
 undesirable, but because they're each roughly as much work as a whole
 additional platform target — real community-contributor territory:
 
-- **An iOS kid app.** Requires Apple's Family Controls entitlement, which
+- **An iOS kid app.** A future project and a real opportunity for community
+  involvement. Requires Apple's Family Controls entitlement, which
   this project hasn't been granted (see
   [issue #7](https://github.com/jsconu/OpenScreenTime/issues/7) for the
   requirements analysis). Someone with an active Apple Developer account and

@@ -34,13 +34,17 @@ no shared backend.
 
 ## Bigger things the community could tackle
 
+Where things stand: the Android parent and kid apps are ready, the iOS parent app is built but not
+yet in the App Store, and the iOS kid app is a future project - see the
+[status table](README.md#current-status).
+
 Two gaps are explicitly not on the maintainer's near-term roadmap, not
 because they're unwanted, but because each is closer in scope to standing
 up a whole additional platform target than to a normal feature PR. If
 either interests you and you have what it takes to start, please open an
 issue first so the approach can be agreed on before you sink real time in.
 
-- **An iOS kid app** (see [issue #7](https://github.com/jsconu/OpenScreenTime/issues/7)).
+- **An iOS kid app** - a future project and a great way to get involved (see [issue #7](https://github.com/jsconu/OpenScreenTime/issues/7)).
   Blocked on Apple's Family Controls entitlement, which this project hasn't
   been granted - you'd need an active Apple Developer account and to go
   through Apple's entitlement-request process yourself. Once granted, the

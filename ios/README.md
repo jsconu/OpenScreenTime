@@ -1,5 +1,12 @@
 # OpenScreenTime Parent for iOS
 
+| App | Status |
+| --- | --- |
+| Android parent | Ready |
+| Android kid | Ready |
+| **iOS parent (this app)** | **Built, not yet in the App Store** - build it yourself with Xcode for now |
+| iOS kid | Future project - community welcome (see #7) |
+
 **Beta note - no iOS kid app yet.** This is the *parent* app only. There is no
 OpenScreenTime Kid for iPhone: Apple has not granted this project the Family Controls
 entitlement that a kid-side screen-time app on iOS requires (see #7 for the full
