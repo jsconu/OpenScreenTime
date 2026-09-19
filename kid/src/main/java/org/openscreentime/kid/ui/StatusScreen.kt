@@ -63,25 +63,17 @@ import org.openscreentime.shared.model.formatDuration
 fun StatusScreen(
     childName: String,
     permissions: PermissionState,
-    themeMode: ThemeMode,
-    textSize: TextSize,
     streakDays: Int,
     parentStatusLabel: String?,
     parentStats: DailyStats?,
     showUnlocks: Boolean,
     showNotifications: Boolean,
-    permissionActions: PermissionActions,
-    onCycleTheme: () -> Unit,
-    onCycleTextSize: () -> Unit,
-    onOpenColorSettings: () -> Unit,
+    onOpenSettings: () -> Unit,
     onOpenParentMode: () -> Unit,
     onOpenHelp: () -> Unit,
     onProposeChange: () -> Unit,
     onOpenNotificationDigest: () -> Unit,
-    onRequestNotificationListener: () -> Unit,
-    /** Only offered here while no family passcode is set; otherwise it lives in Parent controls. */
-    showUnpair: Boolean,
-    onUnpair: () -> Unit
+    onRequestNotificationListener: () -> Unit
 ) {
     Column(
         modifier = Modifier
@@ -102,24 +94,14 @@ fun StatusScreen(
             if (permissions.allGranted) "Screen time monitoring is active." else "A few permissions are needed to finish setup.",
             style = MaterialTheme.typography.bodyMedium
         )
+        if (!permissions.allGranted) {
+            Spacer(Modifier.height(4.dp))
+            Button(onClick = onOpenSettings, modifier = Modifier.testTag("status_finish_setup")) {
+                Text("Finish setup in Settings")
+            }
+        }
         Spacer(Modifier.height(12.dp))
         MyScreenTimeCard()
-        Spacer(Modifier.height(12.dp))
-        StatusIconLegend()
-        Spacer(Modifier.height(12.dp))
-        TipOfTheDayCard()
-        if (streakDays > 0) {
-            Spacer(Modifier.height(8.dp))
-            Text(
-                "$streakDays day${if (streakDays == 1) "" else "s"} in a row under your goal",
-                style = MaterialTheme.typography.bodyMedium,
-                modifier = Modifier.testTag("status_streak")
-            )
-        }
-        if (showUnlocks || showNotifications) {
-            Spacer(Modifier.height(8.dp))
-            TrackingCountsCard(showUnlocks = showUnlocks, showNotifications = showNotifications)
-        }
         if (parentStatusLabel != null && parentStats != null) {
             Spacer(Modifier.height(8.dp))
             Card(modifier = Modifier.fillMaxWidth().testTag("status_parent_status")) {
@@ -138,80 +120,28 @@ fun StatusScreen(
                 }
             }
         }
-        Spacer(Modifier.height(24.dp))
-
-        PermissionRow(
-            "Display over other apps",
-            "Needed to show a screen when a limit is reached. If OpenScreenTime isn't " +
-                "visible right away on the next screen, scroll down.",
-            permissions.overlay,
-            permissionActions.onRequestOverlay
-        )
-        PermissionRow(
-            "Accessibility service",
-            "Needed to detect which app is open. On the next screen, tap \"Downloaded " +
-                "apps\" (or \"Installed apps\"), then find and turn on OpenScreenTime.",
-            permissions.accessibility,
-            permissionActions.onRequestAccessibility
-        )
-        PermissionRow(
-            "Notifications",
-            "Shows the ongoing monitoring notification",
-            permissions.notifications,
-            permissionActions.onRequestNotifications
-        )
-        PermissionRow(
-            "Battery optimization",
-            "Stops the system from killing tracking in the background",
-            permissions.ignoringBatteryOptimizations,
-            permissionActions.onRequestBatteryExemption
-        )
-        PermissionRow(
-            "Website filter",
-            "Blocks sites a parent has restricted, in any browser",
-            permissions.vpn,
-            permissionActions.onRequestVpn
-        )
-        Spacer(Modifier.height(8.dp))
-        Text(
-            "Some phone makers (Samsung, Xiaomi, and others) have their own extra battery " +
-                "settings beyond this one - if tracking still stops unexpectedly after enabling " +
-                "this, check this phone's battery/app settings for anything mentioning " +
-                "\"auto-start,\" \"protected apps,\" or \"sleeping apps.\"",
-            style = MaterialTheme.typography.bodySmall,
-            textAlign = TextAlign.Start
-        )
-
-        Spacer(Modifier.height(24.dp))
+        if (showUnlocks || showNotifications) {
+            Spacer(Modifier.height(8.dp))
+            TrackingCountsCard(showUnlocks = showUnlocks, showNotifications = showNotifications)
+        }
+        Spacer(Modifier.height(12.dp))
         NotificationDigestCard(
             listenerGranted = isNotificationListenerEnabled(LocalContext.current),
             onOpen = onOpenNotificationDigest,
             onRequestListener = onRequestNotificationListener
         )
-
-        Spacer(Modifier.height(24.dp))
-        Text("Display", style = MaterialTheme.typography.labelLarge)
-        ListItem(
-            headlineContent = { Text("Theme") },
-            supportingContent = { Text(themeMode.label()) },
-            trailingContent = { TextButton(onClick = onCycleTheme) { Text("Change") } }
-        )
-        ListItem(
-            headlineContent = { Text("Text size") },
-            supportingContent = { Text(textSize.label()) },
-            trailingContent = { TextButton(onClick = onCycleTextSize) { Text("Change") } }
-        )
-        Spacer(Modifier.height(8.dp))
-        Text(
-            "Recommended: Android's built-in grayscale mode makes apps noticeably less " +
-                "compelling to check, which research shows measurably cuts phone use. This app " +
-                "can't turn it on directly - open Accessibility settings below, then look for " +
-                "\"Color and motion\" or \"Color correction\" and turn on grayscale. The exact " +
-                "wording and location varies by phone.",
-            style = MaterialTheme.typography.bodySmall
-        )
-        Spacer(Modifier.height(4.dp))
-        OutlinedButton(onClick = onOpenColorSettings) { Text("Open Accessibility settings") }
+        Spacer(Modifier.height(12.dp))
+        StatusIconLegend()
+        Spacer(Modifier.height(12.dp))
+        TipOfTheDayCard()
+        if (streakDays > 0) {
+            Spacer(Modifier.height(8.dp))
+            Text(
+                "$streakDays day${if (streakDays == 1) "" else "s"} in a row under your goal",
+                style = MaterialTheme.typography.bodyMedium,
+                modifier = Modifier.testTag("status_streak")
+            )
+        }
 
         Spacer(Modifier.height(24.dp))
         OutlinedButton(
@@ -227,11 +157,12 @@ fun StatusScreen(
         ) {
             Text("Parent controls")
         }
-        if (showUnpair) {
-            Spacer(Modifier.height(8.dp))
-            OutlinedButton(onClick = onUnpair, modifier = Modifier.fillMaxWidth()) {
-                Text("Unpair this device")
-            }
+        Spacer(Modifier.height(8.dp))
+        OutlinedButton(
+            onClick = onOpenSettings,
+            modifier = Modifier.fillMaxWidth().testTag("status_settings")
+        ) {
+            Text("Settings")
         }
     }
 }
@@ -415,15 +346,10 @@ private fun NotificationDigestCard(
             )
         }
     )
-    if (!listenerGranted) {
-        PermissionRow(
-            "Notification access",
-            "Needed for the digest above, and separately to mute texts from numbers " +
-                "that aren't allowed through during bedtime (see Parent controls). " +
-                "Off until you turn it on in system settings.",
-            granted = false,
-            onClick = onRequestListener
-        )
+    if (optedIn && !listenerGranted) {
+        OutlinedButton(onClick = onRequestListener, modifier = Modifier.fillMaxWidth()) {
+            Text("Allow notification access")
+        }
     }
     if (optedIn && listenerGranted) {
         OutlinedButton(
@@ -436,7 +362,7 @@ private fun NotificationDigestCard(
 }
 
 @Composable
-private fun PermissionRow(title: String, description: String, granted: Boolean, onClick: () -> Unit) {
+internal fun PermissionRow(title: String, description: String, granted: Boolean, onClick: () -> Unit) {
     // Ungranted rows are the thing that needs attention - a tinted background makes them
     // stand out in the checklist instead of blending in with everything already fixed.
     Surface(

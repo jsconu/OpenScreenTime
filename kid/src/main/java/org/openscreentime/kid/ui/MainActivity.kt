@@ -45,7 +45,7 @@ import org.openscreentime.sharedui.AccessibilityDisclosureDialog
 import org.openscreentime.sharedui.HelpBotScreen
 import org.openscreentime.sharedui.NotificationDigestScreen
 
-private enum class KidScreen { STATUS, PARENT_UNLOCK, PARENT_CONTROLS, PROPOSE_CHANGE, NOTIFICATION_DIGEST, HELP }
+private enum class KidScreen { STATUS, PARENT_UNLOCK, PARENT_CONTROLS, PROPOSE_CHANGE, NOTIFICATION_DIGEST, HELP, SETTINGS }
 
 class MainActivity : ComponentActivity() {
 
@@ -165,18 +165,17 @@ class MainActivity : ComponentActivity() {
                 } else {
                     // System back from any sub-screen returns to the status screen instead of leaving the app.
                     BackHandler(enabled = screen != KidScreen.STATUS) { screen = KidScreen.STATUS }
-                    when (screen) {
-                        KidScreen.STATUS -> StatusScreen(
-                            childName = pairingStore.childName ?: "",
-                            permissions = permissions,
-                            themeMode = themeMode,
-                            textSize = textSize,
-                            streakDays = streakDays,
-                            parentStatusLabel = parentSelfProfile?.let { calmParentStatusLabel(it, parentSelfStats) },
-                            parentStats = parentSelfProfile?.let { parentSelfStats },
-                            showUnlocks = child?.let { it.trackUnlocks && it.showUnlocksOnKid } == true,
-                            showNotifications = child?.let { it.trackNotifications && it.showNotificationsOnKid } == true,
-                            permissionActions = PermissionActions(
+                    // The monitoring service (and with it the status-bar icon) was only started right
+                    // after pairing and at boot, so after an app update or a killed process it stayed
+                    // off until the next reboot. Starting it on every launch is harmless if it's
+                    // already running.
+                    LaunchedEffect(Unit) {
+                        ContextCompat.startForegroundService(
+                            this@MainActivity,
+                            Intent(this@MainActivity, ScreenMonitorService::class.java)
+                        )
+                    }
+                    val permissionActions = PermissionActions(
                                 onRequestOverlay = {
                                     startActivity(
                                         Intent(
@@ -207,16 +206,35 @@ class MainActivity : ComponentActivity() {
                                         startWebsiteFilterService()
                                     }
                                 }
-                            ),
+                            )
+                    when (screen) {
+                        KidScreen.STATUS -> StatusScreen(
+                            childName = pairingStore.childName ?: "",
+                            permissions = permissions,
+                            streakDays = streakDays,
+                            parentStatusLabel = parentSelfProfile?.let { calmParentStatusLabel(it, parentSelfStats) },
+                            parentStats = parentSelfProfile?.let { parentSelfStats },
+                            showUnlocks = child?.let { it.trackUnlocks && it.showUnlocksOnKid } == true,
+                            showNotifications = child?.let { it.trackNotifications && it.showNotificationsOnKid } == true,
+                            onOpenSettings = { screen = KidScreen.SETTINGS },
+                            onOpenParentMode = { screen = KidScreen.PARENT_UNLOCK },
+                            onOpenHelp = { screen = KidScreen.HELP },
+                            onProposeChange = { screen = KidScreen.PROPOSE_CHANGE },
+                            onOpenNotificationDigest = { screen = KidScreen.NOTIFICATION_DIGEST },
+                            onRequestNotificationListener = {
+                                startActivity(Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS))
+                            }
+                        )
+                        KidScreen.SETTINGS -> KidSettingsScreen(
+                            permissions = permissions,
+                            themeMode = themeMode,
+                            textSize = textSize,
+                            permissionActions = permissionActions,
                             onCycleTheme = { themeMode = appearancePrefs.cycleThemeMode() },
                             onCycleTextSize = { textSize = appearancePrefs.cycleTextSize() },
                             onOpenColorSettings = {
                                 startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
                             },
-                            onOpenParentMode = { screen = KidScreen.PARENT_UNLOCK },
-                            onOpenHelp = { screen = KidScreen.HELP },
-                            onProposeChange = { screen = KidScreen.PROPOSE_CHANGE },
-                            onOpenNotificationDigest = { screen = KidScreen.NOTIFICATION_DIGEST },
                             onRequestNotificationListener = {
                                 startActivity(Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS))
                             },
@@ -225,7 +243,8 @@ class MainActivity : ComponentActivity() {
                                 pairingStore.clear()
                                 LiveChildState.clear(this@MainActivity)
                                 paired = false
-                            }
+                            },
+                            onBack = { screen = KidScreen.STATUS }
                         )
                         KidScreen.HELP -> HelpBotScreen(
                             audience = HelpAudience.KID,

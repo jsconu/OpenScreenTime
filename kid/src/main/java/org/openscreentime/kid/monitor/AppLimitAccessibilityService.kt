@@ -65,6 +65,8 @@ class AppLimitAccessibilityService : AccessibilityService() {
 
     override fun onServiceConnected() {
         usageStore = UsageStore(applicationContext)
+        // Show the right icon straight away instead of waiting for the first tick.
+        updateStatusNotification()
         handler.postDelayed(tick, TICK_INTERVAL_MS)
     }
 
