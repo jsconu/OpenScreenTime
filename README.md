@@ -287,6 +287,28 @@ access** (also powers muting non-allowed texts during bedtime), and, from
 the passcode-gated Parent controls screen, **uninstall protection** and
 **bedtime call blocking** (Android 10+ only for the latter).
 
+## Official builds and forks
+
+OpenScreenTime is free and open source under the [MIT license](LICENSE), so anyone may use, modify,
+fork and even sell it. That's intentional. But because this is an app that can see a child's phone
+use, it matters who you trust to run it, so here is how to tell the official project apart:
+
+- **The only official source is this repository:**
+  <https://github.com/jsconu/OpenScreenTime>. Official releases and any official store listing will be
+  linked from here. If you found the app somewhere that this page doesn't link to, it isn't an
+  official build.
+- **This project has no ads, no in-app purchases, no analytics beyond crash reports, and no paid
+  tier.** If an app using this code asks you to pay or shows ads, it's someone else's fork.
+- **Check where the data goes.** Every build talks to a Firebase project run by whoever published it.
+  In the official project that's described in [docs/PRIVACY.md](docs/PRIVACY.md). A fork may send data
+  somewhere else, so read its privacy policy before pairing a child's phone.
+- **Please don't use the name "OpenScreenTime" for a modified version.** The MIT license doesn't
+  give anyone the right to the project's name or branding. Forks are welcome; call yours something
+  else and say it's based on OpenScreenTime, so families aren't confused about who's behind it.
+- The design principles here (calm signals for kids, parent-only detailed reports, tracking that's
+  opt-in and clearly explained) aren't enforceable by a license. If a fork drops them, that's the
+  fork's choice, not this project's.
+
 ## Publishing your own build
 
 Building a signed release, and putting it on a private Google Play internal-testing track, is
