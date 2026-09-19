@@ -62,7 +62,7 @@
       "topic": "app",
       "question": "What do the status icons mean?",
       "keywords": ["icon", "icons", "status", "thumb", "thumbs", "hand", "stop", "notification icon", "meaning", "green", "amber", "red", "legend"],
-      "answer": "The kid app's ongoing notification shows one of three icons instead of a number: a thumbs-up means comfortably under today's goal, an open hand means approaching it, and a stop sign means at or over it (or locked, or bedtime). Android always draws status-bar icons as flat white silhouettes; the color only shows in the pulled-down notification shade."
+      "answer": "A small icon in the top-left of the phone's status bar, next to the clock: a thumbs up (\"Great job! You're on track.\"), an open hand (\"Slow down\"), or a stop sign (\"You've reached your overall screen time limit\"). Pull down from the top of the screen to see it as \"Screen Time Status\" with the same message. A stop sign also shows during a parent lock or bedtime, with a message saying screen time is paused. The kid app shows it, and the parent app shows the same icons once you turn on My screen time. Android always draws status-bar icons as flat white silhouettes; the color only shows in the pulled-down shade."
     },
     {
       "id": "why-no-numbers-kid",
@@ -174,7 +174,7 @@
       "topic": "app",
       "question": "How do I pause screen time right now?",
       "keywords": ["lock", "lock now", "pause", "end screen time", "dinner", "immediately", "resume", "stop now", "quiet"],
-      "answer": "Tap \"Lock now\" on your child's card (or \"End screen time now\" on their screen). Every app on their phone is blocked immediately until you tap Resume. A lock is absolute - extra-time grants and always-allowed apps don't override it."
+      "answer": "Tap \"Lock now\" on your child's card (or \"End screen time now\" on their screen). Every app on their phone is blocked immediately until you tap Resume. A lock is absolute - extra-time grants and always-allowed apps don't override it. You can also lift it from the locked phone itself: tap \"Parent unlock\" on the lock screen and enter the family passcode (set one from the parent app's home screen first)."
     },
     {
       "id": "passcode-parent-controls",
@@ -233,7 +233,8 @@
       "topic": "app",
       "question": "What is the calm notification list?",
       "keywords": ["digest", "notification list", "calm notification", "grouped", "notifications list", "read later", "batch"],
-      "answer": "An optional, local-only list on the kid's phone that groups the day's notifications by app so they can be read in one calm sitting. Nothing from it is sent to a parent. Turn it on from the kid's status screen; it needs Notification access."
+      "answer": "An optional list, kept only on the phone it's on, that groups the day's notifications by app so they can be read in one calm sitting. Turn it on from the kid's status screen or from the parent app's home screen; it needs Notification access.",
+      "iosAnswer": "The calm notification list is an Android feature, on both the kid and parent apps. The iPhone parent app doesn't have it yet."
     },
     {
       "id": "website-blocking",
