@@ -1,5 +1,8 @@
 package org.openscreentime.parent.ui
 
+import android.content.ClipData
+import android.content.ClipboardManager
+import android.content.Context
 import android.os.Build
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -262,6 +265,9 @@ fun DashboardScreen(
     }
 
     newChildCode?.let { code ->
+        val dialogContext = LocalContext.current
+        // Copied the moment the code appears, so it can be pasted straight into the kid app.
+        LaunchedEffect(code) { copyPairingCode(dialogContext, code) }
         AlertDialog(
             onDismissRequest = { newChildCode = null },
             title = { Text("Pairing code") },
@@ -275,6 +281,11 @@ fun DashboardScreen(
                             style = MaterialTheme.typography.headlineMedium,
                             modifier = Modifier.testTag("pairing_code_value")
                         )
+                        Spacer(Modifier.height(8.dp))
+                        Text(
+                            "Copied to your clipboard. It works for 30 minutes.",
+                            style = MaterialTheme.typography.bodySmall
+                        )
                     }
                 }
             },
@@ -285,6 +296,9 @@ fun DashboardScreen(
                         modifier = Modifier.testTag("pairing_code_done")
                     ) { Text("Done") }
                 }
+            },
+            dismissButton = {
+                TextButton(onClick = { copyPairingCode(dialogContext, code) }) { Text("Copy again") }
             }
         )
     }
@@ -384,7 +398,9 @@ private fun ChildSummaryCard(
             }
             if (!child.paired) {
                 Spacer(Modifier.height(4.dp))
+                val cardContext = LocalContext.current
                 Text("Waiting for device pairing (code: ${child.pairingCode})", style = MaterialTheme.typography.bodySmall)
+                TextButton(onClick = { copyPairingCode(cardContext, child.pairingCode) }) { Text("Copy code") }
             } else {
                 if (child.proposedDailyLimitMinutes != null || child.proposedAppLimits != null) {
                     Spacer(Modifier.height(4.dp))
@@ -695,4 +711,10 @@ private fun PasscodePromptCard(onSetPasscode: () -> Unit, modifier: Modifier = M
             Button(onClick = onSetPasscode, modifier = Modifier.fillMaxWidth()) { Text("Set passcode") }
         }
     }
+}
+
+/** Puts a pairing code on the clipboard (Android 13+ shows its own "Copied" confirmation). */
+private fun copyPairingCode(context: Context, code: String) {
+    val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as? ClipboardManager ?: return
+    clipboard.setPrimaryClip(ClipData.newPlainText("OpenScreenTime pairing code", code))
 }

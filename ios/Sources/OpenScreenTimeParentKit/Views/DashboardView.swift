@@ -147,6 +147,9 @@ private struct ChildRow: View {
                 Text("Waiting for device pairing (code: \(child.pairingCode))")
                     .font(.caption)
                     .foregroundStyle(.secondary)
+                Button("Copy code") { UIPasteboard.general.string = child.pairingCode }
+                    .font(.caption)
+                    .buttonStyle(.borderless)
             } else {
                 HStack(spacing: 16) {
                     StatColumn(label: "Screen time today", value: formatDuration(stats.totalScreenTimeMs))
@@ -266,11 +269,17 @@ private struct PairingCodeSheet: View {
                 Text("Enter this code in OpenScreenTime Kid on your child's Android phone:")
                 Text(code)
                     .font(.system(size: 36, weight: .bold, design: .monospaced))
+                Text("Copied to your clipboard. It works for 30 minutes.")
+                    .font(.footnote)
+                Button("Copy again") { UIPasteboard.general.string = code }
+                    .buttonStyle(.bordered)
                 Text("There's no iPhone version of OpenScreenTime Kid yet.")
                     .font(.footnote)
                     .foregroundStyle(.secondary)
             }
             .padding(32)
+            // Copied the moment the code appears, so it can be pasted straight into the kid app.
+            .onAppear { UIPasteboard.general.string = code }
             .navigationTitle("Pairing code")
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
