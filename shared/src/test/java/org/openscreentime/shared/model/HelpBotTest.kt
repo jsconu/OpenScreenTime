@@ -1,5 +1,6 @@
 package org.openscreentime.shared.model
 
+import org.junit.Assert.assertArrayEquals
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
@@ -17,6 +18,16 @@ class HelpBotTest {
     @Test
     fun `the packaged knowledge base loads`() {
         assertTrue("knowledge.json should be on the classpath", knowledge.entries.isNotEmpty())
+    }
+
+    @Test
+    fun `the iOS copy of the knowledge base is byte-identical`() {
+        // Unit tests run with the module directory as the working directory.
+        val shared = java.io.File("src/main/resources/helpbot/knowledge.json")
+        val ios = java.io.File("../ios/Sources/OpenScreenTimeParentKit/Resources/knowledge.json")
+        assertTrue("shared knowledge.json missing", shared.exists())
+        assertTrue("iOS knowledge.json missing - copy the shared file over", ios.exists())
+        assertArrayEquals("edit shared/.../knowledge.json, then copy it to the iOS Resources", shared.readBytes(), ios.readBytes())
     }
 
     @Test

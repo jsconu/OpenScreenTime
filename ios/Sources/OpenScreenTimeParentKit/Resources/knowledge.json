@@ -1,0 +1,438 @@
+{
+  "version": 1,
+  "suggestions": {
+    "parent": [
+      "How much screen time is reasonable for my child?",
+      "How do I set a bedtime?",
+      "What is the weekly report for?",
+      "Why can't my child see their exact numbers?",
+      "How do I pair my child's phone?"
+    ],
+    "kid": [
+      "What do the status icons mean?",
+      "How do I ask for more time?",
+      "Why can't I see my exact numbers?",
+      "What is the friction pause?"
+    ]
+  },
+  "entries": [
+    {
+      "id": "philosophy-overview",
+      "audience": "both",
+      "topic": "philosophy",
+      "question": "What is OpenScreenTime's design philosophy?",
+      "keywords": ["philosophy", "design", "principles", "calm", "why", "goal", "purpose", "engagement", "addiction", "opposite"],
+      "answer": "OpenScreenTime is built to be the opposite of an engagement-maximizing app. Its goal is to keep screen time something a family stays aware of, not something anyone ends up fixated on checking. So it shows a calm signal instead of running numbers, never scores failure (streaks only count up), interrupts with a pause rather than a wall, offers an off-ramp instead of a dead end, and keeps detailed reports with the parent - explained openly, as something to start a conversation."
+    },
+    {
+      "id": "philosophy-conversation",
+      "audience": "both",
+      "topic": "philosophy",
+      "question": "Is this meant for tracking my child secretly?",
+      "keywords": ["secret", "secretly", "spy", "spying", "surveillance", "transparent", "talk", "conversation", "trust", "tell"],
+      "answer": "No. It's designed to support a conversation about healthy screen time, not to be sprung on someone unannounced. The kid app explains what it shows and why, and the weekly report says outright that it's meant to start a conversation with your child, not to track them silently. Talk to your child about it before installing."
+    },
+    {
+      "id": "philosophy-autonomy",
+      "audience": "both",
+      "topic": "philosophy",
+      "question": "Can my child have a say in their limits?",
+      "keywords": ["say", "autonomy", "negotiate", "negotiated", "propose", "suggest", "involve", "agree", "fair", "input"],
+      "answer": "Yes, on purpose. A child can use \"Suggest a change\" on their own phone (no passcode needed) to propose a different daily or per-app limit. It goes to a parent for approval and never changes anything by itself. Limits work better when they're negotiated than when they're only handed down."
+    },
+    {
+      "id": "philosophy-nonpunitive",
+      "audience": "both",
+      "topic": "philosophy",
+      "question": "Does the app shame or punish going over a limit?",
+      "keywords": ["shame", "punish", "punishment", "punitive", "guilt", "failure", "fail", "missed", "streak", "broken"],
+      "answer": "No. Streaks only ever count up from zero; there is no \"broken streak\" or \"you missed a day\" state anywhere. The daily tip is acknowledgment-only. A day over the limit is simply not counted, never flagged."
+    },
+    {
+      "id": "philosophy-honest-limits",
+      "audience": "both",
+      "topic": "philosophy",
+      "question": "Can my child get around the limits?",
+      "keywords": ["bypass", "around", "cheat", "workaround", "uninstall", "disable", "circumvent", "hard block", "determined", "trust"],
+      "answer": "Some things are hard limits (a full-screen block, a parent lock) and some are deliberately deterrents. Android doesn't let an ordinary app truly prevent uninstalling it, so uninstall protection only adds a warning to ask a parent first. Bedtime text muting silences alerts but doesn't stop delivery. Anyone with physical access to a phone already has a baseline of trust, so the app is honest about what it can and can't enforce."
+    },
+    {
+      "id": "calm-status-icon",
+      "audience": "both",
+      "topic": "app",
+      "question": "What do the status icons mean?",
+      "keywords": ["icon", "icons", "status", "thumb", "thumbs", "hand", "stop", "notification icon", "meaning", "green", "amber", "red", "legend"],
+      "answer": "The kid app's ongoing notification shows one of three icons instead of a number: a thumbs-up means comfortably under today's goal, an open hand means approaching it, and a stop sign means at or over it (or locked, or bedtime). Android always draws status-bar icons as flat white silhouettes; the color only shows in the pulled-down notification shade."
+    },
+    {
+      "id": "why-no-numbers-kid",
+      "audience": "both",
+      "topic": "philosophy",
+      "question": "Why can't my child see their exact numbers?",
+      "keywords": ["numbers", "exact", "why", "hidden", "kid see", "child see", "report", "obsess", "obsessive", "compulsive", "checking", "count", "counts"],
+      "answer": "Deliberately. A running number invites checking, and compulsive checking is the behavior this app is trying not to feed. So the kid app only shows the calm icon, and the detailed report stays with the parent. A parent can choose to show unlock or notification counts on the kid's phone, but always alongside a note that watching counts can make phone use feel more compulsive."
+    },
+    {
+      "id": "streaks",
+      "audience": "both",
+      "topic": "app",
+      "question": "What is the streak?",
+      "keywords": ["streak", "streaks", "days in a row", "consecutive", "under goal", "positive"],
+      "answer": "A streak counts consecutive completed days under the current daily limit (and unlock goal, if one is set). It only ever counts up; a day with no synced data or a day over the limit simply means there's no streak to show, never a \"broken\" message."
+    },
+    {
+      "id": "friction-pause",
+      "audience": "both",
+      "topic": "app",
+      "question": "What is the friction pause?",
+      "keywords": ["pause", "friction", "breath", "halfway", "countdown", "continue", "flagged", "half"],
+      "answer": "The first time an app crosses half of its daily limit, a \"Just a breath\" screen appears and \"Continue\" is disabled for a few seconds. It's not a block - just a beat to notice the automatic reach for the app, and the choice to continue stays yours. It shows once per app per day."
+    },
+    {
+      "id": "block-screen",
+      "audience": "both",
+      "topic": "app",
+      "question": "What is the block screen?",
+      "keywords": ["block", "blocked", "block screen", "limit reached", "time is up", "ok button", "home screen", "swipe", "back gesture", "overlay"],
+      "answer": "When a limit is reached, or it's bedtime, or a parent has paused screen time, a full-screen block appears. It suggests something else to do (except at bedtime, where winding down is the point) and has an OK button that takes you to the home screen. Swiping back doesn't dismiss it. During a limit or bedtime you can ask a parent for 5 or 15 more minutes."
+    },
+    {
+      "id": "request-more-time",
+      "audience": "both",
+      "topic": "app",
+      "question": "How do I ask for more time?",
+      "keywords": ["more time", "extra time", "extension", "extend", "request", "5 minutes", "15 minutes", "ask parent", "unlock", "grant"],
+      "answer": "On the block screen, tap +5 min or +15 min. A parent sees the request in their app (or on the kid device under Parent controls) and can grant or decline it. A grant temporarily lets everything through - including bedtime - for that many minutes. It's never self-granted, and it can't override a parent lock."
+    },
+    {
+      "id": "suggest-change",
+      "audience": "both",
+      "topic": "app",
+      "question": "How do I suggest a different limit?",
+      "keywords": ["suggest", "suggestion", "propose", "proposal", "change limit", "different limit", "new limit", "approve", "decline"],
+      "answer": "On the kid app's home screen, tap \"Suggest a change\", pick a new daily limit or a limit for a specific app, and send it. A parent reviews it and can approve or decline. Nothing changes until they approve, and no passcode is needed to send a suggestion."
+    },
+    {
+      "id": "pairing",
+      "audience": "parent",
+      "topic": "app",
+      "question": "How do I pair my child's phone?",
+      "keywords": ["pair", "pairing", "pair child phone", "pair kid phone", "pair device", "code", "6-digit", "six digit", "add child", "connect", "link", "claim", "set up"],
+      "answer": "In the parent app tap +, name your child, and note the 6-digit code that appears. On the child's Android phone, open OpenScreenTime Kid and enter it. The code expires after 30 minutes. The child's phone signs in anonymously, so no email or personal info is collected from a child."
+    },
+    {
+      "id": "multiple-parents",
+      "audience": "parent",
+      "topic": "app",
+      "question": "Can two parents manage the same child?",
+      "keywords": ["two parents", "second parent", "both parents", "spouse", "partner", "share", "multiple parents", "co-parent", "same account", "household"],
+      "answer": "Yes. Both parents sign in to the same parent account (email and password) on their own phones, Android or iPhone in any mix, and both see and control the same children. Nothing extra to set up."
+    },
+    {
+      "id": "daily-limit",
+      "audience": "parent",
+      "topic": "app",
+      "question": "How do I set a daily screen time limit?",
+      "keywords": ["daily limit", "limit", "set limit", "change limit", "minutes per day", "total time", "screen time limit", "cap"],
+      "answer": "Open your child in the parent app and tap \"Change daily limit\". It's the total time the phone can be unlocked and in use per day, across all apps. The default is 120 minutes - a starting point, not a recommendation for every child (ask me about reasonable limits). You'll get a heads-up notification about 5 minutes before it's reached."
+    },
+    {
+      "id": "app-limits",
+      "audience": "parent",
+      "topic": "app",
+      "question": "How do I limit a specific app?",
+      "keywords": ["app limit", "per-app", "per app", "specific app", "one app", "instagram", "tiktok", "youtube", "game", "individual app"],
+      "answer": "In your child's screen under \"App usage today\", tap Limit next to an app and set its daily minutes. Apps appear in that list once they've been used and synced. When the limit is reached that app is blocked; halfway there, the friction pause shows once."
+    },
+    {
+      "id": "bedtime",
+      "audience": "parent",
+      "topic": "app",
+      "question": "How do I set a bedtime?",
+      "keywords": ["bedtime", "sleep", "night", "overnight", "quiet hours", "downtime", "wind down", "start", "end", "window"],
+      "answer": "Open your child and tap \"Change bedtime\", then enter a start and end time in 24-hour format (for example 21:00 to 07:00; windows that cross midnight work). During bedtime every app is blocked, independent of the daily limit. Apps you've marked \"always allow\" and numbers you've allowed for calls still get through."
+    },
+    {
+      "id": "always-allowed-apps",
+      "audience": "parent",
+      "topic": "app",
+      "question": "How do I let certain apps always work?",
+      "keywords": ["always allow", "always allowed", "exclude", "exclusion", "exception", "whitelist", "allowlist", "phone app", "maps", "calling", "emergency", "exempt"],
+      "answer": "In the app usage list, tick \"Always allow\" next to an app. It then stays usable through the daily limit, its own app limit, and bedtime - meant for things like a phone/calling app or maps. A parent lock still always wins."
+    },
+    {
+      "id": "bedtime-calls",
+      "audience": "parent",
+      "topic": "app",
+      "question": "How do I block calls and texts at bedtime except from parents?",
+      "keywords": ["calls", "call", "texts", "text", "sms", "messages", "contacts", "phone number", "block calls", "screen calls", "unknown numbers", "reachable"],
+      "answer": "On the kid's phone, open Parent controls (passcode) and find \"Bedtime calls\". Add the numbers that may get through (like yours), then turn on incoming- and outgoing-call blocking (Android 10 or newer). During bedtime, calls from or to any other number are blocked. Texts are muted rather than blocked - opening the messaging app can still show one - and that needs Notification access granted."
+    },
+    {
+      "id": "lock-now",
+      "audience": "parent",
+      "topic": "app",
+      "question": "How do I pause screen time right now?",
+      "keywords": ["lock", "lock now", "pause", "end screen time", "dinner", "immediately", "resume", "stop now", "quiet"],
+      "answer": "Tap \"Lock now\" on your child's card (or \"End screen time now\" on their screen). Every app on their phone is blocked immediately until you tap Resume. A lock is absolute - extra-time grants and always-allowed apps don't override it."
+    },
+    {
+      "id": "passcode-parent-controls",
+      "audience": "parent",
+      "topic": "app",
+      "question": "What are the family passcode and Parent controls?",
+      "keywords": ["passcode", "pin", "parent controls", "parent mode", "password", "unlock controls", "kid's phone", "on the phone", "hash"],
+      "answer": "Set a passcode in the parent app menu. It locks the parent app on launch, and it lets you open \"Parent controls\" on your child's own phone to change limits, bedtime, blocked websites, and more without needing your phone. The child's phone checks it locally against a stored hash, so it works offline."
+    },
+    {
+      "id": "weekly-report",
+      "audience": "parent",
+      "topic": "app",
+      "question": "What is the weekly report?",
+      "keywords": ["report", "weekly", "weekly report", "trend", "average", "four weeks", "4 weeks", "history", "chart", "by app"],
+      "answer": "Open your child and tap \"View weekly report\". It shows a rolling 4-week bar chart of total screen time, a weekly average, and a by-app trend for the top apps. It's capped at four weeks on purpose - enough to notice a trend, not an archive to pore over - and it never appears on the child's phone."
+    },
+    {
+      "id": "report-nudge",
+      "audience": "parent",
+      "topic": "philosophy",
+      "question": "Why does it ask if I'm sure before opening the report?",
+      "keywords": ["are you sure", "check in", "check up", "nudge", "too many times", "open again", "prompt", "obsessive", "checking often", "warning"],
+      "answer": "After you've opened a report a few times in one day, it asks \"Check in, not check up\" before opening it again. It's the same friction-pause idea used on the kid side, turned on the parent: constant checking can become its own source of stress. You can still tap \"Open anyway\". The count is local to your phone and resets daily."
+    },
+    {
+      "id": "tracking-toggles",
+      "audience": "parent",
+      "topic": "app",
+      "question": "How do I turn on unlock or notification tracking?",
+      "keywords": ["track", "tracking", "unlocks", "unlock tracking", "notifications", "notification count", "toggle", "optional", "turn on", "digest"],
+      "answer": "Open your child (or your own \"My screen time\") and find \"Optional tracking\". Turn on Track unlocks and/or Track notification counts. Both are off by default and nothing is collected until you enable one. Each adds a section to the weekly report plus a day-by-day digest. Notification tracking counts only - never the content - and needs Notification access granted on that phone."
+    },
+    {
+      "id": "first-app-after-unlock",
+      "audience": "parent",
+      "topic": "app",
+      "question": "How can I see which apps are opened right after unlocking?",
+      "keywords": ["first app", "after unlock", "right after", "immediately", "reach", "automatic", "habit", "opened first", "unlock habit"],
+      "answer": "Turn on Track unlocks. The weekly report then lists which apps were opened first after an unlock (within about 45 seconds; the home screen doesn't count). It's a good window into automatic reach-for-the-phone habits - a useful thing to discuss together rather than a score."
+    },
+    {
+      "id": "show-counts-on-kid",
+      "audience": "parent",
+      "topic": "app",
+      "question": "Should I show counts on my child's phone?",
+      "keywords": ["show on phone", "display", "child sees", "show counts", "visible to child", "show unlocks", "show notifications"],
+      "answer": "It's optional and off by default. If you turn it on, today's count appears on their status screen with a note that watching counts can feed compulsive checking. Consider leaving it off unless your child has asked for it - a number that's always in view tends to invite checking."
+    },
+    {
+      "id": "notification-digest",
+      "audience": "both",
+      "topic": "app",
+      "question": "What is the calm notification list?",
+      "keywords": ["digest", "notification list", "calm notification", "grouped", "notifications list", "read later", "batch"],
+      "answer": "An optional, local-only list on the kid's phone that groups the day's notifications by app so they can be read in one calm sitting. Nothing from it is sent to a parent. Turn it on from the kid's status screen; it needs Notification access."
+    },
+    {
+      "id": "website-blocking",
+      "audience": "parent",
+      "topic": "app",
+      "question": "How do I block a website?",
+      "keywords": ["website", "websites", "block site", "domain", "browser", "url", "web", "tiktok.com", "sinkhole", "vpn", "filter"],
+      "answer": "In your child's screen find \"Blocked websites\", type a domain such as tiktok.com and tap Block. It also blocks subdomains, in any browser, using a local filter on the child's phone (the \"Website filter\" permission on their status screen). Nothing is sent to a third-party server."
+    },
+    {
+      "id": "uninstall-protection",
+      "audience": "parent",
+      "topic": "app",
+      "question": "Can I stop my child uninstalling the app?",
+      "keywords": ["uninstall", "remove app", "delete app", "device admin", "protection", "delete", "stop removing", "disable app"],
+      "answer": "Partly. In Parent controls on the child's phone, turn on \"Uninstall protection\". Removing the app then first shows a warning to ask a parent. Android doesn't let an ordinary app truly block uninstalling, so it's a deterrent, not a lock - someone who taps through the warning can still remove it."
+    },
+    {
+      "id": "self-tracking",
+      "audience": "parent",
+      "topic": "app",
+      "question": "Can I track my own screen time too?",
+      "keywords": ["my own", "myself", "parent tracking", "self", "self-tracking", "my screen time", "adult", "model", "walk the walk"],
+      "answer": "Yes, on Android. Open \"My screen time\" on the parent dashboard and start tracking. Your phone gets the same limits, bedtime, tracking, and report as a child's profile, and your child can see your calm status on their phone - the arrangement isn't one-directional. It isn't available on iPhone."
+    },
+    {
+      "id": "permissions-why",
+      "audience": "both",
+      "topic": "app",
+      "question": "Why does the kid app need so many permissions?",
+      "keywords": ["permission", "permissions", "accessibility", "overlay", "display over", "battery", "notifications", "why need", "grant", "access"],
+      "answer": "Accessibility service: to see which app is in front (it never reads screen content). Display over other apps: to show the block screen. Notifications: for the ongoing monitor notice and warnings. Battery optimization: so Android doesn't kill tracking. Website filter: for blocked sites. Optional extras (notification access, uninstall protection, call blocking) are only requested if you use those features."
+    },
+    {
+      "id": "battery-oem",
+      "audience": "parent",
+      "topic": "app",
+      "question": "Tracking keeps stopping on a Samsung or Xiaomi phone",
+      "keywords": ["samsung", "xiaomi", "stops", "stopped", "killed", "background", "auto-start", "sleeping apps", "protected apps", "battery saver", "not tracking", "doze"],
+      "answer": "Some phone makers add battery rules beyond Android's standard one. After allowing the Battery optimization exemption, check the phone's own battery/app settings for options called \"auto-start\", \"protected apps\", or \"sleeping apps\" and allow OpenScreenTime. This is the known weak spot across brands."
+    },
+    {
+      "id": "privacy-collected",
+      "audience": "both",
+      "topic": "app",
+      "question": "What data does the app collect?",
+      "keywords": ["privacy", "data", "collect", "collected", "private", "store", "stored", "personal", "read messages", "screen content", "who sees"],
+      "answer": "It records time per app, unlock counts, and (only if a parent enables them) which app opens first after unlocking and notification counts - never notification content, messages, or what's on screen. It syncs to the Firebase project your family set up, not to any central server. The optional notification list stays on the child's phone. Crash reports contain stack traces and device model only."
+    },
+    {
+      "id": "ios-limits",
+      "audience": "parent",
+      "topic": "app",
+      "question": "Does it work on iPhone?",
+      "keywords": ["iphone", "ios", "apple", "ipad", "kid iphone", "child iphone", "app store", "family controls"],
+      "answer": "The iPhone app is for parents only. There is no OpenScreenTime Kid for iPhone yet, because Apple hasn't granted the Family Controls entitlement a kid-side app needs, so a child has to be paired using an Android phone. An iPhone parent can fully manage that Android child. If your child uses an iPhone, Apple's own Screen Time (in Settings) is the closest built-in option."
+    },
+    {
+      "id": "grayscale",
+      "audience": "both",
+      "topic": "app",
+      "question": "What is grayscale mode and should I use it?",
+      "keywords": ["grayscale", "greyscale", "black and white", "color", "colour", "less appealing", "colors"],
+      "answer": "Grayscale makes apps less visually compelling to check. It's recommended, not forced, and the app can't switch it on for you - open Accessibility settings and look for \"Color correction\" or \"Color and motion\"; the exact wording varies by phone."
+    },
+    {
+      "id": "cost-hosting",
+      "audience": "parent",
+      "topic": "app",
+      "question": "Is OpenScreenTime free? Where does my data live?",
+      "keywords": ["free", "cost", "price", "subscription", "ads", "firebase", "server", "hosting", "self-host", "open source", "license"],
+      "answer": "It's free and open source (MIT) with no ads or subscriptions. There's no central server: each family points the apps at their own free Firebase project, so the data lives in an account you control."
+    },
+    {
+      "id": "feedback",
+      "audience": "parent",
+      "topic": "app",
+      "question": "How do I send feedback or report a bug?",
+      "keywords": ["feedback", "bug", "report bug", "problem", "issue", "suggest feature", "contact", "developer", "support"],
+      "answer": "In the parent app's menu (the three dots), choose Feedback and write your note - it goes straight to the maintainers without revealing anyone's address. You can also open an issue on the project's GitHub page."
+    },
+    {
+      "id": "guidance-overview",
+      "audience": "both",
+      "topic": "guidance",
+      "question": "How much screen time is reasonable?",
+      "keywords": ["reasonable", "reasonable screen time", "how much screen time", "how much", "recommended", "recommendation", "healthy", "guideline", "guidelines", "limit", "too much", "hours", "normal"],
+      "answer": "There isn't one number that fits every child. The strongest numeric guidance is for young children: the WHO advises no screen time for under-2s and no more than 1 hour a day (less is better) for ages 2 to 4. For ages 5 to 17 the Canadian guidelines suggest no more than 2 hours a day of recreational screen time, while the American Academy of Pediatrics and UK Chief Medical Officers say the evidence doesn't support one fixed limit and point to quality, sleep, and activity instead. Tell me your child's age for the specifics. This is general public guidance, not medical advice.",
+      "sources": [
+        { "title": "WHO: children under 5 (2019)", "url": "https://www.who.int/news/item/24-04-2019-to-grow-up-healthy-children-need-to-sit-less-and-play-more" },
+        { "title": "Canadian 24-Hour Movement Guidelines, ages 5-17", "url": "https://csepguidelines.ca/guidelines/children-youth/" },
+        { "title": "AAP: screen time guidelines Q&A", "url": "https://www.aap.org/en/patient-care/media-and-children/center-of-excellence-on-social-media-and-youth-mental-health/qa-portal/qa-portal-library/qa-portal-library-questions/screen-time-guidelines/" }
+      ]
+    },
+    {
+      "id": "guidance-under-2",
+      "audience": "both",
+      "topic": "guidance",
+      "question": "How much screen time for a baby or toddler under 2?",
+      "keywords": ["baby", "infant", "toddler", "under 2", "under two", "1 year", "one year", "newborn", "under 18 months", "12 months", "months old"],
+      "answer": "The WHO says screen time is not recommended for infants under 1, and sedentary screen time (TV, videos, games) is not recommended for 1-year-olds. The AAP notes infants under 18 months learn best from real-world interactions, and heavy solo screen use can affect developing language and social skills. Reading, play, and time with a caregiver are the better use of that time. General guidance, not medical advice.",
+      "sources": [
+        { "title": "WHO: children under 5 (2019)", "url": "https://www.who.int/news/item/24-04-2019-to-grow-up-healthy-children-need-to-sit-less-and-play-more" },
+        { "title": "AAP: helping kids thrive in a digital world", "url": "https://www.healthychildren.org/English/family-life/Media/Pages/helping-kids-thrive-in-a-digital-world-AAP-policy-explained.aspx" }
+      ]
+    },
+    {
+      "id": "guidance-2-4",
+      "audience": "both",
+      "topic": "guidance",
+      "question": "How much screen time for a 2, 3 or 4 year old?",
+      "keywords": ["preschool", "preschooler", "2 year", "3 year", "4 year", "two year", "three year", "four year", "2-4", "age 2", "age 3", "age 4"],
+      "answer": "The WHO advises no more than 1 hour a day of sedentary screen time for ages 2 to 4, and adds that less is better. It also emphasizes replacing screen time with active play, reading and storytelling with a caregiver, and good sleep (10 to 13 hours a day for ages 3 to 4, 11 to 14 for age 2, including naps). General guidance, not medical advice.",
+      "sources": [
+        { "title": "WHO: children under 5 (2019)", "url": "https://www.who.int/news/item/24-04-2019-to-grow-up-healthy-children-need-to-sit-less-and-play-more" }
+      ]
+    },
+    {
+      "id": "guidance-5-17",
+      "audience": "both",
+      "topic": "guidance",
+      "question": "How much screen time for a school-age child or teen?",
+      "keywords": ["school", "school age", "school-age", "child", "kid", "teen", "teenager", "tween", "5 year", "6 year", "7 year", "8 year", "9 year", "10 year", "11 year", "12 year", "13 year", "14 year", "15 year", "16 year", "17 year", "age 5", "recreational"],
+      "answer": "The Canadian 24-Hour Movement Guidelines suggest no more than 2 hours a day of recreational screen time for ages 5 to 17, alongside at least 60 minutes of moderate-to-vigorous activity and 9 to 11 hours of sleep (ages 5 to 13) or 8 to 10 hours (ages 14 to 17). The AAP and UK Chief Medical Officers say the evidence doesn't support one fixed limit for everyone, and recommend focusing on what screens crowd out. Note: 2 hours refers to recreational use - schoolwork isn't counted, but this app counts all screen time. General guidance, not medical advice.",
+      "sources": [
+        { "title": "Canadian 24-Hour Movement Guidelines, ages 5-17", "url": "https://csepguidelines.ca/guidelines/children-youth/" },
+        { "title": "AAP: screen time guidelines Q&A", "url": "https://www.aap.org/en/patient-care/media-and-children/center-of-excellence-on-social-media-and-youth-mental-health/qa-portal/qa-portal-library/qa-portal-library-questions/screen-time-guidelines/" },
+        { "title": "UK CMOs: screen-based activities commentary", "url": "https://www.gov.uk/government/publications/uk-cmo-commentary-on-screen-time-and-social-media-map-of-reviews" }
+      ]
+    },
+    {
+      "id": "guidance-aap",
+      "audience": "both",
+      "topic": "guidance",
+      "question": "What does the American Academy of Pediatrics say about screen time?",
+      "keywords": ["aap", "american academy of pediatrics", "pediatrician", "pediatrics", "doctor", "family media plan", "5 cs", "quality"],
+      "answer": "The AAP says there isn't enough evidence to support a single screen-time limit that applies to all children and teens. It recommends looking at quality as well as quantity - content, co-viewing, calm, what media crowds out, and communication - and building a Family Media Plan together. Its 2026 guidance stresses moving beyond simple limits toward quality, context, and conversation, with screen-free zones (bedrooms, mealtimes) and no screens for an hour before bed.",
+      "sources": [
+        { "title": "AAP: helping kids thrive in a digital world", "url": "https://www.healthychildren.org/English/family-life/Media/Pages/helping-kids-thrive-in-a-digital-world-AAP-policy-explained.aspx" },
+        { "title": "AAP Family Media Plan", "url": "https://www.healthychildren.org/English/fmp/Pages/MediaPlan.aspx" }
+      ]
+    },
+    {
+      "id": "guidance-uk-cmo",
+      "audience": "both",
+      "topic": "guidance",
+      "question": "Is there evidence that screen time harms mental health?",
+      "keywords": ["mental health", "harm", "harmful", "evidence", "research", "depression", "anxiety", "science", "study", "studies", "cmo", "uk"],
+      "answer": "The UK Chief Medical Officers' review found an association between screen time and mental health problems in children and young people, but the evidence wasn't clear enough to show that screens cause them, and was insufficient to set an evidence-based time limit. That's why much current guidance focuses on sleep, activity, content, and how a child feels and behaves rather than a single number.",
+      "sources": [
+        { "title": "UK CMOs: screen-based activities commentary", "url": "https://www.gov.uk/government/publications/uk-cmo-commentary-on-screen-time-and-social-media-map-of-reviews" }
+      ]
+    },
+    {
+      "id": "guidance-sleep",
+      "audience": "both",
+      "topic": "guidance",
+      "question": "How should screens fit around sleep?",
+      "keywords": ["sleep", "bedtime", "before bed", "night", "bedroom", "devices in bedroom", "hour before bed", "how much sleep", "sleeping", "tired"],
+      "answer": "The AAP recommends screen-free zones - bedrooms and mealtimes are good places to start - and no screens for an hour before bed. For sleep amounts, the Canadian guidelines suggest 9 to 11 hours a night for ages 5 to 13 and 8 to 10 hours for ages 14 to 17; the WHO gives 10 to 13 hours for ages 3 to 4. A bedtime window in this app (and keeping the phone out of the bedroom) supports that. General guidance, not medical advice.",
+      "sources": [
+        { "title": "AAP: helping kids thrive in a digital world", "url": "https://www.healthychildren.org/English/family-life/Media/Pages/helping-kids-thrive-in-a-digital-world-AAP-policy-explained.aspx" },
+        { "title": "Canadian 24-Hour Movement Guidelines, ages 5-17", "url": "https://csepguidelines.ca/guidelines/children-youth/" }
+      ]
+    },
+    {
+      "id": "guidance-adults",
+      "audience": "both",
+      "topic": "guidance",
+      "question": "How much screen time should I set for myself?",
+      "keywords": ["myself", "adult", "adults", "my own limit", "for me", "i use", "my phone", "parent limit", "own screen time", "grown up"],
+      "answer": "No major health body publishes a daily screen-time number for adults, so it's yours to set. A practical way to choose: decide what you want more of (sleep, movement, time with family, focus), see your real numbers for a week using self-tracking, then set a limit slightly below your current use and adjust. Modeling healthy habits is one of the things the AAP recommends for parents, and children notice. This is a practical suggestion, not medical advice."
+    },
+    {
+      "id": "guidance-how-to-choose",
+      "audience": "parent",
+      "topic": "guidance",
+      "question": "How do I decide on a limit for my child?",
+      "keywords": ["decide", "choose", "how to set", "what limit", "starting point", "start", "where to start", "set limit", "family media plan", "fair", "how many minutes"],
+      "answer": "A practical approach, in the spirit of the AAP's Family Media Plan: first protect the non-negotiables - sleep, physical activity, homework, meals, and family time. Then see what's left and set a starting daily limit together with your child. Use the weekly report to notice patterns, and revisit it every few weeks. Age matters: ask me about your child's age for what public guidance says. A limit your child helped set is more likely to stick than one imposed on them.",
+      "sources": [
+        { "title": "AAP Family Media Plan", "url": "https://www.healthychildren.org/English/fmp/Pages/MediaPlan.aspx" }
+      ]
+    },
+    {
+      "id": "guidance-quality",
+      "audience": "both",
+      "topic": "guidance",
+      "question": "Does the type of screen time matter, not just the amount?",
+      "keywords": ["quality", "content", "educational", "co-viewing", "watch together", "type", "type matter", "just the amount", "amount", "matter", "social media", "games", "passive", "active", "creative"],
+      "answer": "Yes. The AAP recommends considering the quality of interactions with digital media, not just the amount of time, and reports that rules based on balance, content, co-viewing, and communication are linked to better well-being than rules based only on time. Creating, learning, or connecting with people is different from endless scrolling. Use per-app limits and always-allowed apps to reflect that.",
+      "sources": [
+        { "title": "AAP: screen time guidelines Q&A", "url": "https://www.aap.org/en/patient-care/media-and-children/center-of-excellence-on-social-media-and-youth-mental-health/qa-portal/qa-portal-library/qa-portal-library-questions/screen-time-guidelines/" }
+      ]
+    },
+    {
+      "id": "guidance-default-limit",
+      "audience": "parent",
+      "topic": "guidance",
+      "question": "Why is the default limit 120 minutes?",
+      "keywords": ["default", "120", "two hours", "2 hours", "why 120", "starting limit", "preset"],
+      "answer": "It's simply a starting value, in the same range as the Canadian 2-hours-a-day recreational figure for ages 5 to 17 - not a recommendation for every child. It's too high for a preschooler under WHO guidance and may not suit your family. Also note this app counts all unlocked screen time, including schoolwork, while that guideline refers to recreational use. Adjust it to your child's age and your household."
+    }
+  ]
+}

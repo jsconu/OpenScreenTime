@@ -22,7 +22,10 @@ let package = Package(
                 .product(name: "FirebaseAuth", package: "firebase-ios-sdk"),
                 .product(name: "FirebaseFirestore", package: "firebase-ios-sdk"),
                 .product(name: "FirebaseCrashlytics", package: "firebase-ios-sdk")
-            ]
+            ],
+            // The help bot's knowledge base - a byte-identical copy of
+            // shared/src/main/resources/helpbot/knowledge.json (a test enforces that).
+            resources: [.copy("Resources/knowledge.json")]
         ),
         .testTarget(
             name: "OpenScreenTimeParentKitTests",

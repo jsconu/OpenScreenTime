@@ -25,6 +25,10 @@ decline, website blocking, always-allowed apps, "more time" grant/decline), pass
 settings, feedback, crash reporting. It does **not** cover self-tracking - that needs the same OS-level monitoring
 capability the iOS kid app is blocked on (see #7) - or off-screen-idea tips or an
 appearance (theme/text size) settings screen, both lower-priority and not yet ported.
+The in-app **help bot** (#36, the "?" on the dashboard) is here too: a Swift port of the same
+offline matcher reading a byte-identical copy of the shared cited knowledge base
+(`Sources/OpenScreenTimeParentKit/Resources/knowledge.json`; edit the one under
+`shared/src/main/resources/helpbot/` and copy it over - tests on both platforms enforce it).
 The optional unlock/notification **tracking toggles** (#35) are here too, but only as switches -
 the counting happens on the Android devices and the report that displays it isn't ported. The
 Android parent app's **weekly report** (#29, a rolling 4-week bar chart and by-app

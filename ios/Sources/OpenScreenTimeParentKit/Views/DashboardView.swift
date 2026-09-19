@@ -16,16 +16,18 @@ struct DashboardView: View {
     @State private var newChildCode: String?
     @State private var errorMessage: String?
     @State private var showFeedbackSheet = false
+    @State private var showHelp = false
 
     var body: some View {
         childList
-            .navigationTitle("Your children")
+            .navigationTitle("Manage Your Screen Time")
             .navigationDestination(for: String.self) { childId in
                 ChildDetailView(repository: repository, parentUid: parentUid, childId: childId)
             }
             .toolbar { toolbarContent }
             .sheet(isPresented: $showAddChild) { addChildSheet }
             .sheet(item: newChildCodeBinding) { item in PairingCodeSheet(code: item.code) { newChildCode = nil } }
+            .sheet(isPresented: $showHelp) { HelpBotView(audience: .parent) }
             .sheet(isPresented: $showFeedbackSheet) {
                 FeedbackSheet { text in
                     try await submitFeedback(text: text)
@@ -62,6 +64,10 @@ struct DashboardView: View {
             NavigationLink("Passcode") {
                 PasscodeSettingsView(repository: repository, parentUid: parentUid)
             }
+        }
+        ToolbarItem(placement: .navigationBarTrailing) {
+            Button("?") { showHelp = true }
+                .accessibilityLabel("Help")
         }
         ToolbarItem(placement: .navigationBarTrailing) {
             Button("Feedback") { showFeedbackSheet = true }
