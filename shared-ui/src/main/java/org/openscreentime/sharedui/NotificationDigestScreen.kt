@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -37,6 +38,7 @@ import java.util.Locale
  * kid and parent apps - each supplies its own on-device [loadEntries]. Nothing here is synced.
  * Tapping a row does nothing on purpose - this is not a launcher back into the source app.
  */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun NotificationDigestScreen(loadEntries: () -> List<DigestNotification>, onDone: () -> Unit) {
     var groups by remember { mutableStateOf(groupDigestByApp(loadEntries())) }

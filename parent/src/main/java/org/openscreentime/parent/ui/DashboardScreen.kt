@@ -87,6 +87,24 @@ fun DashboardScreen(
     var showAddDialog by remember { mutableStateOf(false) }
     var newChildCode by remember { mutableStateOf<String?>(null) }
     var showFeedbackDialog by remember { mutableStateOf(false) }
+    // Assume a passcode exists until the check says otherwise, so the prompt never flashes up for
+    // someone who already has one. Rechecked whenever this screen comes back into view, so it
+    // disappears as soon as the passcode has been set.
+    var hasPasscode by remember { mutableStateOf(true) }
+    val lifecycleOwner = LocalLifecycleOwner.current
+    DisposableEffect(lifecycleOwner, parentUid) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) {
+                scope.launch {
+                    // Couldn't check (offline etc.) - leave the prompt as it was rather than nagging.
+                    runCatching { repository.getParentPasscode(parentUid) }
+                        .onSuccess { hasPasscode = it != null }
+                }
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+    }
 
     DisposableEffect(parentUid) {
         // Excludes the parent's own self-tracking profile (see #8) - that one gets its
@@ -143,6 +161,14 @@ fun DashboardScreen(
         },
     ) { padding ->
         LazyColumn(modifier = Modifier.fillMaxSize().padding(padding)) {
+            if (!hasPasscode) {
+                item {
+                    PasscodePromptCard(
+                        onSetPasscode = onOpenSettings,
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp)
+                    )
+                }
+            }
             item {
                 TipOfTheDayCard(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp))
             }
@@ -635,6 +661,36 @@ private fun NotificationDigestCard(
                     modifier = Modifier.fillMaxWidth().testTag("dashboard_open_digest")
                 ) { Text("Today's notifications") }
             }
+        }
+    }
+}
+
+/**
+ * Nudges a parent who hasn't set the family passcode yet. The passcode is what protects this app,
+ * lets a parent unlock or change limits from a kid's phone without their own in hand, and lifts a
+ * "Lock now" from the lock screen - so most of the rest of the app works better once it exists.
+ */
+@Composable
+private fun PasscodePromptCard(onSetPasscode: () -> Unit, modifier: Modifier = Modifier) {
+    Card(
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.tertiaryContainer),
+        modifier = modifier.testTag("dashboard_passcode_prompt")
+    ) {
+        Column(Modifier.padding(16.dp)) {
+            Text(
+                "Set your family passcode",
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.onTertiaryContainer
+            )
+            Spacer(Modifier.height(4.dp))
+            Text(
+                "It protects this app, and it's how you unlock a locked phone or change limits on " +
+                    "your kid's phone without your own in hand. It only takes a moment.",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onTertiaryContainer
+            )
+            Spacer(Modifier.height(12.dp))
+            Button(onClick = onSetPasscode, modifier = Modifier.fillMaxWidth()) { Text("Set passcode") }
         }
     }
 }
