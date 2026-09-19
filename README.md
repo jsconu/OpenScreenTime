@@ -35,6 +35,17 @@ callouts explaining the reasoning behind specific choices. It's a faithful
 rebuild, not photographs of a real device — if you're running this on your
 own phone, real screenshots to replace it are a very welcome contribution.
 
+| Kid: calm status | Kid: block screen | Kid: friction pause |
+| :---: | :---: | :---: |
+| <img src="design/screenshots/kid-02-status.png" width="220" alt="Kid status screen"> | <img src="design/screenshots/kid-05-block-overlay.png" width="220" alt="Kid block screen"> | <img src="design/screenshots/kid-06-pause-overlay.png" width="220" alt="Kid friction pause"> |
+
+| Parent: dashboard | Parent: child detail | Parent: weekly report |
+| :---: | :---: | :---: |
+| <img src="design/screenshots/parent-03-dashboard.png" width="220" alt="Parent dashboard"> | <img src="design/screenshots/parent-06-child-detail.png" width="220" alt="Parent child detail"> | <img src="design/screenshots/parent-07-weekly-report.png" width="220" alt="Parent weekly report"> |
+
+All 18 screens are in [`design/screenshots/`](design/screenshots/), rendered from
+the gallery above.
+
 ## How it works
 
 - **`kid`** — installed on the child's phone. Runs quietly in the background,
