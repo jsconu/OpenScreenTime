@@ -6,11 +6,11 @@ import android.service.notification.StatusBarNotification
 import org.openscreentime.parent.data.CalmModePrefs
 import org.openscreentime.parent.data.NotificationDigestStore
 import org.openscreentime.parent.data.UsageStore
-import org.openscreentime.shared.model.AUTHENTICATOR_PACKAGES
 import org.openscreentime.shared.model.DigestNotification
-import org.openscreentime.shared.model.FOCUS_SYSTEM_PACKAGES
 import org.openscreentime.shared.util.resolveEssentialPackages
 import org.openscreentime.shared.model.NotificationDeduper
+import org.openscreentime.shared.model.NotificationFacts
+import org.openscreentime.shared.model.shouldHideNotification
 import org.openscreentime.shared.model.shouldIncludeInDigest
 
 /**
@@ -61,21 +61,18 @@ class NotificationCountListenerService : NotificationListenerService() {
     private var essentialCache: Set<String> = emptySet()
     private var essentialAtMs = 0L
 
-    /** Calls, texts, alarms, sign-in codes and system messages are never hidden. */
+    /** The rule itself lives in `shouldHideNotification`; this only supplies the facts and the phone's essentials. */
     private fun shouldHide(sbn: StatusBarNotification): Boolean {
-        val pkg = sbn.packageName
-        if (pkg == packageName || sbn.isOngoing) return false
         val now = System.currentTimeMillis()
         if (essentialCache.isEmpty() || now - essentialAtMs > 60_000L) {
             essentialCache = resolveEssentialPackages(this).toSet()
             essentialAtMs = now
         }
-        if (pkg in essentialCache || pkg in FOCUS_SYSTEM_PACKAGES || pkg in AUTHENTICATOR_PACKAGES) return false
-        return when (sbn.notification.category) {
-            Notification.CATEGORY_CALL, Notification.CATEGORY_ALARM, Notification.CATEGORY_NAVIGATION,
-            Notification.CATEGORY_SYSTEM, Notification.CATEGORY_ERROR, Notification.CATEGORY_TRANSPORT -> false
-            else -> true
-        }
+        return shouldHideNotification(
+            NotificationFacts(sbn.packageName, sbn.notification.category, sbn.isOngoing),
+            ownPackage = packageName,
+            essentialPackages = essentialCache
+        )
     }
 
     private fun appLabelFor(packageName: String): String =
