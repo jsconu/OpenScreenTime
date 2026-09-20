@@ -9,7 +9,7 @@ import android.graphics.Color
 import androidx.core.app.NotificationCompat
 import org.openscreentime.kid.KidApp
 import org.openscreentime.kid.R
-import org.openscreentime.kid.data.UsageStore
+import org.openscreentime.shared.util.DailyUsageStore
 import org.openscreentime.kid.ui.MainActivity
 import org.openscreentime.shared.model.STATUS_NOTIFICATION_TITLE
 import org.openscreentime.shared.model.StatusTier
@@ -25,7 +25,7 @@ import org.openscreentime.shared.model.statusNotificationMessage
  */
 object StatusNotification {
 
-    fun build(context: Context, usageStore: UsageStore): Notification {
+    fun build(context: Context, usageStore: DailyUsageStore): Notification {
         val status = currentStatus(usageStore)
         val tier = status.tier
         val iconRes = when (tier) {
@@ -54,7 +54,7 @@ object StatusNotification {
     }
 
     /** Re-posts the status with the current tier. Safe to call as often as you like. */
-    fun post(context: Context, usageStore: UsageStore) {
+    fun post(context: Context, usageStore: DailyUsageStore) {
         context.getSystemService(NotificationManager::class.java)
             .notify(ScreenMonitorService.NOTIFICATION_ID, build(context, usageStore))
     }

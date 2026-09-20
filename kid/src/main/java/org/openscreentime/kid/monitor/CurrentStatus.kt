@@ -1,6 +1,6 @@
 package org.openscreentime.kid.monitor
 
-import org.openscreentime.kid.data.UsageStore
+import org.openscreentime.shared.util.DailyUsageStore
 import org.openscreentime.shared.model.StatusTier
 import org.openscreentime.shared.model.computeStatusTier
 import org.openscreentime.shared.model.isInBedtimeWindow
@@ -14,7 +14,7 @@ data class CurrentStatus(val tier: StatusTier, val pausedByLockOrBedtime: Boolea
  * [AppLimitAccessibilityService]) and the "My screen time" tile on the home screen both call this,
  * so the two can never disagree about thumbs up, open hand or stop.
  */
-fun currentStatus(usageStore: UsageStore): CurrentStatus {
+fun currentStatus(usageStore: DailyUsageStore): CurrentStatus {
     val isInBedtime = isInBedtimeWindow(
         nowMinutesOfDay(), LiveChildState.bedtimeStartMinutes, LiveChildState.bedtimeEndMinutes
     )
