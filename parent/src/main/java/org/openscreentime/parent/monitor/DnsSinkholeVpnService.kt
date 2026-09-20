@@ -34,8 +34,8 @@ class DnsSinkholeVpnService : BaseDnsSinkholeVpnService() {
             .build()
     }
 
-    override fun blockedDomains(): List<String> = AppLimitAccessibilityService.blockedDomains
-    override fun trackingWebsites(): Boolean = AppLimitAccessibilityService.trackWebsites
-    override fun foregroundPackage(): String? = AppLimitAccessibilityService.foregroundPackage
+    override fun blockedDomains(): List<String> = SelfDeviceState.blockedDomains
+    override fun trackingWebsites(): Boolean = SelfDeviceState.trackWebsites
+    override fun foregroundPackage(): String? = SelfDeviceState.foregroundPackage
     override fun saveWebsiteCounts(counts: Map<String, Int>) = UsageStore(this).addWebsiteCounts(counts)
 }

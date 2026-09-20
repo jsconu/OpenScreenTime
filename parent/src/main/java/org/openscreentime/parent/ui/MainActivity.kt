@@ -34,6 +34,7 @@ import org.openscreentime.parent.data.NotificationDigestStore
 import org.openscreentime.parent.data.AppearancePrefs
 import org.openscreentime.parent.data.SelfProfileStore
 import org.openscreentime.parent.monitor.ScreenMonitorService
+import org.openscreentime.parent.monitor.SelfDeviceState
 import org.openscreentime.parent.monitor.DnsSinkholeVpnService
 import org.openscreentime.parent.util.checkPermissions
 import org.openscreentime.shared.model.HelpAudience
@@ -271,7 +272,7 @@ class MainActivity : FragmentActivity() {
                                 SelfPermissionsScreen(
                                     permissions = selfPermissions,
                                     onStopTracking = {
-                                        FocusLauncherActivity.focusMode(this@MainActivity).stop()
+                                        SelfDeviceState.clear(this@MainActivity)
                                         selfProfileStore.clear()
                                         isSelfTracking = false
                                         navController.popBackStack("dashboard", false)

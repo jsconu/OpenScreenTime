@@ -12,7 +12,7 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.crashlytics.FirebaseCrashlytics
 import com.google.firebase.firestore.FirebaseFirestore
 import org.openscreentime.parent.data.SelfProfileStore
-import org.openscreentime.parent.monitor.AppLimitAccessibilityService
+import org.openscreentime.parent.monitor.SelfDeviceState
 import org.openscreentime.parent.monitor.SyncWorker
 import org.openscreentime.parent.ui.BlockOverlayActivity
 import org.openscreentime.parent.ui.FocusLauncherActivity
@@ -34,6 +34,8 @@ class ParentApp : Application() {
         // same flag that already points Firebase itself at the local emulator suite.
         FirebaseCrashlytics.getInstance().setCrashlyticsCollectionEnabled(!BuildConfig.USE_FIREBASE_EMULATOR)
         createNotificationChannels()
+        // So this phone's own limits still apply after a restart, before Firestore has answered.
+        SelfDeviceState.restore(this)
         scheduleSelfSync()
         startSelfTrackingListener()
     }
@@ -72,23 +74,9 @@ class ParentApp : Application() {
         val parentUid = repository.currentUid ?: return
 
         repository.listenChild(parentUid, childId) { child ->
-            AppLimitAccessibilityService.limitsCache = child.appLimits
-            AppLimitAccessibilityService.dailyLimitMinutes = child.dailyLimitMinutes
-            AppLimitAccessibilityService.dailyUnlockGoal = child.dailyUnlockGoal
-            AppLimitAccessibilityService.bedtimeStartMinutes = child.bedtimeStartMinutes
-            AppLimitAccessibilityService.bedtimeEndMinutes = child.bedtimeEndMinutes
-            AppLimitAccessibilityService.alwaysAllowedCache = child.alwaysAllowedPackages.toSet()
-            AppLimitAccessibilityService.trackUnlocks = child.trackUnlocks
-            AppLimitAccessibilityService.trackNotifications = child.trackNotifications
-            AppLimitAccessibilityService.trackWebsites = child.trackWebsites
-            // "Dumb phone" (see #42): keep this phone's copy of the choice, and the home-screen option, in step.
-            FocusLauncherActivity.focusMode(this).sync(child)
-            AppLimitAccessibilityService.blockedDomains = child.blockedDomains
-
-            val wasLocked = AppLimitAccessibilityService.lockedCache
-            AppLimitAccessibilityService.lockedCache = child.locked
-            // Locked again (by hand, or by an earlier timer): any pending timed re-lock is moot.
-            if (child.locked) SelfProfileStore(this).relockAtMs = null
+            val wasLocked = SelfDeviceState.lockedCache
+            // Limits, lock, tracking choices and dumb-phone mode, in memory and saved on the phone.
+            SelfDeviceState.update(this, child)
             if (child.locked && !wasLocked) {
                 startActivity(
                     Intent(this, BlockOverlayActivity::class.java)

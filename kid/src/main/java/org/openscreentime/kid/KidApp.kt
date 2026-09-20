@@ -76,7 +76,6 @@ class KidApp : Application() {
             val wasLocked = LiveChildState.lockedCache
             LiveChildState.update(this, child)
             // "Dumb phone" (see #42): keep this phone's copy of the choice, and the home-screen option, in step.
-            FocusLauncherActivity.focusMode(this).sync(child)
             if (child.locked && !wasLocked) {
                 // Don't wait for the next app switch or tick - interrupt right away.
                 startActivity(

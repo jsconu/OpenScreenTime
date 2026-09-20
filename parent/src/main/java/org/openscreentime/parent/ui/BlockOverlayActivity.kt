@@ -32,7 +32,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.openscreentime.parent.ParentApp
 import org.openscreentime.parent.data.SelfProfileStore
-import org.openscreentime.parent.monitor.AppLimitAccessibilityService
+import org.openscreentime.parent.monitor.SelfDeviceState
 import org.openscreentime.shared.model.BlockReason
 import org.openscreentime.shared.model.blockScreenCopy
 import org.openscreentime.shared.model.randomAlternativeActivity
@@ -51,7 +51,7 @@ class BlockOverlayActivity : ComponentActivity() {
         val reason = BlockReason.fromWireValue(intent.getStringExtra(EXTRA_REASON))
         val copy = blockScreenCopy(
             reason = reason,
-            bedtimeEndMinutes = AppLimitAccessibilityService.bedtimeEndMinutes,
+            bedtimeEndMinutes = SelfDeviceState.bedtimeEndMinutes,
             // The parent locked their own device here, not another parent - "ask a
             // parent to resume it" (the kid app's wording) wouldn't fit.
             lockMessage = "You paused your own screen time. Resume it from the dashboard when you're ready.",
@@ -147,9 +147,10 @@ class BlockOverlayActivity : ComponentActivity() {
                                         info == null -> unlockError = "Couldn't check the passcode. Check your connection and try again."
                                         ok -> {
                                             attempts.recordSuccess()
-                                            AppLimitAccessibilityService.lockedCache = false
-                                            SelfProfileStore(this@BlockOverlayActivity).relockAtMs =
+                                            SelfDeviceState.clearLock(
+                                                this@BlockOverlayActivity,
                                                 relockAtFor(relockAfterMinutes, System.currentTimeMillis())
+                                            )
                                             launch { runCatching { repository.setLocked(parentUid, selfChildId, false) } }
                                             finish()
                                         }

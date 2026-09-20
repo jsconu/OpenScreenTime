@@ -33,7 +33,7 @@ class SyncWorker(context: Context, params: WorkerParameters) : CoroutineWorker(c
             notificationsByApp = toAppCounts(usageStore.notificationCountsByApp, usageStore.appNames),
             unlockFirstApps = toAppCounts(usageStore.firstAppsAfterUnlock, usageStore.appNames),
             // See #41 - empty unless website tracking is on for the parent's own profile.
-            websiteCounts = if (AppLimitAccessibilityService.trackWebsites) toAppCounts(usageStore.websiteCounts, emptyMap()) else emptyList()
+            websiteCounts = if (SelfDeviceState.trackWebsites) toAppCounts(usageStore.websiteCounts, emptyMap()) else emptyList()
         )
 
         return try {

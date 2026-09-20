@@ -14,6 +14,7 @@ import org.openscreentime.shared.model.BlockReason
 import org.openscreentime.shared.model.EnforcementSettings
 import org.openscreentime.shared.util.BaseAppLimitAccessibilityService
 import org.openscreentime.shared.util.DailyUsageStore
+import org.openscreentime.shared.util.DeviceProfileSettings
 
 /**
  * The kid app's foreground guard: the shared loop in [BaseAppLimitAccessibilityService], reading a child's live
@@ -21,7 +22,7 @@ import org.openscreentime.shared.util.DailyUsageStore
  */
 class AppLimitAccessibilityService : BaseAppLimitAccessibilityService() {
 
-    override val settings: EnforcementSettings = KidEnforcementSettings
+    override val settings: EnforcementSettings = DeviceProfileSettings(LiveChildState)
     override fun openUsageStore(): DailyUsageStore = UsageStore(applicationContext)
 
     override val warningChannelId = KidApp.WARNING_CHANNEL_ID
@@ -70,19 +71,4 @@ class AppLimitAccessibilityService : BaseAppLimitAccessibilityService() {
     override fun updateStatusNotification() {
         StatusNotification.post(this, usageStore)
     }
-}
-
-/** A child's limits, as [LiveChildState] keeps them on the phone. */
-private object KidEnforcementSettings : EnforcementSettings {
-    override val locked get() = LiveChildState.lockedCache
-    override val bedtimeStartMinutes get() = LiveChildState.bedtimeStartMinutes
-    override val bedtimeEndMinutes get() = LiveChildState.bedtimeEndMinutes
-    override val dailyLimitMinutes get() = LiveChildState.dailyLimitMinutes
-    override fun appLimitMinutes(packageName: String) = LiveChildState.limitsCache[packageName]
-    override val temporaryUnlockUntilMs get() = LiveChildState.temporaryUnlockUntilMs
-    override val alwaysAllowedPackages get() = LiveChildState.alwaysAllowedPackages
-    override val relockAtMs get() = LiveChildState.relockAtMs
-    override var foregroundPackage: String?
-        get() = LiveChildState.foregroundPackage
-        set(value) { LiveChildState.foregroundPackage = value }
 }

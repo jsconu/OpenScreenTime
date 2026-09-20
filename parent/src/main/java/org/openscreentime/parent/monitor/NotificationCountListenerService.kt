@@ -27,7 +27,7 @@ class NotificationCountListenerService : NotificationListenerService() {
 
     override fun onNotificationPosted(sbn: StatusBarNotification) {
         val digestStore = NotificationDigestStore(this)
-        val counting = AppLimitAccessibilityService.trackNotifications
+        val counting = SelfDeviceState.trackNotifications
         if (!counting && !digestStore.optedIn) return
         val notification = sbn.notification
         val title = notification.extras.getCharSequence(Notification.EXTRA_TITLE)?.toString().orEmpty()

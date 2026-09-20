@@ -25,6 +25,7 @@ import org.openscreentime.shared.model.nowMinutesOfDay
 import org.openscreentime.shared.model.statusNotificationMessage
 import org.openscreentime.shared.util.BaseAppLimitAccessibilityService
 import org.openscreentime.shared.util.DailyUsageStore
+import org.openscreentime.shared.util.DeviceProfileSettings
 
 /**
  * Self-tracking equivalent of the kid app's foreground guard (see #8) - enforces the parent's own limits on
@@ -34,7 +35,7 @@ import org.openscreentime.shared.util.DailyUsageStore
  */
 class AppLimitAccessibilityService : BaseAppLimitAccessibilityService() {
 
-    override val settings: EnforcementSettings by lazy { SelfEnforcementSettings(applicationContext) }
+    override val settings: EnforcementSettings = DeviceProfileSettings(SelfDeviceState)
     override fun openUsageStore(): DailyUsageStore = UsageStore(applicationContext)
 
     override val warningChannelId = ParentApp.WARNING_CHANNEL_ID
@@ -50,12 +51,10 @@ class AppLimitAccessibilityService : BaseAppLimitAccessibilityService() {
 
     /** A timed "Unlock with passcode" has run out - lock this phone again, here and in Firestore. */
     override fun relockNow() {
-        val store = SelfProfileStore(applicationContext)
-        store.relockAtMs = null
-        lockedCache = true
+        SelfDeviceState.relockNow(applicationContext)
         val repository = (application as ParentApp).repository
         val parentUid = repository.currentUid
-        val childId = store.childId
+        val childId = SelfProfileStore(applicationContext).childId
         if (parentUid != null && childId != null) {
             CoroutineScope(Dispatchers.IO).launch {
                 runCatching { repository.setLocked(parentUid, childId, true) }
@@ -69,13 +68,13 @@ class AppLimitAccessibilityService : BaseAppLimitAccessibilityService() {
      * just reflects current state whenever it's glanced at.
      */
     override fun updateStatusNotification() {
-        val isInBedtime = isInBedtimeWindow(nowMinutesOfDay(), bedtimeStartMinutes, bedtimeEndMinutes)
+        val isInBedtime = isInBedtimeWindow(nowMinutesOfDay(), SelfDeviceState.bedtimeStartMinutes, SelfDeviceState.bedtimeEndMinutes)
         val tier = computeStatusTier(
-            locked = lockedCache,
+            locked = SelfDeviceState.lockedCache,
             isInBedtime = isInBedtime,
-            dailyLimitMinutes = dailyLimitMinutes,
+            dailyLimitMinutes = SelfDeviceState.dailyLimitMinutes,
             liveTotalScreenTimeMs = usageStore.liveTotalScreenTimeMs,
-            dailyUnlockGoal = dailyUnlockGoal,
+            dailyUnlockGoal = SelfDeviceState.dailyUnlockGoal,
             unlockCount = usageStore.unlockCount
         )
         val iconRes = when (tier) {
@@ -95,36 +94,13 @@ class AppLimitAccessibilityService : BaseAppLimitAccessibilityService() {
             // this only reaches the pulled-down notification shade's icon circle.
             .setColor(statusTierColor(tier))
             .setContentTitle(STATUS_NOTIFICATION_TITLE)
-            .setContentText(statusNotificationMessage(tier, pausedByLockOrBedtime = lockedCache || isInBedtime))
+            .setContentText(statusNotificationMessage(tier, pausedByLockOrBedtime = SelfDeviceState.lockedCache || isInBedtime))
             .setContentIntent(openIntent)
             .setOngoing(true)
             .setOnlyAlertOnce(true)
             .setPriority(NotificationCompat.PRIORITY_MIN)
             .build()
         getSystemService(NotificationManager::class.java).notify(ScreenMonitorService.NOTIFICATION_ID, notification)
-    }
-
-    companion object {
-        /** Updated live from Firestore by [org.openscreentime.parent.ParentApp]. */
-        @Volatile var limitsCache: Map<String, Int> = emptyMap()
-        @Volatile var dailyLimitMinutes: Int = Int.MAX_VALUE
-        @Volatile var lockedCache: Boolean = false
-        /** Informational only (see #10) - factors into the status icon, never blocks. */
-        @Volatile var dailyUnlockGoal: Int? = null
-        /** Minutes since local midnight; either null = no bedtime window set. See #15. */
-        @Volatile var bedtimeStartMinutes: Int? = null
-        @Volatile var bedtimeEndMinutes: Int? = null
-        /** See #28 - packages that bypass bedtime and every daily/app-limit check. */
-        @Volatile var alwaysAllowedCache: Set<String> = emptySet()
-        /** See #35 - parent-controlled tracking toggles for this device's own self profile. */
-        @Volatile var trackUnlocks: Boolean = false
-        @Volatile var trackNotifications: Boolean = false
-        /** See #41 - count sites looked up while a browser is open, on this (the parent's own) phone. */
-        @Volatile var trackWebsites: Boolean = false
-        /** Domains blocked on this phone by the website filter; mirrors the self profile's list. */
-        @Volatile var blockedDomains: List<String> = emptyList()
-        /** The package in front right now, so the website filter counts only browser lookups. */
-        @Volatile var foregroundPackage: String? = null
     }
 }
 
@@ -133,18 +109,4 @@ private fun statusTierColor(tier: StatusTier): Int = when (tier) {
     StatusTier.GOOD -> Color.parseColor("#2E7D32")
     StatusTier.CAUTION -> Color.parseColor("#F57C00")
     StatusTier.STOP -> Color.parseColor("#B3261E")
-}
-
-/** The parent's own limits, as the parent app keeps them (updated live from Firestore by [ParentApp]). */
-private class SelfEnforcementSettings(private val context: Context) : EnforcementSettings {
-    override val locked get() = AppLimitAccessibilityService.lockedCache
-    override val bedtimeStartMinutes get() = AppLimitAccessibilityService.bedtimeStartMinutes
-    override val bedtimeEndMinutes get() = AppLimitAccessibilityService.bedtimeEndMinutes
-    override val dailyLimitMinutes get() = AppLimitAccessibilityService.dailyLimitMinutes
-    override fun appLimitMinutes(packageName: String) = AppLimitAccessibilityService.limitsCache[packageName]
-    override val alwaysAllowedPackages get() = AppLimitAccessibilityService.alwaysAllowedCache
-    override val relockAtMs get() = SelfProfileStore(context).relockAtMs
-    override var foregroundPackage: String?
-        get() = AppLimitAccessibilityService.foregroundPackage
-        set(value) { AppLimitAccessibilityService.foregroundPackage = value }
 }

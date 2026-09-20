@@ -31,7 +31,7 @@ class ScreenMonitorService : Service() {
                     usageStore.startSession()
                     usageStore.incrementUnlockCount()
                     // See #35 - only while a parent has unlock tracking on for this profile.
-                    if (AppLimitAccessibilityService.trackUnlocks) usageStore.markUnlockAwaitingFirstApp(System.currentTimeMillis())
+                    if (SelfDeviceState.trackUnlocks) usageStore.markUnlockAwaitingFirstApp(System.currentTimeMillis())
                 }
                 Intent.ACTION_SCREEN_OFF -> {
                     usageStore.endSessionAndFlush()
