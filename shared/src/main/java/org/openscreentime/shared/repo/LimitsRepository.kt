@@ -49,6 +49,10 @@ internal class LimitsRepository(private val db: FirebaseFirestore) {
     suspend fun setAlwaysAllowedPackage(parentUid: String, childId: String, packageName: String, allowed: Boolean) =
         arrayEdit(parentUid, childId, "alwaysAllowedPackages", packageName, add = allowed)
 
+    /** Adds or removes ONE app from the list whose time doesn't count toward the overall daily limit. */
+    suspend fun setExcludedFromTotalPackage(parentUid: String, childId: String, packageName: String, excluded: Boolean) =
+        arrayEdit(parentUid, childId, "excludedFromTotalPackages", packageName, add = excluded)
+
     // "Dumb phone" (Focus mode), see #42. Parent-only writes.
 
     suspend fun setFocusMode(parentUid: String, childId: String, enabled: Boolean) {

@@ -313,6 +313,10 @@ a child needs a parent's passcode. On a parent's phone, **Hide other notificatio
 texts, alarms and sign-in codes into the calm list, reachable from one summary notification, a Quick Settings tile,
 or a swipe down on the dumb-phone home screen. See [`docs/INSTALL_ANDROID.md`](docs/INSTALL_ANDROID.md).
 
+A parent can also leave chosen apps out of the overall daily limit (**Time that doesn't count**, on a person's page): an
+audiobook, reading, maps or school app then doesn't use up the day. Their time still shows in the app list and their own
+limit still applies; pair it with **Always allow** to keep one usable after the daily limit is reached.
+
 ## Official builds and forks
 
 OpenScreenTime is free and open source under the [MIT license](LICENSE), so anyone may use, modify,

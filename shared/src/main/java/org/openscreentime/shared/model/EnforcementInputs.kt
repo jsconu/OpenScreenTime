@@ -16,6 +16,9 @@ interface EnforcementSettings {
     val temporaryUnlockUntilMs: Long? get() = null
     val alwaysAllowedPackages: Set<String>
 
+    /** Apps whose time does not add to the overall daily limit. */
+    val excludedFromTotalPackages: Set<String>
+
     /** When a timed "Parent unlock" runs out and the phone should lock again, if one is running. */
     val relockAtMs: Long?
 
@@ -60,3 +63,9 @@ fun buildEnforcementInput(
     temporaryUnlockUntilMs = settings.temporaryUnlockUntilMs,
     alwaysAllowedPackages = settings.alwaysAllowedPackages
 )
+
+/**
+ * Screen time that counts toward the overall daily limit: everything the screen was on for, less the time spent in
+ * apps a parent excluded. Never negative, whatever order the two totals were recorded in.
+ */
+fun countedScreenTimeMs(screenOnMs: Long, excludedMs: Long): Long = maxOf(0L, screenOnMs - maxOf(0L, excludedMs))

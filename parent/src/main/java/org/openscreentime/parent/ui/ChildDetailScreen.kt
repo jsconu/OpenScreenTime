@@ -65,7 +65,8 @@ import org.openscreentime.shared.model.mergeUsageWithInstalled
 import org.openscreentime.shared.util.listLaunchableApps
 import org.openscreentime.shared.model.todayDateString
 import org.openscreentime.shared.repo.FamilyRepository
-import org.openscreentime.sharedui.FocusAppPickerDialog
+import org.openscreentime.sharedui.AppPickerDialog
+import org.openscreentime.sharedui.excludedFromTotalSection
 import org.openscreentime.sharedui.focusModeSection
 import org.openscreentime.sharedui.trackingSection
 import org.openscreentime.sharedui.AppSortToggle
@@ -114,6 +115,7 @@ fun ChildDetailScreen(
     var appSort by rememberSaveable { mutableStateOf(AppSort.USAGE) }
     // "Dumb phone" (see #42): which allowed-apps list is being edited (null = none, false = everyday, true = travel).
     var pickingFocusApps by remember { mutableStateOf<Boolean?>(null) }
+    var pickingExcludedApps by remember { mutableStateOf(false) }
 
     DisposableEffect(childId) {
         val reg1 = repository.listenChildren(parentUid) { list ->
@@ -207,6 +209,10 @@ fun ChildDetailScreen(
                 onChangeLimit = { showLimitDialog = true },
                 onChangeUnlockGoal = { showUnlockGoalDialog = true },
                 onChangeBedtime = { showBedtimeDialog = true }
+            )
+            excludedFromTotalSection(
+                child = currentChild,
+                onPickApps = { pickingExcludedApps = true }
             )
             focusModeSection(
                 child = currentChild,
@@ -359,8 +365,20 @@ fun ChildDetailScreen(
         )
     }
 
+    if (pickingExcludedApps) {
+        AppPickerDialog(
+            title = "Apps that don't count toward the daily limit",
+            apps = displayedApps,
+            selected = currentChild.excludedFromTotalPackages.toSet(),
+            onToggle = { pkg, excluded ->
+                scope.launch { repository.setExcludedFromTotalPackage(parentUid, childId, pkg, excluded) }
+            },
+            onDone = { pickingExcludedApps = false }
+        )
+    }
+
     pickingFocusApps?.let { travelOnly ->
-        FocusAppPickerDialog(
+        AppPickerDialog(
             title = if (travelOnly) "Extra apps while traveling" else "Apps that stay allowed",
             apps = displayedApps,
             selected = (if (travelOnly) currentChild.travelAllowedPackages else currentChild.focusAllowedPackages).toSet(),

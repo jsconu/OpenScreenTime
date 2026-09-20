@@ -107,9 +107,9 @@ private fun FocusProfileRow(selected: Boolean, title: String, detail: String, on
     )
 }
 
-/** Pick which apps are allowed: every app on the phone, A to Z, with a checkbox each. */
+/** Pick apps from everything on the phone, A to Z, with a checkbox each. */
 @Composable
-fun FocusAppPickerDialog(
+fun AppPickerDialog(
     title: String,
     apps: List<AppUsage>,
     selected: Set<String>,

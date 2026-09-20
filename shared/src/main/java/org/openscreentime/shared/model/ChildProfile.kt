@@ -116,6 +116,12 @@ data class ChildProfile(
     val focusAllowedPackages: List<String> = emptyList(),
     val travelAllowedPackages: List<String> = emptyList(),
     /**
+     * Apps whose time does not add to the overall daily limit (an audiobook or reading app, maps, a school app).
+     * Their time still shows in the per-app usage and their own per-app limit still applies; to keep one usable
+     * after the daily limit is reached, also mark it [alwaysAllowedPackages]. Written only by the parent account.
+     */
+    val excludedFromTotalPackages: List<String> = emptyList(),
+    /**
      * Whether today's count for a tracked category is also shown on the kid's own phone, with
      * a note that watching counts can feed compulsive checking. Off by default, and only
      * meaningful while the matching track flag is on. Unused on the self profile.
@@ -151,6 +157,7 @@ data class ChildProfile(
         "focusProfile" to focusProfile,
         "focusAllowedPackages" to focusAllowedPackages,
         "travelAllowedPackages" to travelAllowedPackages,
+        "excludedFromTotalPackages" to excludedFromTotalPackages,
         "showUnlocksOnKid" to showUnlocksOnKid,
         "showNotificationsOnKid" to showNotificationsOnKid
     )
@@ -194,6 +201,7 @@ data class ChildProfile(
             focusProfile = map["focusProfile"] as? String ?: FocusProfile.STANDARD.wireValue,
             focusAllowedPackages = (map["focusAllowedPackages"] as? List<*>)?.filterIsInstance<String>() ?: emptyList(),
             travelAllowedPackages = (map["travelAllowedPackages"] as? List<*>)?.filterIsInstance<String>() ?: emptyList(),
+            excludedFromTotalPackages = (map["excludedFromTotalPackages"] as? List<*>)?.filterIsInstance<String>() ?: emptyList(),
             showUnlocksOnKid = map["showUnlocksOnKid"] as? Boolean ?: false,
             showNotificationsOnKid = map["showNotificationsOnKid"] as? Boolean ?: false
         )

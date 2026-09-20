@@ -135,7 +135,10 @@ abstract class BaseAppLimitAccessibilityService : AccessibilityService() {
     private fun flushCurrent(restart: Boolean) {
         val pkg = currentPackage ?: return
         val now = System.currentTimeMillis()
-        usageStore.addAppTime(pkg, now - currentPackageStartMs)
+        val elapsed = now - currentPackageStartMs
+        usageStore.addAppTime(pkg, elapsed)
+        // A parent can exclude an app from the overall limit; its time is then taken off today's total.
+        if (pkg in settings.excludedFromTotalPackages) usageStore.addExcludedTime(elapsed)
         if (restart) currentPackageStartMs = now
     }
 

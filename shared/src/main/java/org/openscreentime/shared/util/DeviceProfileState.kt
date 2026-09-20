@@ -38,6 +38,8 @@ open class DeviceProfileState(
     @Volatile var temporaryUnlockUntilMs: Long? = null
     /** See #28 - packages that bypass bedtime and every daily/app-limit check. */
     @Volatile var alwaysAllowedPackages: Set<String> = emptySet()
+    /** Apps whose time does not add to the overall daily limit. */
+    @Volatile var excludedFromTotalPackages: Set<String> = emptySet()
     /** See #34 - phone numbers that can still call/text through a bedtime block. */
     @Volatile var alwaysAllowedContacts: List<String> = emptyList()
     /** See #35 - parent-controlled tracking toggles; nothing is collected while these are off. */
@@ -95,6 +97,7 @@ open class DeviceProfileState(
         blockedDomains = child.blockedDomains
         temporaryUnlockUntilMs = child.temporaryUnlockUntilMs
         alwaysAllowedPackages = child.alwaysAllowedPackages.toSet()
+        excludedFromTotalPackages = child.excludedFromTotalPackages.toSet()
         alwaysAllowedContacts = child.alwaysAllowedContacts
         trackUnlocks = child.trackUnlocks
         trackNotifications = child.trackNotifications
@@ -127,7 +130,8 @@ open class DeviceProfileState(
         "locked" to lockedCache,
         "relockAt" to (relockAtMs ?: -1L),
         "pcHash" to parentPasscodeHash,
-        "pcSalt" to parentPasscodeSalt
+        "pcSalt" to parentPasscodeSalt,
+        "excluded" to excludedFromTotalPackages.joinToString("\n")
     )
 
     /** The reverse of [encode]. Anything missing keeps its default; nothing saved yet leaves everything alone. */
@@ -154,6 +158,7 @@ open class DeviceProfileState(
         relockAtMs = (saved["relockAt"] as? Long)?.takeIf { it >= 0 }
         parentPasscodeHash = saved["pcHash"] as? String
         parentPasscodeSalt = saved["pcSalt"] as? String
+        excludedFromTotalPackages = lines("excluded").toSet()
     }
 
     internal fun reset() {
@@ -165,6 +170,7 @@ open class DeviceProfileState(
         blockedDomains = emptyList()
         temporaryUnlockUntilMs = null
         alwaysAllowedPackages = emptySet()
+        excludedFromTotalPackages = emptySet()
         alwaysAllowedContacts = emptyList()
         trackUnlocks = false
         trackNotifications = false
@@ -200,6 +206,7 @@ class DeviceProfileSettings(private val state: DeviceProfileState) : Enforcement
     override fun appLimitMinutes(packageName: String) = state.limitsCache[packageName]
     override val temporaryUnlockUntilMs get() = state.temporaryUnlockUntilMs
     override val alwaysAllowedPackages get() = state.alwaysAllowedPackages
+    override val excludedFromTotalPackages get() = state.excludedFromTotalPackages
     override val relockAtMs get() = state.relockAtMs
     override var foregroundPackage: String?
         get() = state.foregroundPackage

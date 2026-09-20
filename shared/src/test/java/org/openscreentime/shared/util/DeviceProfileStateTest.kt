@@ -25,7 +25,8 @@ class DeviceProfileStateTest {
         alwaysAllowedContacts = listOf("+15550100"),
         trackUnlocks = true,
         trackNotifications = true,
-        trackWebsites = true
+        trackWebsites = true,
+        excludedFromTotalPackages = listOf("com.example.audiobook")
     )
 
     private fun fresh() = DeviceProfileState("test")
@@ -46,6 +47,7 @@ class DeviceProfileStateTest {
         assertTrue(state.trackUnlocks && state.trackNotifications && state.trackWebsites)
         assertEquals("hash", state.parentPasscodeHash)
         assertEquals("salt", state.parentPasscodeSalt)
+        assertEquals(setOf("com.example.audiobook"), state.excludedFromTotalPackages)
         assertFalse(state.lockedCache)
     }
 
@@ -76,6 +78,7 @@ class DeviceProfileStateTest {
         assertEquals(listOf("+15550100"), restored.alwaysAllowedContacts)
         assertTrue(restored.trackUnlocks && restored.trackNotifications && restored.trackWebsites)
         assertEquals(777L, restored.relockAtMs)
+        assertEquals(setOf("com.example.audiobook"), restored.excludedFromTotalPackages)
         assertEquals("hash", restored.parentPasscodeHash)
         assertEquals("salt", restored.parentPasscodeSalt)
     }
@@ -128,7 +131,7 @@ class DeviceProfileStateTest {
         assertEquals(
             listOf(
                 "has", "limits", "daily", "goal", "bedStart", "bedEnd", "domains", "tempUnlock", "packages",
-                "contacts", "trackUnlocks", "trackNotifications", "trackWebsites", "locked", "relockAt", "pcHash", "pcSalt"
+                "contacts", "trackUnlocks", "trackNotifications", "trackWebsites", "locked", "relockAt", "pcHash", "pcSalt", "excluded"
             ),
             fresh().encode().keys.toList()
         )

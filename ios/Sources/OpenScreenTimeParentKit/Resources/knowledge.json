@@ -115,6 +115,15 @@
       "iosAnswer": "Dumb phone and hiding notifications are Android features for now. The iPhone parent app can't turn them on for a child yet, and iPhones don't offer the same home-screen and notification controls to apps."
     },
     {
+      "id": "exclude-apps-from-total",
+      "audience": "parent",
+      "topic": "app",
+      "question": "Can I leave some apps out of the daily screen time limit?",
+      "keywords": ["exclude", "excluded", "doesn't count", "not count", "count toward", "leave out", "audiobook", "reading app", "school app", "daily limit", "total", "overall limit", "except"],
+      "answer": "Yes. Open the person's page (yours or a child's), find \"Time that doesn't count\", and tap \"Choose apps\". Time spent in the apps you tick isn't added to the daily limit, so an audiobook, reading, maps or school app won't use up the day. They still show in the app list, and their own limit still applies. \"Always allow\" is different: it lets an app keep working after limits and bedtime, but its time still counted before. To keep an excluded app usable after the daily limit is reached, tick Always allow for it too. The day's screen time shown to you is the counted figure, the same one the limit uses.",
+      "iosAnswer": "Leaving apps out of the daily limit is an Android feature for now; the iPhone parent app can't set it yet. Set it from an Android parent phone."
+    },
+    {
       "id": "request-more-time",
       "audience": "both",
       "topic": "app",

@@ -21,6 +21,7 @@ class EnforcementInputsTest {
         private val appLimits: Map<String, Int> = emptyMap(),
         override val temporaryUnlockUntilMs: Long? = null,
         override val alwaysAllowedPackages: Set<String> = emptySet(),
+        override val excludedFromTotalPackages: Set<String> = emptySet(),
         override val relockAtMs: Long? = null,
         override var foregroundPackage: String? = null
     ) : EnforcementSettings {
@@ -128,6 +129,32 @@ class EnforcementInputsTest {
         )
         assertNull(input.temporaryUnlockUntilMs)
         assertEquals(listOf<EnforcementEvent>(EnforcementEvent.Block(BlockReason.DAILY_LIMIT)), decideEnforcement(input))
+    }
+
+    @Test
+    fun `screen time that counts is what the screen was on for, less the excluded apps`() {
+        assertEquals(50 * 60_000L, countedScreenTimeMs(screenOnMs = 60 * 60_000L, excludedMs = 10 * 60_000L))
+        assertEquals(60 * 60_000L, countedScreenTimeMs(screenOnMs = 60 * 60_000L, excludedMs = 0))
+    }
+
+    @Test
+    fun `counted screen time is never negative, even if excluded time was recorded first`() {
+        assertEquals(0L, countedScreenTimeMs(screenOnMs = 5 * 60_000L, excludedMs = 10 * 60_000L))
+        assertEquals(0L, countedScreenTimeMs(screenOnMs = 0L, excludedMs = 1L))
+        assertEquals(60_000L, countedScreenTimeMs(screenOnMs = 60_000L, excludedMs = -5L))
+    }
+
+    @Test
+    fun `an excluded app's time no longer pushes the day over its limit`() {
+        val limit = 60
+        val settings = FakeSettings(dailyLimitMinutes = limit)
+        // 75 minutes on screen, 20 of them in an excluded audiobook app: 55 minutes counts, under the limit.
+        val counted = countedScreenTimeMs(75 * 60_000L, 20 * 60_000L)
+        val events = decideEnforcement(build(settings, FakeUsage(liveTotalScreenTimeMs = counted)))
+        assertTrue(events.none { it is EnforcementEvent.Block })
+        // Without the exclusion the same day is over the limit.
+        val without = decideEnforcement(build(settings, FakeUsage(liveTotalScreenTimeMs = 75 * 60_000L)))
+        assertEquals(listOf<EnforcementEvent>(EnforcementEvent.Block(BlockReason.DAILY_LIMIT)), without)
     }
 
     @Test

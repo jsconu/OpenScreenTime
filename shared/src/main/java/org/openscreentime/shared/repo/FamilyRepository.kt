@@ -121,6 +121,9 @@ class FamilyRepository(
     suspend fun setFocusProfile(parentUid: String, childId: String, profile: FocusProfile) =
         limits.setFocusProfile(parentUid, childId, profile)
 
+    suspend fun setExcludedFromTotalPackage(parentUid: String, childId: String, packageName: String, excluded: Boolean) =
+        limits.setExcludedFromTotalPackage(parentUid, childId, packageName, excluded)
+
     suspend fun setFocusAllowedPackage(parentUid: String, childId: String, packageName: String, allowed: Boolean, travelOnly: Boolean) =
         limits.setFocusAllowedPackage(parentUid, childId, packageName, allowed, travelOnly)
 

@@ -6,6 +6,7 @@ import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import org.openscreentime.shared.model.UsageReader
 import org.openscreentime.shared.model.capWebsites
+import org.openscreentime.shared.model.countedScreenTimeMs
 import org.openscreentime.shared.model.todayDateString
 
 /**
@@ -26,6 +27,7 @@ open class DailyUsageStore(context: Context, prefsName: String) : UsageReader {
             prefs.edit()
                 .putString("date", today)
                 .putLong("totalScreenTimeMs", 0)
+                .putLong("excludedMs", 0)
                 .putInt("unlockCount", 0)
                 .putString("appUsage", "{}")
                 .putString("notificationsByApp", "{}")
@@ -42,7 +44,7 @@ open class DailyUsageStore(context: Context, prefsName: String) : UsageReader {
     fun addScreenTime(ms: Long) {
         if (ms <= 0) return
         rolloverIfNeeded()
-        prefs.edit().putLong("totalScreenTimeMs", totalScreenTimeMs + ms).apply()
+        prefs.edit().putLong("totalScreenTimeMs", prefs.getLong("totalScreenTimeMs", 0) + ms).apply()
     }
 
     /** Call when the device is unlocked, to start a live screen-time session. */
@@ -64,16 +66,26 @@ open class DailyUsageStore(context: Context, prefsName: String) : UsageReader {
             return if (v < 0) null else v
         }
 
+    /** Time spent in an app a parent excluded from the overall limit; taken off today's total. */
+    fun addExcludedTime(ms: Long) {
+        if (ms <= 0) return
+        rolloverIfNeeded()
+        prefs.edit().putLong("excludedMs", prefs.getLong("excludedMs", 0) + ms).apply()
+    }
+
     /**
-     * Today's total screen time including any session currently in progress -
-     * unlike [totalScreenTimeMs], which only reflects sessions already ended.
-     * Used for daily-limit checks so a single long unlocked session is still caught.
+     * Today's screen time that counts toward the overall daily limit, including any session currently in
+     * progress, less the time in apps excluded from it (see [addExcludedTime]). Used for daily-limit checks so a
+     * single long unlocked session is still caught, and uploaded as the day's total so a parent sees the same
+     * figure the limit uses.
      */
     override val liveTotalScreenTimeMs: Long
         get() {
-            val base = totalScreenTimeMs
-            val start = sessionStartMs ?: return base
-            return base + (System.currentTimeMillis() - start)
+            rolloverIfNeeded()
+            val ended = prefs.getLong("totalScreenTimeMs", 0)
+            val start = sessionStartMs
+            val inProgress = if (start == null) 0L else System.currentTimeMillis() - start
+            return countedScreenTimeMs(ended + inProgress, prefs.getLong("excludedMs", 0))
         }
 
     fun markDailyWarned() {
@@ -210,11 +222,9 @@ open class DailyUsageStore(context: Context, prefsName: String) : UsageReader {
             return prefs.getString("date", todayDateString())!!
         }
 
+    /** Today's counted screen time, for reports and sync; the same figure the daily limit uses. */
     val totalScreenTimeMs: Long
-        get() {
-            rolloverIfNeeded()
-            return prefs.getLong("totalScreenTimeMs", 0)
-        }
+        get() = liveTotalScreenTimeMs
 
     val unlockCount: Int
         get() {
