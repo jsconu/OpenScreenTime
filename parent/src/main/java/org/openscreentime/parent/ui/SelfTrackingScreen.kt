@@ -30,6 +30,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
 import org.openscreentime.parent.util.PermissionState
+import org.openscreentime.shared.util.FocusPrefs
+import org.openscreentime.shared.util.isDefaultHome
 import org.openscreentime.parent.util.isNotificationListenerEnabled
 
 /**
@@ -96,8 +98,20 @@ fun SelfPermissionsScreen(
     onRequestBatteryExemption: () -> Unit,
     onRequestNotificationListener: () -> Unit,
     onRequestWebsiteFilter: () -> Unit,
+    onRequestHomeScreen: () -> Unit,
     onBack: () -> Unit
 ) {
+    val context = LocalContext.current
+    val focusOn = FocusPrefs(context).config().enabled
+    var isHome by remember { mutableStateOf(isDefaultHome(context)) }
+    val lifecycleOwner = androidx.compose.ui.platform.LocalLifecycleOwner.current
+    androidx.compose.runtime.DisposableEffect(lifecycleOwner) {
+        val observer = androidx.lifecycle.LifecycleEventObserver { _, event ->
+            if (event == androidx.lifecycle.Lifecycle.Event.ON_RESUME) isHome = isDefaultHome(context)
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+    }
     Scaffold(
         topBar = {
             TopAppBar(
@@ -163,6 +177,17 @@ fun SelfPermissionsScreen(
                 permissions.vpn,
                 onRequestWebsiteFilter
             )
+
+            if (focusOn) {
+                PermissionRow(
+                    "Home screen (dumb phone)",
+                    "Dumb phone is on, so apps that aren't allowed are sent back to the home screen. For the " +
+                        "simple home screen itself, make OpenScreenTime the phone's home app: tap Fix, then choose " +
+                        "OpenScreenTime. You can always get back to your other apps with All apps.",
+                    isHome,
+                    onRequestHomeScreen
+                )
+            }
 
             Spacer(Modifier.height(24.dp))
             OutlinedButton(onClick = onStopTracking, modifier = Modifier.fillMaxWidth()) {

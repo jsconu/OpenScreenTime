@@ -107,6 +107,17 @@ Each answer should say *why* the permission is core to the app's purpose, and wh
   turns that on; (2) quieting text-message notifications from unlisted numbers during bedtime; (3) a
   local "calm notification list". Notification content is never uploaded.
 
+### Home screen role and "Dumb phone" (kid app and parent app)
+- **Purpose:** an optional parent-chosen Focus mode. When on, the app offers a plain home screen (registered as a
+  HOME activity, disabled until the mode is turned on, and only used if the user makes it the default home app from
+  the system's own prompt) listing calls, texts, contacts, authenticator apps and the apps a parent allowed. The
+  Accessibility service, which already reports the foreground app, sends non-allowed apps back to the home screen.
+  On a child's phone opening everything needs the family passcode; on a parent's own phone an "All apps" button opens
+  everything for 10 minutes. Nothing about this is uploaded beyond the on/off choice and the allowed-app list.
+- **Calm notifications ("Hide other notifications"):** uses the Notification listener to remove other apps'
+  notifications from the shade, keeping them on the device in a local list; calls, alarms, navigation and system
+  messages, texts and sign-in-code apps are excluded. A Quick Settings tile opens that list.
+
 ### Display over other apps (SYSTEM_ALERT_WINDOW)
 - **Purpose:** to show the block screen when a limit is reached, on top of the limited app.
 

@@ -36,6 +36,8 @@ import org.openscreentime.parent.data.SelfProfileStore
 import org.openscreentime.parent.monitor.ScreenMonitorService
 import org.openscreentime.parent.monitor.DnsSinkholeVpnService
 import org.openscreentime.parent.util.checkPermissions
+import org.openscreentime.shared.util.homeRoleIntent
+import org.openscreentime.shared.util.FocusPrefs
 import org.openscreentime.shared.model.HelpAudience
 import org.openscreentime.shared.model.PasscodeInfo
 import org.openscreentime.sharedui.AccessibilityDisclosureDialog
@@ -57,6 +59,23 @@ class MainActivity : FragmentActivity() {
         ContextCompat.startForegroundService(this, Intent(this, DnsSinkholeVpnService::class.java))
     }
 
+    // Set as the phone's home screen, for "Dumb phone" (see #42).
+    private val homeRoleLauncher =
+        registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {}
+
+    private fun requestHomeScreen() {
+        homeRoleLauncher.launch(homeRoleIntent(this))
+    }
+
+    /** Set by the calm-notification summary and tile, which open the calm list straight away. */
+    private val openDigest = mutableStateOf(false)
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        if (intent.getBooleanExtra(EXTRA_OPEN_DIGEST, false)) openDigest.value = true
+    }
+
     private fun requestWebsiteFilter() {
         val consent = VpnService.prepare(this)
         if (consent != null) vpnPermissionLauncher.launch(consent) else startWebsiteFilter()
@@ -67,6 +86,7 @@ class MainActivity : FragmentActivity() {
         val repository = (application as ParentApp).repository
         val appearancePrefs = AppearancePrefs(this)
         val selfProfileStore = SelfProfileStore(this)
+        if (intent.getBooleanExtra(EXTRA_OPEN_DIGEST, false)) openDigest.value = true
 
         // If the parent already allowed the website filter, keep it running while they track themselves.
         if (selfProfileStore.isTracking && VpnService.prepare(this) == null) startWebsiteFilter()
@@ -145,6 +165,13 @@ class MainActivity : FragmentActivity() {
                             }
                         )
                     } else if (passcodeChecked) {
+                        // Opened by the calm summary notification or the Quick Settings tile (after any unlock above).
+                        LaunchedEffect(openDigest.value) {
+                            if (openDigest.value) {
+                                openDigest.value = false
+                                navController.navigate("digest")
+                            }
+                        }
                         NavHost(navController = navController, startDestination = "dashboard") {
                             composable("dashboard") {
                                 DashboardScreen(
@@ -246,6 +273,7 @@ class MainActivity : FragmentActivity() {
                                 SelfPermissionsScreen(
                                     permissions = selfPermissions,
                                     onStopTracking = {
+                                        FocusPrefs(this@MainActivity).clear(this@MainActivity, FocusLauncherActivity.component(this@MainActivity))
                                         selfProfileStore.clear()
                                         isSelfTracking = false
                                         navController.popBackStack("dashboard", false)
@@ -276,6 +304,7 @@ class MainActivity : FragmentActivity() {
                                         startActivity(Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS))
                                     },
                                     onRequestWebsiteFilter = { requestWebsiteFilter() },
+                                    onRequestHomeScreen = { requestHomeScreen() },
                                     onBack = { navController.popBackStack() }
                                 )
                             }
@@ -285,5 +314,9 @@ class MainActivity : FragmentActivity() {
               }
             }
         }
+    }
+
+    companion object {
+        const val EXTRA_OPEN_DIGEST = "open_digest"
     }
 }

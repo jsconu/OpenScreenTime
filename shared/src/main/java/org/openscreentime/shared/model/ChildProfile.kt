@@ -107,6 +107,15 @@ data class ChildProfile(
      */
     val trackWebsites: Boolean = false,
     /**
+     * "Dumb phone" (Focus mode) - see #42. [focusAllowedPackages] are extra apps allowed on top of calls, texts
+     * and two-step sign-in; [travelAllowedPackages] only while [focusProfile] is "travel" (adults). Written
+     * only by the parent account - a kid device never changes any of these.
+     */
+    val focusMode: Boolean = false,
+    val focusProfile: String = FocusProfile.STANDARD.wireValue,
+    val focusAllowedPackages: List<String> = emptyList(),
+    val travelAllowedPackages: List<String> = emptyList(),
+    /**
      * Whether today's count for a tracked category is also shown on the kid's own phone, with
      * a note that watching counts can feed compulsive checking. Off by default, and only
      * meaningful while the matching track flag is on. Unused on the self profile.
@@ -138,6 +147,10 @@ data class ChildProfile(
         "trackUnlocks" to trackUnlocks,
         "trackNotifications" to trackNotifications,
         "trackWebsites" to trackWebsites,
+        "focusMode" to focusMode,
+        "focusProfile" to focusProfile,
+        "focusAllowedPackages" to focusAllowedPackages,
+        "travelAllowedPackages" to travelAllowedPackages,
         "showUnlocksOnKid" to showUnlocksOnKid,
         "showNotificationsOnKid" to showNotificationsOnKid
     )
@@ -177,6 +190,10 @@ data class ChildProfile(
             trackUnlocks = map["trackUnlocks"] as? Boolean ?: false,
             trackNotifications = map["trackNotifications"] as? Boolean ?: false,
             trackWebsites = map["trackWebsites"] as? Boolean ?: false,
+            focusMode = map["focusMode"] as? Boolean ?: false,
+            focusProfile = map["focusProfile"] as? String ?: FocusProfile.STANDARD.wireValue,
+            focusAllowedPackages = (map["focusAllowedPackages"] as? List<*>)?.filterIsInstance<String>() ?: emptyList(),
+            travelAllowedPackages = (map["travelAllowedPackages"] as? List<*>)?.filterIsInstance<String>() ?: emptyList(),
             showUnlocksOnKid = map["showUnlocksOnKid"] as? Boolean ?: false,
             showNotificationsOnKid = map["showNotificationsOnKid"] as? Boolean ?: false
         )

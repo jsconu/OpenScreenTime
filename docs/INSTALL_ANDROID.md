@@ -130,6 +130,33 @@ If limits stop working after a while, look in the phone's settings for:
 6. To try the website filter, on the parent's phone open the child, add a website (for example `example.com`)
    under **Blocked websites**, then try to open it on the kid's phone.
 
+## Dumb phone (optional): call, text and little else
+
+A parent can turn on **Dumb phone** for a child, or for their own phone. Open the person's page in the parent app,
+find **Dumb phone**, and switch it on. The phone then keeps only calling, texting, contacts, sign-in-code
+(authenticator) apps and any apps you add with **Choose apps**; everything else is sent back to a plain home screen.
+
+What has to happen on the phone itself:
+
+1. **Accessibility** must be on (it already is if limits work) - that's what sends other apps back home.
+2. Open **Settings** (kid app) or **Permissions** (parent app) and find **Home screen**. Tap **Fix** and choose
+   **OpenScreenTime** as the phone's home app. Until you do, apps that aren't allowed are still sent back, but the
+   simple home screen won't be the one showing.
+
+**On a child's phone** there's a **Parent unlock** button: a parent types the family passcode and picks how long
+everything opens for (it goes back by itself). Children can't open the other apps without it.
+
+**On your own phone** there's an **All apps** button. It pauses for a few breaths, then opens every app for 10 minutes and
+goes back on its own. **Travel** is a switch on the same screen: it also lets through tickets, maps, mail, the camera,
+calendar, translation and ride apps (and any you add under **Travel apps**), for days when you need them.
+**Turn off dumb phone** is at the bottom of the screen. OpenScreenTime itself is always in the list.
+
+**Calm notifications, in one place:** on your own phone, switch on **Hide other notifications** on the parent home
+screen (it needs notification access). Everything except calls, texts, alarms and sign-in codes is taken out of the
+notification shade and collected; one quiet "Calm notifications" line tells you how many are waiting. Tap it to read them.
+You can also add the **Calm notifications** tile to Quick Settings (swipe down twice, tap the pencil, drag it in),
+or swipe down from the top of the dumb-phone home screen. Nothing is uploaded.
+
 ## Website tracking (optional): what has to happen
 
 Besides blocking, a parent can choose to see **which websites** a phone looked up. It's off by default, it's

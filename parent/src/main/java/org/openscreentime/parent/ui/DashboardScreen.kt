@@ -54,7 +54,9 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import kotlinx.coroutines.launch
 import org.openscreentime.parent.R
+import org.openscreentime.parent.data.CalmModePrefs
 import org.openscreentime.parent.data.NotificationDigestStore
+import org.openscreentime.parent.monitor.CalmSummary
 import org.openscreentime.parent.util.isNotificationListenerEnabled
 import org.openscreentime.sharedui.StatusIconGuide
 import org.openscreentime.parent.BuildConfig
@@ -670,6 +672,32 @@ private fun NotificationDigestCard(
                 Spacer(Modifier.height(8.dp))
                 OutlinedButton(onClick = onRequestListener, modifier = Modifier.fillMaxWidth()) {
                     Text("Allow notification access")
+                }
+            }
+            if (optedIn && listenerGranted) {
+                val calmPrefs = remember { CalmModePrefs(context) }
+                var hideOthers by remember { mutableStateOf(calmPrefs.hideOthers) }
+                Spacer(Modifier.height(8.dp))
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Column(Modifier.weight(1f)) {
+                        Text("Hide other notifications", style = MaterialTheme.typography.titleSmall)
+                        Text(
+                            "Other apps' notifications are taken out of the shade and collected here. Calls, texts, " +
+                                "alarms and sign-in codes still come through. Read them from the \"Calm notifications\" " +
+                                "summary, from the Quick Settings tile (swipe down twice, then edit tiles), or by " +
+                                "swiping down on the dumb-phone home screen.",
+                            style = MaterialTheme.typography.bodySmall
+                        )
+                    }
+                    Switch(
+                        checked = hideOthers,
+                        onCheckedChange = {
+                            hideOthers = it
+                            calmPrefs.hideOthers = it
+                            if (!it) CalmSummary.clear(context)
+                        },
+                        modifier = Modifier.testTag("dashboard_hide_others")
+                    )
                 }
             }
             if (optedIn && listenerGranted) {

@@ -16,6 +16,14 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import org.openscreentime.shared.util.FocusPrefs
+import org.openscreentime.shared.util.isDefaultHome
 import androidx.compose.runtime.remember
 import android.os.Build
 import android.net.ConnectivityManager
@@ -49,6 +57,7 @@ fun KidSettingsScreen(
     onCycleTextSize: () -> Unit,
     onOpenColorSettings: () -> Unit,
     onRequestNotificationListener: () -> Unit,
+    onRequestHomeScreen: () -> Unit,
     /** Only offered here while no family passcode is set; otherwise it lives in Parent controls. */
     showUnpair: Boolean,
     onUnpair: () -> Unit,
@@ -124,6 +133,25 @@ fun KidSettingsScreen(
             isNotificationListenerEnabled(LocalContext.current),
             onRequestNotificationListener
         )
+        if (FocusPrefs(LocalContext.current).config().enabled) {
+            val context = LocalContext.current
+            var isHome by remember { mutableStateOf(isDefaultHome(context)) }
+            val lifecycleOwner = androidx.compose.ui.platform.LocalLifecycleOwner.current
+            DisposableEffect(lifecycleOwner) {
+                val observer = LifecycleEventObserver { _, event ->
+                    if (event == Lifecycle.Event.ON_RESUME) isHome = isDefaultHome(context)
+                }
+                lifecycleOwner.lifecycle.addObserver(observer)
+                onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+            }
+            PermissionRow(
+                "Home screen (simple phone)",
+                "A parent turned on the simple phone. So the simple home screen shows up, make OpenScreenTime " +
+                    "this phone's home app: tap Fix, then choose OpenScreenTime.",
+                isHome,
+                onRequestHomeScreen
+            )
+        }
         Spacer(Modifier.height(24.dp))
         Text("Display", style = MaterialTheme.typography.labelLarge)
         ListItem(

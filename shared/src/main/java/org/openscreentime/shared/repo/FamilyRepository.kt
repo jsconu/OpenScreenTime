@@ -5,6 +5,7 @@ import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.ListenerRegistration
 import org.openscreentime.shared.model.ChildProfile
 import org.openscreentime.shared.model.DailyStats
+import org.openscreentime.shared.model.FocusProfile
 import org.openscreentime.shared.model.InstalledApp
 import org.openscreentime.shared.model.PasscodeInfo
 import org.openscreentime.shared.model.TrackingToggle
@@ -114,6 +115,15 @@ class FamilyRepository(
         limits.setTrackingToggle(parentUid, childId, toggle, enabled)
 
     /** Replaces the whole always-allowed contacts list (see #34, [ChildProfile.alwaysAllowedContacts]). */
+    suspend fun setFocusMode(parentUid: String, childId: String, enabled: Boolean) =
+        limits.setFocusMode(parentUid, childId, enabled)
+
+    suspend fun setFocusProfile(parentUid: String, childId: String, profile: FocusProfile) =
+        limits.setFocusProfile(parentUid, childId, profile)
+
+    suspend fun setFocusAllowedPackage(parentUid: String, childId: String, packageName: String, allowed: Boolean, travelOnly: Boolean) =
+        limits.setFocusAllowedPackage(parentUid, childId, packageName, allowed, travelOnly)
+
     suspend fun addAllowedContact(parentUid: String, childId: String, number: String) =
         limits.addAllowedContact(parentUid, childId, number)
 

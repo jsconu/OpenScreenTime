@@ -5,6 +5,7 @@ import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.SetOptions
 import kotlinx.coroutines.tasks.await
 import org.openscreentime.shared.model.ChildProfile
+import org.openscreentime.shared.model.FocusProfile
 import org.openscreentime.shared.model.TrackingToggle
 
 /** Reading/writing a child's limits, and the kid-initiated propose/approve/decline flow (see #14). */
@@ -47,6 +48,20 @@ internal class LimitsRepository(private val db: FirebaseFirestore) {
     /** See #28 - packages that bypass every limit/bedtime check, the same way a temporary unlock does. */
     suspend fun setAlwaysAllowedPackage(parentUid: String, childId: String, packageName: String, allowed: Boolean) =
         arrayEdit(parentUid, childId, "alwaysAllowedPackages", packageName, add = allowed)
+
+    // "Dumb phone" (Focus mode), see #42. Parent-only writes.
+
+    suspend fun setFocusMode(parentUid: String, childId: String, enabled: Boolean) {
+        db.document(FirestorePaths.childDoc(parentUid, childId)).update("focusMode", enabled).await()
+    }
+
+    suspend fun setFocusProfile(parentUid: String, childId: String, profile: FocusProfile) {
+        db.document(FirestorePaths.childDoc(parentUid, childId)).update("focusProfile", profile.wireValue).await()
+    }
+
+    /** Adds or removes ONE app from the always-allowed list, or from the travel-only list. */
+    suspend fun setFocusAllowedPackage(parentUid: String, childId: String, packageName: String, allowed: Boolean, travelOnly: Boolean) =
+        arrayEdit(parentUid, childId, if (travelOnly) "travelAllowedPackages" else "focusAllowedPackages", packageName, add = allowed)
 
     private suspend fun arrayEdit(parentUid: String, childId: String, field: String, value: String, add: Boolean) {
         db.document(FirestorePaths.childDoc(parentUid, childId))

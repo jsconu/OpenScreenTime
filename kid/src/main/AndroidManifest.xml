@@ -26,6 +26,18 @@
             <action android:name="android.intent.action.MAIN" />
             <category android:name="android.intent.category.LAUNCHER" />
         </intent>
+        <!-- "Dumb phone" (see #42) finds this phone's own dialer, texting and contacts apps, so it can keep them. -->
+        <intent>
+            <action android:name="android.intent.action.DIAL" />
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.SENDTO" />
+            <data android:scheme="smsto" />
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <data android:scheme="content" android:host="com.android.contacts" />
+        </intent>
     </queries>
 
     <application
@@ -60,6 +72,20 @@
             android:excludeFromRecents="true"
             android:launchMode="singleInstance"
             android:theme="@style/Theme.OpenScreenTime.Overlay" />
+
+        <!-- "Dumb phone" home screen (see #42). Off until a parent turns Focus mode on for this child. -->
+        <activity
+            android:name=".ui.FocusLauncherActivity"
+            android:exported="true"
+            android:enabled="false"
+            android:launchMode="singleTask"
+            android:stateNotNeeded="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.HOME" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>
 
         <service
             android:name=".monitor.ScreenMonitorService"

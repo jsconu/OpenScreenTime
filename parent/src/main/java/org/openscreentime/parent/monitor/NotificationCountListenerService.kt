@@ -3,9 +3,13 @@ package org.openscreentime.parent.monitor
 import android.app.Notification
 import android.service.notification.NotificationListenerService
 import android.service.notification.StatusBarNotification
+import org.openscreentime.parent.data.CalmModePrefs
 import org.openscreentime.parent.data.NotificationDigestStore
 import org.openscreentime.parent.data.UsageStore
+import org.openscreentime.shared.model.AUTHENTICATOR_PACKAGES
 import org.openscreentime.shared.model.DigestNotification
+import org.openscreentime.shared.model.FOCUS_SYSTEM_PACKAGES
+import org.openscreentime.shared.util.resolveEssentialPackages
 import org.openscreentime.shared.model.NotificationDeduper
 import org.openscreentime.shared.model.shouldIncludeInDigest
 
@@ -47,6 +51,31 @@ class NotificationCountListenerService : NotificationListenerService() {
                 postedAtMs = sbn.postTime
             )
         )
+        // Calm mode: take everything but the essentials out of the shade; the summary stands in for them.
+        if (digestStore.optedIn && CalmModePrefs(this).hideOthers && shouldHide(sbn)) {
+            cancelNotification(sbn.key)
+            CalmSummary.post(this, digestStore.entries.size)
+        }
+    }
+
+    private var essentialCache: Set<String> = emptySet()
+    private var essentialAtMs = 0L
+
+    /** Calls, texts, alarms, sign-in codes and system messages are never hidden. */
+    private fun shouldHide(sbn: StatusBarNotification): Boolean {
+        val pkg = sbn.packageName
+        if (pkg == packageName || sbn.isOngoing) return false
+        val now = System.currentTimeMillis()
+        if (essentialCache.isEmpty() || now - essentialAtMs > 60_000L) {
+            essentialCache = resolveEssentialPackages(this).toSet()
+            essentialAtMs = now
+        }
+        if (pkg in essentialCache || pkg in FOCUS_SYSTEM_PACKAGES || pkg in AUTHENTICATOR_PACKAGES) return false
+        return when (sbn.notification.category) {
+            Notification.CATEGORY_CALL, Notification.CATEGORY_ALARM, Notification.CATEGORY_NAVIGATION,
+            Notification.CATEGORY_SYSTEM, Notification.CATEGORY_ERROR, Notification.CATEGORY_TRANSPORT -> false
+            else -> true
+        }
     }
 
     private fun appLabelFor(packageName: String): String =

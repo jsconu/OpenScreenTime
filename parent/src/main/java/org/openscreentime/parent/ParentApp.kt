@@ -15,6 +15,8 @@ import org.openscreentime.parent.data.SelfProfileStore
 import org.openscreentime.parent.monitor.AppLimitAccessibilityService
 import org.openscreentime.parent.monitor.SyncWorker
 import org.openscreentime.parent.ui.BlockOverlayActivity
+import org.openscreentime.parent.ui.FocusLauncherActivity
+import org.openscreentime.shared.util.FocusPrefs
 import org.openscreentime.shared.model.BlockReason
 import org.openscreentime.shared.repo.FamilyRepository
 import java.util.concurrent.TimeUnit
@@ -55,6 +57,9 @@ class ParentApp : Application() {
         manager.createNotificationChannel(
             NotificationChannel(WARNING_CHANNEL_ID, "Approaching a limit", NotificationManager.IMPORTANCE_DEFAULT)
         )
+        manager.createNotificationChannel(
+            NotificationChannel(CALM_CHANNEL_ID, "Calm notifications", NotificationManager.IMPORTANCE_LOW)
+        )
     }
 
     /**
@@ -77,6 +82,8 @@ class ParentApp : Application() {
             AppLimitAccessibilityService.trackUnlocks = child.trackUnlocks
             AppLimitAccessibilityService.trackNotifications = child.trackNotifications
             AppLimitAccessibilityService.trackWebsites = child.trackWebsites
+            // "Dumb phone" (see #42): keep this phone's copy of the choice, and the home-screen option, in step.
+            FocusPrefs(this).update(this, child, FocusLauncherActivity.component(this))
             AppLimitAccessibilityService.blockedDomains = child.blockedDomains
 
             val wasLocked = AppLimitAccessibilityService.lockedCache
@@ -96,5 +103,6 @@ class ParentApp : Application() {
     companion object {
         const val MONITOR_CHANNEL_ID = "self_monitor_service"
         const val WARNING_CHANNEL_ID = "self_limit_warnings"
+        const val CALM_CHANNEL_ID = "calm_summary"
     }
 }

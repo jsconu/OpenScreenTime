@@ -306,6 +306,13 @@ access** (also powers muting non-allowed texts during bedtime), and, from
 the passcode-gated Parent controls screen, **uninstall protection** and
 **bedtime call blocking** (Android 10+ only for the latter).
 
+**Dumb phone** (a parent-chosen Focus mode, for a child or for a parent's own phone) turns the phone into calls,
+texts, authenticator apps and a short list of allowed apps on a plain home screen. A parent gets a **Travel**
+profile (tickets, maps, mail...) and an **All apps** button that opens everything for 10 minutes after a short pause;
+a child needs a parent's passcode. On a parent's phone, **Hide other notifications** collects everything but calls,
+texts, alarms and sign-in codes into the calm list, reachable from one summary notification, a Quick Settings tile,
+or a swipe down on the dumb-phone home screen. See [`docs/INSTALL_ANDROID.md`](docs/INSTALL_ANDROID.md).
+
 ## Official builds and forks
 
 OpenScreenTime is free and open source under the [MIT license](LICENSE), so anyone may use, modify,

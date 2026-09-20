@@ -63,6 +63,8 @@ import org.openscreentime.shared.model.mergeUsageWithInstalled
 import org.openscreentime.shared.util.listLaunchableApps
 import org.openscreentime.shared.model.todayDateString
 import org.openscreentime.shared.repo.FamilyRepository
+import org.openscreentime.sharedui.FocusAppPickerDialog
+import org.openscreentime.sharedui.focusModeSection
 import org.openscreentime.sharedui.trackingSection
 import org.openscreentime.sharedui.AppSortToggle
 import org.openscreentime.sharedui.BedtimeWindowDialog
@@ -108,6 +110,8 @@ fun ChildDetailScreen(
     var newBlockedDomain by remember { mutableStateOf("") }
     var kidInstalledApps by remember { mutableStateOf<List<InstalledApp>>(emptyList()) }
     var appSort by rememberSaveable { mutableStateOf(AppSort.USAGE) }
+    // "Dumb phone" (see #42): which allowed-apps list is being edited (null = none, false = everyday, true = travel).
+    var pickingFocusApps by remember { mutableStateOf<Boolean?>(null) }
 
     DisposableEffect(childId) {
         val reg1 = repository.listenChildren(parentUid) { list ->
@@ -201,6 +205,13 @@ fun ChildDetailScreen(
                 onChangeLimit = { showLimitDialog = true },
                 onChangeUnlockGoal = { showUnlockGoalDialog = true },
                 onChangeBedtime = { showBedtimeDialog = true }
+            )
+            focusModeSection(
+                child = currentChild,
+                isOwnPhone = currentChild.isSelf,
+                onSetEnabled = { enabled -> scope.launch { repository.setFocusMode(parentUid, childId, enabled) } },
+                onSetProfile = { profile -> scope.launch { repository.setFocusProfile(parentUid, childId, profile) } },
+                onPickApps = { travelOnly -> pickingFocusApps = travelOnly }
             )
             weeklyReportSection(
                 onOpenReport = {
@@ -343,6 +354,18 @@ fun ChildDetailScreen(
                 }) { Text("Remove") }
             },
             dismissButton = { TextButton(onClick = { showDeleteConfirm = false }) { Text("Cancel") } }
+        )
+    }
+
+    pickingFocusApps?.let { travelOnly ->
+        FocusAppPickerDialog(
+            title = if (travelOnly) "Extra apps while traveling" else "Apps that stay allowed",
+            apps = displayedApps,
+            selected = (if (travelOnly) currentChild.travelAllowedPackages else currentChild.focusAllowedPackages).toSet(),
+            onToggle = { pkg, allowed ->
+                scope.launch { repository.setFocusAllowedPackage(parentUid, childId, pkg, allowed, travelOnly) }
+            },
+            onDone = { pickingFocusApps = null }
         )
     }
 

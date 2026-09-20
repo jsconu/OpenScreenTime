@@ -97,6 +97,24 @@
       "answer": "When a limit is reached, or it's bedtime, or a parent has paused screen time, a full-screen block appears. It suggests something else to do (except at bedtime, where winding down is the point) and has an OK button that takes you to the home screen. Swiping back doesn't dismiss it. During a limit or bedtime you can ask a parent for 5 or 15 more minutes."
     },
     {
+      "id": "dumb-phone",
+      "audience": "parent",
+      "topic": "app",
+      "question": "What is Dumb phone (Focus mode)?",
+      "keywords": ["dumb phone", "dumbphone", "focus", "focus mode", "minimal", "simple phone", "call text only", "travel", "launcher", "all apps", "beyond launcher"],
+      "answer": "A switch on a person's page (yours or a child's) that turns their phone into calls, texts, contacts, sign-in-code (authenticator) apps and a short list of apps you choose under \"Choose apps\". Everything else is sent back to a plain home screen. To make that home screen appear, open Permissions (Settings on a child's phone), find \"Home screen\", tap Fix and choose OpenScreenTime. On your own phone, \"All apps\" opens everything for 10 minutes after a short pause, and Travel adds tickets, maps, mail, the camera and similar apps (plus any you add). On a child's phone opening other apps takes the family passcode (\"Parent unlock\"). It's not a lock you can't undo: \"Turn off dumb phone\" is on the home screen.",
+      "iosAnswer": "Dumb phone and hiding notifications are Android features for now. The iPhone parent app can't turn them on for a child yet, and iPhones don't offer the same home-screen and notification controls to apps."
+    },
+    {
+      "id": "hide-notifications",
+      "audience": "parent",
+      "topic": "app",
+      "question": "How do I hide notifications except calls and texts?",
+      "keywords": ["hide", "hide notifications", "silence", "quiet notifications", "disable notifications", "swipe", "quick settings", "tile", "calm", "digest", "collect"],
+      "answer": "Turn on the calm notification list (needs notification access), then switch on \"Hide other notifications\" on the home screen. Other apps' notifications are taken out of the shade and collected on your phone; calls, texts, alarms, navigation, sign-in codes and system messages still come through. One quiet \"Calm notifications\" line tells you how many are waiting - tap it to read them. You can also add the \"Calm notifications\" tile to Quick Settings (swipe down twice, tap the pencil), or swipe down from the top of the dumb-phone home screen. Nothing is uploaded.",
+      "iosAnswer": "Dumb phone and hiding notifications are Android features for now. The iPhone parent app can't turn them on for a child yet, and iPhones don't offer the same home-screen and notification controls to apps."
+    },
+    {
       "id": "request-more-time",
       "audience": "both",
       "topic": "app",

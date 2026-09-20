@@ -13,6 +13,8 @@ import com.google.firebase.crashlytics.FirebaseCrashlytics
 import com.google.firebase.firestore.FirebaseFirestore
 import org.openscreentime.kid.data.PairingStore
 import org.openscreentime.kid.monitor.LiveChildState
+import org.openscreentime.kid.ui.FocusLauncherActivity
+import org.openscreentime.shared.util.FocusPrefs
 import org.openscreentime.kid.monitor.SyncWorker
 import org.openscreentime.kid.ui.BlockOverlayActivity
 import org.openscreentime.shared.model.BlockReason
@@ -74,6 +76,8 @@ class KidApp : Application() {
         repository.listenChild(parentUid, childId) { child ->
             val wasLocked = LiveChildState.lockedCache
             LiveChildState.update(this, child)
+            // "Dumb phone" (see #42): keep this phone's copy of the choice, and the home-screen option, in step.
+            FocusPrefs(this).update(this, child, FocusLauncherActivity.component(this))
             if (child.locked && !wasLocked) {
                 // Don't wait for the next app switch or tick - interrupt right away.
                 startActivity(

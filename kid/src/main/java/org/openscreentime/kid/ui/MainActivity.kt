@@ -1,5 +1,6 @@
 package org.openscreentime.kid.ui
 
+import org.openscreentime.shared.util.homeRoleIntent
 import android.content.Intent
 import android.net.Uri
 import android.net.VpnService
@@ -53,6 +54,10 @@ class MainActivity : ComponentActivity() {
 
     private val notificationPermissionLauncher =
         registerForActivityResult(ActivityResultContracts.RequestPermission()) {}
+
+    // Set as the phone's home screen, for the simple phone (see #42).
+    private val homeRoleLauncher =
+        registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {}
 
     private val vpnPermissionLauncher =
         registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
@@ -238,6 +243,7 @@ class MainActivity : ComponentActivity() {
                             onRequestNotificationListener = {
                                 startActivity(Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS))
                             },
+                            onRequestHomeScreen = { homeRoleLauncher.launch(homeRoleIntent(this@MainActivity)) },
                             showUnpair = child?.parentPasscodeHash == null,
                             onUnpair = {
                                 pairingStore.clear()

@@ -35,7 +35,11 @@ this build connects to. Contact: trumpetmadnesshq@gmail.com.
   same site-name counts (this uses the optional website filter on the parent's own phone). The parent's own list of installed apps is only read on the phone
   to build the limits screen; it is not uploaded.
 - An optional "calm notification list" of today's notifications on the parent's phone. It is kept
-  only on that phone and never uploaded (the child's phone has the same optional list).
+  only on that phone and never uploaded (the child's phone has the same optional list). If the parent also
+  turns on "Hide other notifications", other apps' notifications are removed from the notification shade after
+  they're added to that local list; calls, texts, alarms and sign-in codes are left alone.
+- The choice to use "Dumb phone" (on or off, the Travel profile, and the list of apps a parent allows) is saved
+  with the person's profile so the parent can change it from any of their devices. It contains app names, not activity.
 - A family passcode, stored only as a salted hash.
 - Feedback a parent chooses to send (the text, app version and device model).
 

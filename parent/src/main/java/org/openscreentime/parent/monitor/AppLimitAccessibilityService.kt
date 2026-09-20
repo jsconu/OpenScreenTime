@@ -20,6 +20,7 @@ import org.openscreentime.parent.data.UsageStore
 import org.openscreentime.parent.ui.BlockOverlayActivity
 import org.openscreentime.parent.ui.MainActivity
 import org.openscreentime.shared.model.BlockReason
+import org.openscreentime.shared.util.FocusEnforcer
 import org.openscreentime.shared.model.EnforcementEvent
 import org.openscreentime.shared.model.EnforcementInput
 import org.openscreentime.shared.model.STATUS_NOTIFICATION_TITLE
@@ -50,6 +51,7 @@ import org.openscreentime.shared.model.statusNotificationMessage
 class AppLimitAccessibilityService : AccessibilityService() {
 
     private lateinit var usageStore: UsageStore
+    private val focusEnforcer by lazy { FocusEnforcer(this) }
     private val handler = Handler(Looper.getMainLooper())
 
     private var currentPackage: String? = null
@@ -79,6 +81,8 @@ class AppLimitAccessibilityService : AccessibilityService() {
         if (event?.eventType != AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) return
         val pkg = event.packageName?.toString() ?: return
         foregroundPackage = pkg
+        // "Dumb phone" (see #42): an app that isn't allowed goes straight back to the home screen.
+        if (focusEnforcer.enforce(pkg)) return
         recordFirstAppIfPending(pkg)
         if (pkg == packageName || pkg == currentPackage) return
 
