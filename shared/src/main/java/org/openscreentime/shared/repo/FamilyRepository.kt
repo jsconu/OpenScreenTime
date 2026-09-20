@@ -3,6 +3,7 @@ package org.openscreentime.shared.repo
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.ListenerRegistration
+import org.openscreentime.shared.model.AppList
 import org.openscreentime.shared.model.ChildProfile
 import org.openscreentime.shared.model.DailyStats
 import org.openscreentime.shared.model.FocusProfile
@@ -106,9 +107,9 @@ class FamilyRepository(
     suspend fun removeBlockedDomain(parentUid: String, childId: String, domain: String) =
         limits.removeBlockedDomain(parentUid, childId, domain)
 
-    /** Replaces the whole always-allowed list (see #28, [ChildProfile.alwaysAllowedPackages]). */
-    suspend fun setAlwaysAllowedPackage(parentUid: String, childId: String, packageName: String, allowed: Boolean) =
-        limits.setAlwaysAllowedPackage(parentUid, childId, packageName, allowed)
+    /** Adds or removes ONE app from one of the per-app lists (see [AppList]). */
+    suspend fun setAppListMember(parentUid: String, childId: String, list: AppList, packageName: String, member: Boolean) =
+        limits.setAppListMember(parentUid, childId, list, packageName, member)
 
     /** Turns one tracking/display toggle on or off (see #35, [ChildProfile.trackUnlocks] and friends). */
     suspend fun setTrackingToggle(parentUid: String, childId: String, toggle: TrackingToggle, enabled: Boolean) =
@@ -120,12 +121,6 @@ class FamilyRepository(
 
     suspend fun setFocusProfile(parentUid: String, childId: String, profile: FocusProfile) =
         limits.setFocusProfile(parentUid, childId, profile)
-
-    suspend fun setExcludedFromTotalPackage(parentUid: String, childId: String, packageName: String, excluded: Boolean) =
-        limits.setExcludedFromTotalPackage(parentUid, childId, packageName, excluded)
-
-    suspend fun setFocusAllowedPackage(parentUid: String, childId: String, packageName: String, allowed: Boolean, travelOnly: Boolean) =
-        limits.setFocusAllowedPackage(parentUid, childId, packageName, allowed, travelOnly)
 
     suspend fun addAllowedContact(parentUid: String, childId: String, number: String) =
         limits.addAllowedContact(parentUid, childId, number)

@@ -65,7 +65,9 @@ import org.openscreentime.shared.model.mergeUsageWithInstalled
 import org.openscreentime.shared.util.listLaunchableApps
 import org.openscreentime.shared.model.todayDateString
 import org.openscreentime.shared.repo.FamilyRepository
+import org.openscreentime.shared.model.AppList
 import org.openscreentime.sharedui.AppPickerDialog
+import org.openscreentime.sharedui.pickerTitle
 import org.openscreentime.sharedui.excludedFromTotalSection
 import org.openscreentime.sharedui.focusModeSection
 import org.openscreentime.sharedui.trackingSection
@@ -113,9 +115,8 @@ fun ChildDetailScreen(
     var newBlockedDomain by remember { mutableStateOf("") }
     var kidInstalledApps by remember { mutableStateOf<List<InstalledApp>>(emptyList()) }
     var appSort by rememberSaveable { mutableStateOf(AppSort.USAGE) }
-    // "Dumb phone" (see #42): which allowed-apps list is being edited (null = none, false = everyday, true = travel).
-    var pickingFocusApps by remember { mutableStateOf<Boolean?>(null) }
-    var pickingExcludedApps by remember { mutableStateOf(false) }
+    // Which per-app list is being edited in the app picker, if any.
+    var pickingList by remember { mutableStateOf<AppList?>(null) }
 
     DisposableEffect(childId) {
         val reg1 = repository.listenChildren(parentUid) { list ->
@@ -213,14 +214,14 @@ fun ChildDetailScreen(
             excludedFromTotalSection(
                 child = currentChild,
                 appNames = displayedApps.associate { it.packageName to it.appName },
-                onPickApps = { pickingExcludedApps = true }
+                onPickApps = { pickingList = AppList.EXCLUDED_FROM_TOTAL }
             )
             focusModeSection(
                 child = currentChild,
                 isOwnPhone = currentChild.isSelf,
                 onSetEnabled = { enabled -> scope.launch { repository.setFocusMode(parentUid, childId, enabled) } },
                 onSetProfile = { profile -> scope.launch { repository.setFocusProfile(parentUid, childId, profile) } },
-                onPickApps = { travelOnly -> pickingFocusApps = travelOnly }
+                onPickApps = { travelOnly -> pickingList = if (travelOnly) AppList.TRAVEL_ALLOWED else AppList.FOCUS_ALLOWED }
             )
             weeklyReportSection(
                 onOpenReport = {
@@ -264,7 +265,7 @@ fun ChildDetailScreen(
                 alwaysAllowedPackages = currentChild.alwaysAllowedPackages,
                 onEditApp = { editingApp = it },
                 onToggleAlwaysAllowed = { pkg, allowed ->
-                    scope.launch { repository.setAlwaysAllowedPackage(parentUid, childId, pkg, allowed) }
+                    scope.launch { repository.setAppListMember(parentUid, childId, AppList.ALWAYS_ALLOWED, pkg, allowed) }
                 }
             )
             removeChildSection(childName = currentChild.name, onRequestDelete = { showDeleteConfirm = true })
@@ -366,27 +367,15 @@ fun ChildDetailScreen(
         )
     }
 
-    if (pickingExcludedApps) {
+    pickingList?.let { list ->
         AppPickerDialog(
-            title = "Apps that don't count toward the daily limit",
+            title = list.pickerTitle,
             apps = displayedApps,
-            selected = currentChild.excludedFromTotalPackages.toSet(),
-            onToggle = { pkg, excluded ->
-                scope.launch { repository.setExcludedFromTotalPackage(parentUid, childId, pkg, excluded) }
+            selected = currentChild.packages(list).toSet(),
+            onToggle = { pkg, member ->
+                scope.launch { repository.setAppListMember(parentUid, childId, list, pkg, member) }
             },
-            onDone = { pickingExcludedApps = false }
-        )
-    }
-
-    pickingFocusApps?.let { travelOnly ->
-        AppPickerDialog(
-            title = if (travelOnly) "Extra apps while traveling" else "Apps that stay allowed",
-            apps = displayedApps,
-            selected = (if (travelOnly) currentChild.travelAllowedPackages else currentChild.focusAllowedPackages).toSet(),
-            onToggle = { pkg, allowed ->
-                scope.launch { repository.setFocusAllowedPackage(parentUid, childId, pkg, allowed, travelOnly) }
-            },
-            onDone = { pickingFocusApps = null }
+            onDone = { pickingList = null }
         )
     }
 

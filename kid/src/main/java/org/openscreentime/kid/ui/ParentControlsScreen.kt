@@ -58,6 +58,7 @@ import org.openscreentime.kid.monitor.UninstallProtectionAdminReceiver
 import org.openscreentime.kid.util.isCallRedirectionRoleHeld
 import org.openscreentime.kid.util.isCallScreeningRoleHeld
 import org.openscreentime.kid.util.isDeviceAdminActive
+import org.openscreentime.shared.model.AppList
 import org.openscreentime.shared.model.AppUsage
 import org.openscreentime.shared.model.AppSort
 import org.openscreentime.shared.model.mergeUsageWithInstalled
@@ -453,7 +454,7 @@ fun ParentControlsScreen(
                                 checked = app.packageName in child.alwaysAllowedPackages,
                                 onCheckedChange = { allowed ->
                                     scope.launch {
-                                        repository.setAlwaysAllowedPackage(parentUid, childId, app.packageName, allowed)
+                                        repository.setAppListMember(parentUid, childId, AppList.ALWAYS_ALLOWED, app.packageName, allowed)
                                     }
                                 }
                             )

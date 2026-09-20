@@ -129,6 +129,14 @@ data class ChildProfile(
     val showUnlocksOnKid: Boolean = false,
     val showNotificationsOnKid: Boolean = false
 ) {
+    /** The apps on one of this person's per-app lists. */
+    fun packages(list: AppList): List<String> = when (list) {
+        AppList.ALWAYS_ALLOWED -> alwaysAllowedPackages
+        AppList.FOCUS_ALLOWED -> focusAllowedPackages
+        AppList.TRAVEL_ALLOWED -> travelAllowedPackages
+        AppList.EXCLUDED_FROM_TOTAL -> excludedFromTotalPackages
+    }
+
     fun toMap(): Map<String, Any?> = mapOf(
         "name" to name,
         "pairingCode" to pairingCode,
@@ -148,21 +156,24 @@ data class ChildProfile(
         "blockedDomains" to blockedDomains,
         "requestedExtraMinutes" to requestedExtraMinutes,
         "temporaryUnlockUntilMs" to temporaryUnlockUntilMs,
-        "alwaysAllowedPackages" to alwaysAllowedPackages,
+        AppList.ALWAYS_ALLOWED.field to alwaysAllowedPackages,
         "alwaysAllowedContacts" to alwaysAllowedContacts,
         "trackUnlocks" to trackUnlocks,
         "trackNotifications" to trackNotifications,
         "trackWebsites" to trackWebsites,
         "focusMode" to focusMode,
         "focusProfile" to focusProfile,
-        "focusAllowedPackages" to focusAllowedPackages,
-        "travelAllowedPackages" to travelAllowedPackages,
-        "excludedFromTotalPackages" to excludedFromTotalPackages,
+        AppList.FOCUS_ALLOWED.field to focusAllowedPackages,
+        AppList.TRAVEL_ALLOWED.field to travelAllowedPackages,
+        AppList.EXCLUDED_FROM_TOTAL.field to excludedFromTotalPackages,
         "showUnlocksOnKid" to showUnlocksOnKid,
         "showNotificationsOnKid" to showNotificationsOnKid
     )
 
     companion object {
+        private fun packagesFrom(map: Map<String, Any?>, list: AppList): List<String> =
+            (map[list.field] as? List<*>)?.filterIsInstance<String>() ?: emptyList()
+
         /**
          * A kid device can write these fields directly (see firestore.rules), so a wrong-typed value
          * must degrade to "ignored," never throw - a ClassCastException inside a Firestore snapshot
@@ -192,16 +203,16 @@ data class ChildProfile(
             blockedDomains = (map["blockedDomains"] as? List<*>)?.filterIsInstance<String>() ?: emptyList(),
             requestedExtraMinutes = (map["requestedExtraMinutes"] as? Number)?.toInt(),
             temporaryUnlockUntilMs = (map["temporaryUnlockUntilMs"] as? Number)?.toLong(),
-            alwaysAllowedPackages = (map["alwaysAllowedPackages"] as? List<*>)?.filterIsInstance<String>() ?: emptyList(),
+            alwaysAllowedPackages = packagesFrom(map, AppList.ALWAYS_ALLOWED),
             alwaysAllowedContacts = (map["alwaysAllowedContacts"] as? List<*>)?.filterIsInstance<String>() ?: emptyList(),
             trackUnlocks = map["trackUnlocks"] as? Boolean ?: false,
             trackNotifications = map["trackNotifications"] as? Boolean ?: false,
             trackWebsites = map["trackWebsites"] as? Boolean ?: false,
             focusMode = map["focusMode"] as? Boolean ?: false,
             focusProfile = map["focusProfile"] as? String ?: FocusProfile.STANDARD.wireValue,
-            focusAllowedPackages = (map["focusAllowedPackages"] as? List<*>)?.filterIsInstance<String>() ?: emptyList(),
-            travelAllowedPackages = (map["travelAllowedPackages"] as? List<*>)?.filterIsInstance<String>() ?: emptyList(),
-            excludedFromTotalPackages = (map["excludedFromTotalPackages"] as? List<*>)?.filterIsInstance<String>() ?: emptyList(),
+            focusAllowedPackages = packagesFrom(map, AppList.FOCUS_ALLOWED),
+            travelAllowedPackages = packagesFrom(map, AppList.TRAVEL_ALLOWED),
+            excludedFromTotalPackages = packagesFrom(map, AppList.EXCLUDED_FROM_TOTAL),
             showUnlocksOnKid = map["showUnlocksOnKid"] as? Boolean ?: false,
             showNotificationsOnKid = map["showNotificationsOnKid"] as? Boolean ?: false
         )

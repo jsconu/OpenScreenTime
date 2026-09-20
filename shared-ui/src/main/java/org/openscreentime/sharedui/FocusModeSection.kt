@@ -30,6 +30,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
+import org.openscreentime.shared.model.AppList
 import org.openscreentime.shared.model.AppUsage
 import org.openscreentime.shared.model.ChildProfile
 import org.openscreentime.shared.model.FocusProfile
@@ -112,6 +113,15 @@ private fun FocusProfileRow(selected: Boolean, title: String, detail: String, on
         leadingContent = { RadioButton(selected = selected, onClick = null) }
     )
 }
+
+/** What the picker for this list is called. */
+val AppList.pickerTitle: String
+    get() = when (this) {
+        AppList.ALWAYS_ALLOWED -> "Apps that are always allowed"
+        AppList.FOCUS_ALLOWED -> "Apps that stay allowed"
+        AppList.TRAVEL_ALLOWED -> "Extra apps while traveling"
+        AppList.EXCLUDED_FROM_TOTAL -> "Apps that don't count toward the daily limit"
+    }
 
 /** Pick apps from everything on the phone, A to Z, with a checkbox each. */
 @Composable

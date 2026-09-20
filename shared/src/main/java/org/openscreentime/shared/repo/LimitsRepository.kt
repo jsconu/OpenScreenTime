@@ -4,6 +4,7 @@ import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.SetOptions
 import kotlinx.coroutines.tasks.await
+import org.openscreentime.shared.model.AppList
 import org.openscreentime.shared.model.ChildProfile
 import org.openscreentime.shared.model.FocusProfile
 import org.openscreentime.shared.model.TrackingToggle
@@ -45,13 +46,9 @@ internal class LimitsRepository(private val db: FirebaseFirestore) {
 
     suspend fun removeBlockedDomain(parentUid: String, childId: String, domain: String) = arrayEdit(parentUid, childId, "blockedDomains", domain, add = false)
 
-    /** See #28 - packages that bypass every limit/bedtime check, the same way a temporary unlock does. */
-    suspend fun setAlwaysAllowedPackage(parentUid: String, childId: String, packageName: String, allowed: Boolean) =
-        arrayEdit(parentUid, childId, "alwaysAllowedPackages", packageName, add = allowed)
-
-    /** Adds or removes ONE app from the list whose time doesn't count toward the overall daily limit. */
-    suspend fun setExcludedFromTotalPackage(parentUid: String, childId: String, packageName: String, excluded: Boolean) =
-        arrayEdit(parentUid, childId, "excludedFromTotalPackages", packageName, add = excluded)
+    /** Adds or removes ONE app from one of the per-app lists (see [AppList]), without touching the others in it. */
+    suspend fun setAppListMember(parentUid: String, childId: String, list: AppList, packageName: String, member: Boolean) =
+        arrayEdit(parentUid, childId, list.field, packageName, add = member)
 
     // "Dumb phone" (Focus mode), see #42. Parent-only writes.
 
@@ -62,10 +59,6 @@ internal class LimitsRepository(private val db: FirebaseFirestore) {
     suspend fun setFocusProfile(parentUid: String, childId: String, profile: FocusProfile) {
         db.document(FirestorePaths.childDoc(parentUid, childId)).update("focusProfile", profile.wireValue).await()
     }
-
-    /** Adds or removes ONE app from the always-allowed list, or from the travel-only list. */
-    suspend fun setFocusAllowedPackage(parentUid: String, childId: String, packageName: String, allowed: Boolean, travelOnly: Boolean) =
-        arrayEdit(parentUid, childId, if (travelOnly) "travelAllowedPackages" else "focusAllowedPackages", packageName, add = allowed)
 
     private suspend fun arrayEdit(parentUid: String, childId: String, field: String, value: String, add: Boolean) {
         db.document(FirestorePaths.childDoc(parentUid, childId))
