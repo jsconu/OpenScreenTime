@@ -449,6 +449,39 @@ class PairingFlowEmulatorTest {
     }
 
     @Test(timeout = TEST_TIMEOUT_MS)
+    fun pairedKidDeviceCanSetDumbPhoneAndExcludedApps_butStillNotTheOtherProfileFields() = runBlocking {
+        val parentRepo = FamilyRepository()
+        val parentUid = parentRepo.signUpParent(uniqueEmail(), "testpass123")
+        val child = parentRepo.createChild(parentUid, "FocusChild")
+        parentRepo.signOut()
+
+        val kidRepo = FamilyRepository()
+        kidRepo.claimPairingCode(child.pairingCode)
+        // The passcode-gated Parent controls screen on the kid device does this.
+        kidRepo.setFocusMode(parentUid, child.id, true)
+        kidRepo.setAppListMember(parentUid, child.id, org.openscreentime.shared.model.AppList.FOCUS_ALLOWED, "com.example.maps", true)
+        kidRepo.setAppListMember(parentUid, child.id, org.openscreentime.shared.model.AppList.EXCLUDED_FROM_TOTAL, "com.example.audiobook", true)
+
+        val snap = FirebaseFirestore.getInstance()
+            .document(FirestorePaths.childDoc(parentUid, child.id)).get().await()
+        val back = org.openscreentime.shared.model.ChildProfile.fromMap(child.id, snap.data ?: emptyMap())
+        assertTrue(back.focusMode)
+        assertTrue("com.example.maps" in back.focusAllowedPackages)
+        assertTrue("com.example.audiobook" in back.excludedFromTotalPackages)
+
+        var threw = false
+        try {
+            FirebaseFirestore.getInstance()
+                .document(FirestorePaths.childDoc(parentUid, child.id))
+                .update("focusMode", false, "parentPasscodeHash", "hacked")
+                .await()
+        } catch (e: Exception) {
+            threw = true
+        }
+        assertTrue("A kid device must still not be able to slip the passcode fields into a Focus write", threw)
+    }
+
+    @Test(timeout = TEST_TIMEOUT_MS)
     fun passwordResetSendsForExistingAccount_andLooksTheSameForUnknownOnes() = runBlocking {
         val repo = FamilyRepository()
         val email = uniqueEmail()

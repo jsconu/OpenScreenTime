@@ -109,7 +109,7 @@ data class ChildProfile(
     /**
      * "Dumb phone" (Focus mode) - see #42. [focusAllowedPackages] are extra apps allowed on top of calls, texts
      * and two-step sign-in; [travelAllowedPackages] only while [focusProfile] is "travel" (adults). Written
-     * only by the parent account - a kid device never changes any of these.
+     * by the parent account, or from the passcode-gated Parent controls screen on the kid device (like the limits).
      */
     val focusMode: Boolean = false,
     val focusProfile: String = FocusProfile.STANDARD.wireValue,
@@ -118,7 +118,8 @@ data class ChildProfile(
     /**
      * Apps whose time does not add to the overall daily limit (an audiobook or reading app, maps, a school app).
      * Their time still shows in the per-app usage and their own per-app limit still applies; to keep one usable
-     * after the daily limit is reached, also mark it [alwaysAllowedPackages]. Written only by the parent account.
+     * after the daily limit is reached, also mark it [alwaysAllowedPackages]. Written by the parent account, or from the
+     * passcode-gated Parent controls screen on the kid device.
      */
     val excludedFromTotalPackages: List<String> = emptyList(),
     /**

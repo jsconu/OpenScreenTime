@@ -152,7 +152,9 @@ service cloud.firestore {
                          'bedtimeStartMinutes', 'bedtimeEndMinutes', 'blockedDomains',
                          'temporaryUnlockUntilMs', 'requestedExtraMinutes', 'alwaysAllowedPackages',
                          'alwaysAllowedContacts', 'trackUnlocks', 'trackNotifications',
-                         'showUnlocksOnKid', 'showNotificationsOnKid', 'trackWebsites']);
+                         'showUnlocksOnKid', 'showNotificationsOnKid', 'trackWebsites',
+                         'excludedFromTotalPackages', 'focusMode', 'focusProfile',
+                         'focusAllowedPackages', 'travelAllowedPackages']);
 
         // Negotiated limits (#14) and "more time" requests (#23): the linked device may
         // write these with no passcode/parent-mode gate at all - deliberately separate from

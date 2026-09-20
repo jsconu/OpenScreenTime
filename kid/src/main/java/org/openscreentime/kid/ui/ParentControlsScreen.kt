@@ -72,9 +72,13 @@ import org.openscreentime.shared.model.describeBedtimeWindow
 import org.openscreentime.shared.model.removeAllowedContact
 import org.openscreentime.shared.model.removeBlockedDomain
 import org.openscreentime.shared.repo.FamilyRepository
+import org.openscreentime.sharedui.AppPickerDialog
 import org.openscreentime.sharedui.BedtimeWindowDialog
 import org.openscreentime.sharedui.MinutesInputDialog
 import org.openscreentime.sharedui.UnlockGoalInputDialog
+import org.openscreentime.sharedui.excludedFromTotalSection
+import org.openscreentime.sharedui.focusModeSection
+import org.openscreentime.sharedui.pickerTitle
 import org.openscreentime.sharedui.trackingSection
 
 /**
@@ -146,6 +150,8 @@ fun ParentControlsScreen(
         }
     }
     var showUnpairConfirm by remember { mutableStateOf(false) }
+    // Which per-app list is being edited in the app picker, if any.
+    var pickingList by remember { mutableStateOf<AppList?>(null) }
 
     Scaffold(
         topBar = {
@@ -221,6 +227,18 @@ fun ParentControlsScreen(
                     OutlinedButton(onClick = { showBedtimeDialog = true }) { Text("Change bedtime") }
                 }
             }
+            excludedFromTotalSection(
+                child = child,
+                appNames = appUsage.associate { it.packageName to it.appName },
+                onPickApps = { pickingList = AppList.EXCLUDED_FROM_TOTAL }
+            )
+            focusModeSection(
+                child = child,
+                isOwnPhone = false,
+                onSetEnabled = { enabled -> scope.launch { repository.setFocusMode(parentUid, childId, enabled) } },
+                onSetProfile = {},
+                onPickApps = { pickingList = AppList.FOCUS_ALLOWED }
+            )
             item {
                 Column(Modifier.padding(16.dp)) {
                     Text("Uninstall protection", style = MaterialTheme.typography.labelLarge)
@@ -470,6 +488,18 @@ fun ParentControlsScreen(
                 ) { Text("Unpair this device") }
             }
         }
+    }
+
+    pickingList?.let { list ->
+        AppPickerDialog(
+            title = list.pickerTitle,
+            apps = appUsage,
+            selected = child.packages(list).toSet(),
+            onToggle = { pkg, member ->
+                scope.launch { repository.setAppListMember(parentUid, childId, list, pkg, member) }
+            },
+            onDone = { pickingList = null }
+        )
     }
 
     if (showUnpairConfirm) {
