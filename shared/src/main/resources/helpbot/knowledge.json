@@ -150,7 +150,7 @@
       "topic": "app",
       "question": "How do I set a bedtime?",
       "keywords": ["bedtime", "sleep", "night", "overnight", "quiet hours", "downtime", "wind down", "start", "end", "window"],
-      "answer": "Open your child and tap \"Change bedtime\", then enter a start and end time in 24-hour format (for example 21:00 to 07:00; windows that cross midnight work). During bedtime every app is blocked, independent of the daily limit. Apps you've marked \"always allow\" and numbers you've allowed for calls still get through."
+      "answer": "Open your child and tap \"Change bedtime\". It's two steps, each with a clock and an AM or PM switch: first when bedtime starts (that evening or night, like 9:00 PM), then when it ends (the next morning, like 7:00 AM). A line underneath spells it out, for example \"9:00 PM tonight to 7:00 AM tomorrow morning (10 hours)\". During bedtime every app is blocked, independent of the daily limit. Apps you've marked \"always allow\" and numbers you've allowed for calls still get through. Bedtime is set per person: each child has their own, and your own \"My screen time\" has one too."
     },
     {
       "id": "always-allowed-apps",
@@ -182,7 +182,8 @@
       "topic": "app",
       "question": "What are the family passcode and Parent controls?",
       "keywords": ["passcode", "pin", "parent controls", "parent mode", "password", "unlock controls", "kid's phone", "on the phone", "hash"],
-      "answer": "Set a passcode in the parent app menu. It locks the parent app on launch, and it lets you open \"Parent controls\" on your child's own phone to change limits, bedtime, blocked websites, and more without needing your phone. The child's phone checks it locally against a stored hash, so it works offline."
+      "answer": "Set a passcode in the parent app menu. It locks the parent app on launch, and it lets you open \"Parent controls\" on your child's own phone to change limits, bedtime, blocked websites, and more without needing your phone. The child's phone checks it locally against a stored hash, so it works offline. If you forget it, tap \"Forgot passcode?\" on the lock screen and confirm your account password to choose a new one. You can also let the parent app open with this phone's fingerprint or screen lock (Passcode settings) - only turn that on if a child can't unlock your phone. The kid's phone never accepts a fingerprint or screen lock, since the child's own would work.",
+      "iosAnswer": "Set a passcode in the parent app menu. It locks the parent app on launch, and it lets you open \"Parent controls\" on your child's own phone to change limits, bedtime, blocked websites, and more without needing your phone. The child's phone checks it locally against a stored hash, so it works offline."
     },
     {
       "id": "password-reset",
@@ -276,7 +277,7 @@
       "topic": "app",
       "question": "Can I track my own screen time too?",
       "keywords": ["my own", "myself", "parent tracking", "self", "self-tracking", "my screen time", "adult", "model", "walk the walk"],
-      "answer": "Yes, on Android. Open \"My screen time\" on the parent dashboard and start tracking. Your phone gets the same limits, bedtime, tracking, and report as a child's profile, and your child can see your calm status on their phone - the arrangement isn't one-directional. It isn't available on iPhone."
+      "answer": "Yes, on Android. Tap the \"My screen time\" tile on the parent dashboard - the first time it asks to start tracking, and after that it opens your own screen time directly (permissions are under the \"Permissions\" button there). Your phone gets the same limits, bedtime, tracking, and report as a child's profile, and your child can see your calm status on their phone - the arrangement isn't one-directional. It isn't available on iPhone."
     },
     {
       "id": "permissions-why",

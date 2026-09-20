@@ -33,23 +33,14 @@ import org.openscreentime.parent.util.PermissionState
 import org.openscreentime.parent.util.isNotificationListenerEnabled
 
 /**
- * Self-tracking (see #8): the parent's own device, tracked and limited the same way a
- * paired kid's device is. Reuses ChildDetailScreen for the actual stats/limit editing
- * (the self profile is just a ChildProfile with isSelf = true) - this screen only handles
- * opting in and the permission checklist, which needs to be granted on this device too.
+ * Opting in to self-tracking (see #8): the parent's own device, tracked and limited the same way a
+ * paired kid's device is. Shown only until they start; from then on tapping the "Me" tile goes
+ * straight to [ChildDetailScreen] (their own screen time), and the permission checklist lives on
+ * its own screen, [SelfPermissionsScreen].
  */
 @Composable
 fun SelfTrackingScreen(
-    isTracking: Boolean,
-    permissions: PermissionState,
     onStartTracking: suspend () -> Unit,
-    onStopTracking: () -> Unit,
-    onRequestOverlay: () -> Unit,
-    onRequestAccessibility: () -> Unit,
-    onRequestNotifications: () -> Unit,
-    onRequestBatteryExemption: () -> Unit,
-    onRequestNotificationListener: () -> Unit,
-    onViewMyStats: () -> Unit,
     onBack: () -> Unit
 ) {
     val scope = rememberCoroutineScope()
@@ -70,80 +61,101 @@ fun SelfTrackingScreen(
                 .padding(padding)
                 .padding(24.dp)
         ) {
-            if (!isTracking) {
-                Text(
-                    "Track and limit your own screen time on this device, the same way you " +
-                        "can for your kids. Parents modeling healthy limits themselves is one of " +
-                        "the more effective things a family can actually do about screen time.",
-                    style = MaterialTheme.typography.bodyMedium
-                )
-                Spacer(Modifier.height(24.dp))
-                Button(
-                    enabled = !starting,
-                    onClick = {
-                        starting = true
-                        scope.launch {
-                            onStartTracking()
-                            starting = false
-                        }
-                    },
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text(if (starting) "Starting..." else "Start tracking my screen time")
-                }
-            } else {
-                Text(
-                    if (permissions.allGranted) "Self-tracking is active." else "A few permissions are needed on this device too.",
-                    style = MaterialTheme.typography.bodyMedium
-                )
-                Spacer(Modifier.height(16.dp))
+            Text(
+                "Track and limit your own screen time on this device, the same way you " +
+                    "can for your kids. Parents modeling healthy limits themselves is one of " +
+                    "the more effective things a family can actually do about screen time.",
+                style = MaterialTheme.typography.bodyMedium
+            )
+            Spacer(Modifier.height(24.dp))
+            Button(
+                enabled = !starting,
+                onClick = {
+                    starting = true
+                    scope.launch {
+                        onStartTracking()
+                        starting = false
+                    }
+                },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(if (starting) "Starting..." else "Start tracking my screen time")
+            }
+        }
+    }
+}
 
-                PermissionRow(
-                    "Display over other apps",
-                    "Needed to show a screen when a limit is reached. If OpenScreenTime " +
-                        "isn't visible right away on the next screen, scroll down.",
-                    permissions.overlay,
-                    onRequestOverlay
-                )
-                PermissionRow(
-                    "Accessibility service",
-                    "Needed to detect which app is open. On the next screen, tap " +
-                        "\"Downloaded apps\" (or \"Installed apps\"), then find and turn on " +
-                        "OpenScreenTime.",
-                    permissions.accessibility,
-                    onRequestAccessibility
-                )
-                PermissionRow(
-                    "Notifications",
-                    "Shows the ongoing monitoring notification",
-                    permissions.notifications,
-                    onRequestNotifications
-                )
-                PermissionRow(
-                    "Battery optimization",
-                    "Stops the system from killing tracking in the background",
-                    permissions.ignoringBatteryOptimizations,
-                    onRequestBatteryExemption
-                )
-                if (!isNotificationListenerEnabled(LocalContext.current)) {
-                    PermissionRow(
-                        "Notification access (optional)",
-                        "Only needed if you turn on notification-count tracking for your own " +
-                            "screen time (from View my screen time). Counts only - nothing about " +
-                            "a notification's content is kept.",
-                        false,
-                        onRequestNotificationListener
-                    )
-                }
+/** What self-tracking needs turned on for this phone, and where to stop it. Its own screen. */
+@Composable
+fun SelfPermissionsScreen(
+    permissions: PermissionState,
+    onStopTracking: () -> Unit,
+    onRequestOverlay: () -> Unit,
+    onRequestAccessibility: () -> Unit,
+    onRequestNotifications: () -> Unit,
+    onRequestBatteryExemption: () -> Unit,
+    onRequestNotificationListener: () -> Unit,
+    onBack: () -> Unit
+) {
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text("Permissions") },
+                navigationIcon = { TextButton(onClick = onBack) { Text("Back") } }
+            )
+        }
+    ) { padding ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState())
+                .padding(padding)
+                .padding(24.dp)
+        ) {
+            Text(
+                if (permissions.allGranted) "Self-tracking is active." else "A few permissions are needed on this device too.",
+                style = MaterialTheme.typography.bodyMedium
+            )
+            Spacer(Modifier.height(16.dp))
 
-                Spacer(Modifier.height(24.dp))
-                Button(onClick = onViewMyStats, modifier = Modifier.fillMaxWidth()) {
-                    Text("View my screen time")
-                }
-                Spacer(Modifier.height(8.dp))
-                OutlinedButton(onClick = onStopTracking, modifier = Modifier.fillMaxWidth()) {
-                    Text("Stop tracking my screen time")
-                }
+            PermissionRow(
+                "Display over other apps",
+                "Needed to show a screen when a limit is reached. If OpenScreenTime " +
+                    "isn't visible right away on the next screen, scroll down.",
+                permissions.overlay,
+                onRequestOverlay
+            )
+            PermissionRow(
+                "Accessibility service",
+                "Needed to detect which app is open. On the next screen, tap " +
+                    "\"Downloaded apps\" (or \"Installed apps\"), then find and turn on " +
+                    "OpenScreenTime.",
+                permissions.accessibility,
+                onRequestAccessibility
+            )
+            PermissionRow(
+                "Notifications",
+                "Shows the ongoing monitoring notification",
+                permissions.notifications,
+                onRequestNotifications
+            )
+            PermissionRow(
+                "Battery optimization",
+                "Stops the system from killing tracking in the background",
+                permissions.ignoringBatteryOptimizations,
+                onRequestBatteryExemption
+            )
+            PermissionRow(
+                "Notification access (optional)",
+                "Only needed for notification-count tracking or the calm notification list. " +
+                    "Counts only - nothing about a notification's content is kept.",
+                isNotificationListenerEnabled(LocalContext.current),
+                onRequestNotificationListener
+            )
+
+            Spacer(Modifier.height(24.dp))
+            OutlinedButton(onClick = onStopTracking, modifier = Modifier.fillMaxWidth()) {
+                Text("Stop tracking my screen time")
             }
         }
     }

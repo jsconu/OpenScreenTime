@@ -1,6 +1,8 @@
 package org.openscreentime.shared.repo
 
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.auth.EmailAuthProvider
+import com.google.firebase.auth.FirebaseAuthInvalidCredentialsException
 import com.google.firebase.auth.FirebaseAuthInvalidUserException
 import kotlinx.coroutines.tasks.await
 
@@ -29,6 +31,24 @@ internal class SessionRepository(private val auth: FirebaseAuth) {
             auth.sendPasswordResetEmail(email.trim()).await()
         } catch (e: FirebaseAuthInvalidUserException) {
             // Same outcome as a real account: nothing to tell the caller.
+        }
+    }
+
+    /**
+     * True if [password] is the signed-in parent account's password, checked by re-authenticating
+     * with Firebase (this does not sign anyone in or out). A wrong password is `false`; a network
+     * problem or too many attempts still throws, since that isn't an answer.
+     */
+    suspend fun verifyAccountPassword(password: String): Boolean {
+        val user = auth.currentUser ?: return false
+        val email = user.email ?: return false
+        return try {
+            user.reauthenticate(EmailAuthProvider.getCredential(email, password)).await()
+            true
+        } catch (e: FirebaseAuthInvalidCredentialsException) {
+            false
+        } catch (e: FirebaseAuthInvalidUserException) {
+            false
         }
     }
 

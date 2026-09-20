@@ -5,7 +5,7 @@ import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
-import androidx.activity.ComponentActivity
+import androidx.fragment.app.FragmentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Box
@@ -40,7 +40,7 @@ import org.openscreentime.sharedui.AccessibilityDisclosureDialog
 import org.openscreentime.sharedui.HelpBotScreen
 import org.openscreentime.sharedui.NotificationDigestScreen
 
-class MainActivity : ComponentActivity() {
+class MainActivity : FragmentActivity() {
 
     private val notificationPermissionLauncher =
         registerForActivityResult(ActivityResultContracts.RequestPermission()) {}
@@ -113,7 +113,13 @@ class MainActivity : ComponentActivity() {
                     if (passcodeChecked && locked && currentPasscode != null) {
                         PasscodeUnlockScreen(
                             passcode = currentPasscode,
+                            repository = repository,
                             onUnlocked = {
+                                AppLockState.unlockedThisSession = true
+                                locked = false
+                            },
+                            onPasscodeReset = { info ->
+                                passcode = info
                                 AppLockState.unlockedThisSession = true
                                 locked = false
                             }
@@ -126,7 +132,11 @@ class MainActivity : ComponentActivity() {
                                     onOpenChild = { childId -> navController.navigate("child/$childId") },
                                     onOpenSettings = { navController.navigate("settings") },
                                     onOpenAppearance = { navController.navigate("appearance") },
-                                    onOpenSelfTracking = { navController.navigate("self") },
+                                    // Straight to the detailed screen once tracking is on; the opt-in screen before.
+                                    onOpenSelfTracking = {
+                                        val selfId = selfProfileStore.childId
+                                        if (isSelfTracking && selfId != null) navController.navigate("child/$selfId") else navController.navigate("self")
+                                    },
                                     onOpenHelp = { navController.navigate("help") },
                                     onOpenDigest = { navController.navigate("digest") },
                                     onRequestNotificationListener = {
@@ -144,11 +154,14 @@ class MainActivity : ComponentActivity() {
                                 arguments = listOf(navArgument("childId") { type = NavType.StringType })
                             ) { backStackEntry ->
                                 val childId = backStackEntry.arguments?.getString("childId")!!
+                                val isMe = childId == selfProfileStore.childId
                                 ChildDetailScreen(
                                     repository = repository,
                                     childId = childId,
                                     onOpenReport = { navController.navigate("report/$childId") },
-                                    onBack = { navController.popBackStack() }
+                                    onBack = { navController.popBackStack() },
+                                    onOpenPermissions = if (isMe) ({ navController.navigate("self_permissions") }) else null,
+                                    permissionsMissing = isMe && !selfPermissions.allGranted
                                 )
                             }
                             composable(
@@ -194,8 +207,6 @@ class MainActivity : ComponentActivity() {
                             }
                             composable("self") {
                                 SelfTrackingScreen(
-                                    isTracking = isSelfTracking,
-                                    permissions = selfPermissions,
                                     onStartTracking = {
                                         val self = repository.getOrCreateSelfProfile(repository.currentUid!!, "Me")
                                         selfProfileStore.childId = self.id
@@ -205,11 +216,19 @@ class MainActivity : ComponentActivity() {
                                             Intent(this@MainActivity, ScreenMonitorService::class.java)
                                         )
                                         (application as ParentApp).startSelfTrackingListener()
+                                        // Straight to their own screen time, replacing this opt-in screen.
+                                        navController.navigate("child/${self.id}") { popUpTo("self") { inclusive = true } }
                                     },
+                                    onBack = { navController.popBackStack() }
+                                )
+                            }
+                            composable("self_permissions") {
+                                SelfPermissionsScreen(
+                                    permissions = selfPermissions,
                                     onStopTracking = {
                                         selfProfileStore.clear()
                                         isSelfTracking = false
-                                        navController.popBackStack()
+                                        navController.popBackStack("dashboard", false)
                                     },
                                     onRequestOverlay = {
                                         startActivity(
@@ -235,9 +254,6 @@ class MainActivity : ComponentActivity() {
                                     },
                                     onRequestNotificationListener = {
                                         startActivity(Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS))
-                                    },
-                                    onViewMyStats = {
-                                        selfProfileStore.childId?.let { navController.navigate("child/$it") }
                                     },
                                     onBack = { navController.popBackStack() }
                                 )

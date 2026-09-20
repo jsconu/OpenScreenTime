@@ -16,6 +16,7 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.ListItem
@@ -34,11 +35,13 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
 import org.openscreentime.parent.data.ReportOpenTracker
@@ -52,12 +55,15 @@ import org.openscreentime.shared.model.addBlockedDomain
 import org.openscreentime.shared.model.computeStreak
 import org.openscreentime.shared.model.formatDuration
 import org.openscreentime.shared.model.removeBlockedDomain
-import org.openscreentime.shared.model.formatMinutesOfDay
+import org.openscreentime.shared.model.AppSort
+import org.openscreentime.shared.model.describeBedtimeWindow
+import org.openscreentime.shared.model.sortApps
 import org.openscreentime.shared.model.mergeUsageWithInstalled
 import org.openscreentime.shared.util.listLaunchableApps
 import org.openscreentime.shared.model.todayDateString
 import org.openscreentime.shared.repo.FamilyRepository
 import org.openscreentime.sharedui.trackingSection
+import org.openscreentime.sharedui.AppSortToggle
 import org.openscreentime.sharedui.BedtimeWindowDialog
 import org.openscreentime.sharedui.MinutesInputDialog
 import org.openscreentime.sharedui.UnlockGoalInputDialog
@@ -77,7 +83,11 @@ fun ChildDetailScreen(
     repository: FamilyRepository,
     childId: String,
     onOpenReport: () -> Unit,
-    onBack: () -> Unit
+    onBack: () -> Unit,
+    /** Only for the parent's own "Me" profile: opens the permissions screen. */
+    onOpenPermissions: (() -> Unit)? = null,
+    /** True while a permission this device needs for tracking is still missing (self profile only). */
+    permissionsMissing: Boolean = false
 ) {
     val parentUid = repository.currentUid ?: return
     val scope = rememberCoroutineScope()
@@ -96,6 +106,7 @@ fun ChildDetailScreen(
     var showDeleteConfirm by remember { mutableStateOf(false) }
     var newBlockedDomain by remember { mutableStateOf("") }
     var kidInstalledApps by remember { mutableStateOf<List<InstalledApp>>(emptyList()) }
+    var appSort by rememberSaveable { mutableStateOf(AppSort.USAGE) }
 
     DisposableEffect(childId) {
         val reg1 = repository.listenChildren(parentUid) { list ->
@@ -116,10 +127,13 @@ fun ChildDetailScreen(
     // Every app on the device, not only ones already used today. On the parent's own "Me" profile this
     // phone is the device; for a paired kid it's the list their phone last published (see
     // SyncWorker), which is empty until that phone has synced once.
-    val displayedApps = remember(currentChild.isSelf, stats.appUsage, kidInstalledApps) {
-        mergeUsageWithInstalled(
-            stats.appUsage,
-            if (currentChild.isSelf) listLaunchableApps(context) else kidInstalledApps
+    val displayedApps = remember(currentChild.isSelf, stats.appUsage, kidInstalledApps, appSort) {
+        sortApps(
+            mergeUsageWithInstalled(
+                stats.appUsage,
+                if (currentChild.isSelf) listLaunchableApps(context) else kidInstalledApps
+            ),
+            appSort
         )
     }
 
@@ -137,6 +151,36 @@ fun ChildDetailScreen(
         }
     ) { padding ->
         LazyColumn(modifier = Modifier.fillMaxSize().padding(padding)) {
+            if (currentChild.isSelf && onOpenPermissions != null) {
+                item {
+                    Card(
+                        colors = if (permissionsMissing) {
+                            CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer)
+                        } else {
+                            CardDefaults.cardColors()
+                        },
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp)
+                    ) {
+                        Column(Modifier.padding(16.dp)) {
+                            Text("Permissions", style = MaterialTheme.typography.titleMedium)
+                            Spacer(Modifier.height(4.dp))
+                            Text(
+                                if (permissionsMissing) {
+                                    "A few permissions are still needed on this phone for tracking to work."
+                                } else {
+                                    "Everything tracking needs is turned on. You can stop tracking here too."
+                                },
+                                style = MaterialTheme.typography.bodySmall
+                            )
+                            Spacer(Modifier.height(8.dp))
+                            OutlinedButton(
+                                onClick = onOpenPermissions,
+                                modifier = Modifier.fillMaxWidth().testTag("self_open_permissions")
+                            ) { Text(if (permissionsMissing) "Fix permissions" else "Permissions") }
+                        }
+                    }
+                }
+            }
             pendingProposalSection(
                 child = currentChild,
                 onApprove = { scope.launch { repository.approveProposal(parentUid, childId, currentChild) } },
@@ -193,6 +237,8 @@ fun ChildDetailScreen(
                 }
             )
             appUsageSection(
+                sort = appSort,
+                onSortChange = { appSort = it },
                 appUsage = displayedApps,
                 appLimits = currentChild.appLimits,
                 alwaysAllowedPackages = currentChild.alwaysAllowedPackages,
@@ -440,7 +486,7 @@ private fun LazyListScope.lockAndLimitsSection(
             val bedtimeEnd = child.bedtimeEndMinutes
             Text(
                 if (bedtimeStart != null && bedtimeEnd != null) {
-                    "Bedtime: ${formatMinutesOfDay(bedtimeStart)} - ${formatMinutesOfDay(bedtimeEnd)}"
+                    "Bedtime: ${describeBedtimeWindow(bedtimeStart, bedtimeEnd)}"
                 } else {
                     "No bedtime set"
                 },
@@ -524,6 +570,8 @@ private fun LazyListScope.websiteBlockingSection(
 }
 
 private fun LazyListScope.appUsageSection(
+    sort: AppSort,
+    onSortChange: (AppSort) -> Unit,
     appUsage: List<AppUsage>,
     appLimits: Map<String, Int>,
     alwaysAllowedPackages: List<String>,
@@ -542,6 +590,7 @@ private fun LazyListScope.appUsageSection(
             style = MaterialTheme.typography.bodySmall,
             modifier = Modifier.padding(horizontal = 16.dp)
         )
+        AppSortToggle(sort = sort, onChange = onSortChange, modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp))
     }
     if (appUsage.isEmpty()) {
         item {
@@ -552,7 +601,7 @@ private fun LazyListScope.appUsageSection(
             )
         }
     }
-    items(appUsage.sortedByDescending { it.foregroundTimeMs }, key = { it.packageName }) { app ->
+    items(appUsage, key = { it.packageName }) { app ->
         AppUsageRow(
             app = app,
             limitMinutes = appLimits[app.packageName],

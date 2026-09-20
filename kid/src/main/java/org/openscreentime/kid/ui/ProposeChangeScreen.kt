@@ -20,6 +20,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
@@ -28,7 +29,10 @@ import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
 import org.openscreentime.kid.data.UsageStore
 import org.openscreentime.shared.model.AppUsage
+import org.openscreentime.shared.model.AppSort
 import org.openscreentime.shared.model.mergeUsageWithInstalled
+import org.openscreentime.shared.model.sortApps
+import org.openscreentime.sharedui.AppSortToggle
 import org.openscreentime.shared.util.listLaunchableApps
 import org.openscreentime.shared.model.ChildProfile
 import org.openscreentime.shared.repo.FamilyRepository
@@ -52,12 +56,16 @@ fun ProposeChangeScreen(
     val usageStore = remember { UsageStore(context) }
 
     // Every app on the phone, not only ones already used today - so a limit can be suggested for any.
-    val appUsage = remember {
-        mergeUsageWithInstalled(
-            usage = usageStore.appUsageMs.map { (pkg, ms) ->
-                AppUsage(packageName = pkg, appName = usageStore.appNames[pkg] ?: pkg, foregroundTimeMs = ms)
-            },
-            installed = listLaunchableApps(context)
+    var appSort by rememberSaveable { mutableStateOf(AppSort.USAGE) }
+    val appUsage = remember(appSort) {
+        sortApps(
+            mergeUsageWithInstalled(
+                usage = usageStore.appUsageMs.map { (pkg, ms) ->
+                    AppUsage(packageName = pkg, appName = usageStore.appNames[pkg] ?: pkg, foregroundTimeMs = ms)
+                },
+                installed = listLaunchableApps(context)
+            ),
+            appSort
         )
     }
 
@@ -108,6 +116,9 @@ fun ProposeChangeScreen(
                     style = MaterialTheme.typography.labelLarge,
                     modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
                 )
+            }
+            item {
+                AppSortToggle(sort = appSort, onChange = { appSort = it }, modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp))
             }
             if (appUsage.isEmpty()) {
                 item {

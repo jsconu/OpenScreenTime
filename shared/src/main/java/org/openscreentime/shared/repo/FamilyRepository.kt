@@ -41,6 +41,9 @@ class FamilyRepository(
     /** Sends a password-reset email to an existing parent account (see [SessionRepository.sendPasswordReset]). */
     suspend fun sendPasswordReset(email: String) = session.sendPasswordReset(email)
 
+    /** For recovering a forgotten family passcode: proves the person knows the account password. */
+    suspend fun verifyAccountPassword(password: String): Boolean = session.verifyAccountPassword(password)
+
     suspend fun signInAnonymously(): String = session.signInAnonymously()
 
     fun signOut() = session.signOut()

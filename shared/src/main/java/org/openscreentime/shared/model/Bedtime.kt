@@ -50,3 +50,33 @@ fun parseHHmm(text: String): Int? {
 
 /** Formats minutes-since-midnight as a 24-hour "HH:MM" string, e.g. 420 -> "07:00". */
 fun formatHHmm(minutes: Int): String = "%02d:%02d".format(minutes / 60, minutes % 60)
+
+/** Length of a bedtime window in minutes, counting across midnight (a start of 21:00 and end of 07:00 is 600). */
+fun bedtimeDurationMinutes(startMinutes: Int, endMinutes: Int): Int =
+    if (endMinutes > startMinutes) endMinutes - startMinutes else endMinutes + 24 * 60 - startMinutes
+
+/**
+ * A plain-language description of a bedtime window that makes the night-to-next-day shape explicit,
+ * e.g. "9:00 PM tonight to 7:00 AM tomorrow morning (10 hours)". Empty for start == end, which is not a
+ * valid window (see [isInBedtimeWindow]).
+ */
+fun describeBedtimeWindow(startMinutes: Int, endMinutes: Int): String {
+    if (startMinutes == endMinutes) return ""
+    val duration = bedtimeDurationMinutes(startMinutes, endMinutes)
+    val hours = duration / 60
+    val minutes = duration % 60
+    val length = when {
+        minutes == 0 -> "$hours hour${if (hours == 1) "" else "s"}"
+        hours == 0 -> "$minutes min"
+        else -> "$hours hour${if (hours == 1) "" else "s"} $minutes min"
+    }
+    val noon = 12 * 60
+    return if (endMinutes < startMinutes) {
+        // Crosses midnight: starts one day, ends the next.
+        val startLabel = if (startMinutes >= noon) "${formatMinutesOfDay(startMinutes)} tonight" else formatMinutesOfDay(startMinutes)
+        val endLabel = if (endMinutes < noon) "${formatMinutesOfDay(endMinutes)} tomorrow morning" else "${formatMinutesOfDay(endMinutes)} tomorrow"
+        "$startLabel to $endLabel ($length)"
+    } else {
+        "${formatMinutesOfDay(startMinutes)} to ${formatMinutesOfDay(endMinutes)} the same day ($length)"
+    }
+}

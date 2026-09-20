@@ -462,6 +462,14 @@ class PairingFlowEmulatorTest {
     }
 
     @Test(timeout = TEST_TIMEOUT_MS)
+    fun verifyAccountPassword_acceptsTheRightOneAndRejectsAWrongOne() = runBlocking {
+        val repo = FamilyRepository()
+        repo.signUpParent(uniqueEmail(), "testpass123")
+        assertTrue(repo.verifyAccountPassword("testpass123"))
+        assertTrue(!repo.verifyAccountPassword("not-the-password"))
+    }
+
+    @Test(timeout = TEST_TIMEOUT_MS)
     fun claimedDeviceCannotListSiblingChildren() = runBlocking {
         val parentRepo = FamilyRepository()
         val parentUid = parentRepo.signUpParent(uniqueEmail(), "testpass123")

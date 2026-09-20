@@ -83,6 +83,8 @@ dependencies {
     // Pins a current Fragment: an older one arrives transitively (via Firebase) and makes release lint
     // fail on the ActivityResult APIs, though these activities are ComponentActivity, not Fragment-based.
     implementation(libs.fragment)
+    // Optional "unlock with fingerprint or screen lock" for this app (never used on the kid app).
+    implementation(libs.biometric)
     implementation(platform(libs.compose.bom))
     implementation(libs.compose.ui)
     implementation(libs.compose.ui.graphics)

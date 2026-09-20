@@ -39,6 +39,7 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -56,12 +57,15 @@ import org.openscreentime.kid.util.isCallRedirectionRoleHeld
 import org.openscreentime.kid.util.isCallScreeningRoleHeld
 import org.openscreentime.kid.util.isDeviceAdminActive
 import org.openscreentime.shared.model.AppUsage
+import org.openscreentime.shared.model.AppSort
 import org.openscreentime.shared.model.mergeUsageWithInstalled
+import org.openscreentime.shared.model.sortApps
+import org.openscreentime.sharedui.AppSortToggle
 import org.openscreentime.shared.util.listLaunchableApps
 import org.openscreentime.shared.model.ChildProfile
 import org.openscreentime.shared.model.addAllowedContact
 import org.openscreentime.shared.model.addBlockedDomain
-import org.openscreentime.shared.model.formatMinutesOfDay
+import org.openscreentime.shared.model.describeBedtimeWindow
 import org.openscreentime.shared.model.removeAllowedContact
 import org.openscreentime.shared.model.removeBlockedDomain
 import org.openscreentime.shared.repo.FamilyRepository
@@ -89,12 +93,16 @@ fun ParentControlsScreen(
     val usageStore = remember { UsageStore(context) }
 
     // Every app on the phone, not only ones already used today - so a limit can be suggested for any.
-    val appUsage = remember {
-        mergeUsageWithInstalled(
-            usage = usageStore.appUsageMs.map { (pkg, ms) ->
-                AppUsage(packageName = pkg, appName = usageStore.appNames[pkg] ?: pkg, foregroundTimeMs = ms)
-            },
-            installed = listLaunchableApps(context)
+    var appSort by rememberSaveable { mutableStateOf(AppSort.USAGE) }
+    val appUsage = remember(appSort) {
+        sortApps(
+            mergeUsageWithInstalled(
+                usage = usageStore.appUsageMs.map { (pkg, ms) ->
+                    AppUsage(packageName = pkg, appName = usageStore.appNames[pkg] ?: pkg, foregroundTimeMs = ms)
+                },
+                installed = listLaunchableApps(context)
+            ),
+            appSort
         )
     }
 
@@ -200,7 +208,7 @@ fun ParentControlsScreen(
                     val bedtimeEnd = child.bedtimeEndMinutes
                     Text(
                         if (bedtimeStart != null && bedtimeEnd != null) {
-                            "Bedtime: ${formatMinutesOfDay(bedtimeStart)} - ${formatMinutesOfDay(bedtimeEnd)}"
+                            "Bedtime: ${describeBedtimeWindow(bedtimeStart, bedtimeEnd)}"
                         } else {
                             "No bedtime set"
                         },
@@ -421,6 +429,7 @@ fun ParentControlsScreen(
                     style = MaterialTheme.typography.bodySmall,
                     modifier = Modifier.padding(horizontal = 16.dp)
                 )
+                AppSortToggle(sort = appSort, onChange = { appSort = it }, modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp))
             }
             if (appUsage.isEmpty()) {
                 item {
