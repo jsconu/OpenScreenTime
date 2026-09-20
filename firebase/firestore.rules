@@ -1,8 +1,10 @@
 rules_version = '2';
 
 // Data model:
-//   parents/{parentUid}                                  - one doc per parent account,
-//                                                           including linkedDeviceUids (#18)
+//   parents/{parentUid}                                  - one doc per parent account
+//   parents/{parentUid}/linkedDevices/{deviceUid}         - a kid device that claimed a pairing code for
+//                                                           this parent (#18, #39); created only in the
+//                                                           same transaction as that claim
 //   parents/{parentUid}/children/{childId}                - a child profile + limits;
 //                                                           the parent's own self-tracked
 //                                                           profile (#8) always lives at
@@ -32,6 +34,18 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
+
+    // True for a device that paired with this parent (see linkedDevices below). The old
+    // linkedDeviceUids array on the parent doc is still honored for devices paired before
+    // that changed, but nothing except the parent themself can write it any more - it used to
+    // be writable by ANY signed-in user (they could add themselves to another family's list
+    // and read that parent's self-tracked stats), which is what #39 fixed.
+    function isLinkedDevice(parentUid) {
+      return request.auth != null
+        && (exists(/databases/$(database)/documents/parents/$(parentUid)/linkedDevices/$(request.auth.uid))
+            || request.auth.uid in
+               get(/databases/$(database)/documents/parents/$(parentUid)).data.get('linkedDeviceUids', []));
+    }
 
     // In-app feedback (#22): write-only. Nobody, not even the submitter, can read it back
     // through the app - it's reviewed via the Firebase console, which has admin access
@@ -82,25 +96,24 @@ service cloud.firestore {
     match /parents/{parentUid} {
       allow read, write: if request.auth != null && request.auth.uid == parentUid;
 
-      // A newly-claiming kid device appends its own uid to linkedDeviceUids, so it can
-      // later read the parent's self-tracked stats if they opt into self-tracking (#18 -
-      // visible by default, not a separate opt-in). Scoped to only that one field; can't
-      // remove existing entries (hasAll the old array); must be adding itself, not an
-      // arbitrary uid. This intentionally doesn't grant read access to this document at
-      // all - the passcode hash/salt live here too, and get() calls used elsewhere in
-      // these rules to check linkedDeviceUids bypass permissions without exposing this
-      // document's contents to the client, so that boundary holds either way.
-      allow update: if request.auth != null
-        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['linkedDeviceUids'])
-        && request.resource.data.linkedDeviceUids.hasAll(resource.data.get('linkedDeviceUids', []))
-        && request.resource.data.linkedDeviceUids.size() <= 10
-        && request.auth.uid in request.resource.data.linkedDeviceUids;
-      // Same as above, for the case where this is the family's first-ever claimed
-      // device and the parent doc doesn't exist yet (e.g. no passcode set).
-      allow create: if request.auth != null
-        && request.resource.data.keys().hasOnly(['linkedDeviceUids'])
-        && request.resource.data.linkedDeviceUids.size() <= 10
-        && request.auth.uid in request.resource.data.linkedDeviceUids;
+      // Which kid devices are linked to this parent (so they can read the parent's self-tracked stats if
+      // the parent opts in - #18, visible by default, not a separate opt-in). One doc per device, keyed by
+      // its uid. A device can only create ITS OWN doc, and only in the same transaction that claims a
+      // live pairing code belonging to THIS parent (getAfter sees the post-transaction code doc), so
+      // nobody can link themselves to a family they haven't paired with. Only the parent can read or
+      // remove them. (The parent doc itself is readable only by the parent - the passcode hash/salt live
+      // there - and get()/exists() calls in these rules bypass permissions without exposing contents.)
+      match /linkedDevices/{deviceUid} {
+        allow read, write: if request.auth != null && request.auth.uid == parentUid;
+        allow create: if request.auth != null
+          && request.auth.uid == deviceUid
+          && request.resource.data.keys().hasOnly(['code', 'createdAt'])
+          && request.resource.data.code is string
+          && request.resource.data.createdAt == request.time
+          && getAfter(/databases/$(database)/documents/pairingCodes/$(request.resource.data.code)).data.claimedByUid == request.auth.uid
+          && getAfter(/databases/$(database)/documents/pairingCodes/$(request.resource.data.code)).data.parentUid == parentUid
+          && getAfter(/databases/$(database)/documents/pairingCodes/$(request.resource.data.code)).data.used == true;
+      }
 
       match /children/{childId} {
         allow read, write: if request.auth != null && request.auth.uid == parentUid;
@@ -114,8 +127,7 @@ service cloud.firestore {
         // device can read this by direct path; it has no permission to list/query this
         // collection (see the claimedDeviceCannotListSiblingChildren test).
         allow get: if request.auth != null && resource.data.isSelf == true
-          && request.auth.uid in
-             get(/databases/$(database)/documents/parents/$(parentUid)).data.get('linkedDeviceUids', []);
+          && isLinkedDevice(parentUid);
 
         // One-time claim: only allowed while deviceUid is still unset, only deviceUid/paired
         // may change, and only as part of the same transaction that claims this child's own
@@ -197,8 +209,7 @@ service cloud.firestore {
           // Mirrors the isSelf get() rule above, for the daily numbers behind it (#18).
           allow read: if request.auth != null &&
             get(/databases/$(database)/documents/parents/$(parentUid)/children/$(childId)).data.isSelf == true &&
-            request.auth.uid in
-              get(/databases/$(database)/documents/parents/$(parentUid)).data.get('linkedDeviceUids', []);
+            isLinkedDevice(parentUid);
         }
       }
     }

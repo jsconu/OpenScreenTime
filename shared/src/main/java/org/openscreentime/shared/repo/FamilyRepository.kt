@@ -88,8 +88,8 @@ class FamilyRepository(
     suspend fun updateDailyLimit(parentUid: String, childId: String, minutes: Int) =
         limits.updateDailyLimit(parentUid, childId, minutes)
 
-    suspend fun updateAppLimits(parentUid: String, childId: String, appLimits: Map<String, Int>) =
-        limits.updateAppLimits(parentUid, childId, appLimits)
+    suspend fun setAppLimit(parentUid: String, childId: String, packageName: String, minutes: Int) =
+        limits.setAppLimit(parentUid, childId, packageName, minutes)
 
     suspend fun updateDailyUnlockGoal(parentUid: String, childId: String, goal: Int?) =
         limits.updateDailyUnlockGoal(parentUid, childId, goal)
@@ -99,20 +99,26 @@ class FamilyRepository(
         limits.updateBedtimeWindow(parentUid, childId, startMinutes, endMinutes)
 
     /** Replaces the whole blocked-domains list (see #19, [ChildProfile.blockedDomains]). */
-    suspend fun updateBlockedDomains(parentUid: String, childId: String, domains: List<String>) =
-        limits.updateBlockedDomains(parentUid, childId, domains)
+    suspend fun addBlockedDomain(parentUid: String, childId: String, domain: String) =
+        limits.addBlockedDomain(parentUid, childId, domain)
+
+    suspend fun removeBlockedDomain(parentUid: String, childId: String, domain: String) =
+        limits.removeBlockedDomain(parentUid, childId, domain)
 
     /** Replaces the whole always-allowed list (see #28, [ChildProfile.alwaysAllowedPackages]). */
-    suspend fun updateAlwaysAllowedPackages(parentUid: String, childId: String, packages: List<String>) =
-        limits.updateAlwaysAllowedPackages(parentUid, childId, packages)
+    suspend fun setAlwaysAllowedPackage(parentUid: String, childId: String, packageName: String, allowed: Boolean) =
+        limits.setAlwaysAllowedPackage(parentUid, childId, packageName, allowed)
 
     /** Turns one tracking/display toggle on or off (see #35, [ChildProfile.trackUnlocks] and friends). */
     suspend fun setTrackingToggle(parentUid: String, childId: String, toggle: TrackingToggle, enabled: Boolean) =
         limits.setTrackingToggle(parentUid, childId, toggle, enabled)
 
     /** Replaces the whole always-allowed contacts list (see #34, [ChildProfile.alwaysAllowedContacts]). */
-    suspend fun updateAlwaysAllowedContacts(parentUid: String, childId: String, contacts: List<String>) =
-        limits.updateAlwaysAllowedContacts(parentUid, childId, contacts)
+    suspend fun addAllowedContact(parentUid: String, childId: String, number: String) =
+        limits.addAllowedContact(parentUid, childId, number)
+
+    suspend fun removeAllowedContact(parentUid: String, childId: String, number: String) =
+        limits.removeAllowedContact(parentUid, childId, number)
 
     /**
      * Kid-initiated, passcode-free suggestion (see #14) - writes only the two proposal

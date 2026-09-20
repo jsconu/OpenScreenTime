@@ -9,6 +9,7 @@ import android.service.notification.StatusBarNotification
 import org.openscreentime.kid.data.NotificationDigestStore
 import org.openscreentime.kid.data.UsageStore
 import org.openscreentime.shared.model.DigestNotification
+import org.openscreentime.shared.model.NotificationDeduper
 import org.openscreentime.shared.model.isCallAllowedDuringBedtime
 import org.openscreentime.shared.model.isInBedtimeWindow
 import org.openscreentime.shared.model.nowMinutesOfDay
@@ -32,6 +33,8 @@ import org.openscreentime.shared.model.shouldIncludeInDigest
  * a parent.
  */
 class NotificationDigestListenerService : NotificationListenerService() {
+
+    private val countDeduper = NotificationDeduper()
 
     override fun onNotificationPosted(sbn: StatusBarNotification) {
         maybeMuteBedtimeMessage(sbn)
@@ -90,6 +93,8 @@ class NotificationDigestListenerService : NotificationListenerService() {
         val text = notification.extras.getCharSequence(Notification.EXTRA_TEXT)?.toString().orEmpty()
         val isGroupSummary = notification.flags and Notification.FLAG_GROUP_SUMMARY != 0
         if (!shouldIncludeInDigest(sbn.packageName, packageName, sbn.isOngoing, isGroupSummary, title, text)) return
+        // An identical re-post of the same notification is not a new notification (see #39).
+        if (!countDeduper.shouldCount(sbn.key, title, text)) return
         val usageStore = UsageStore(this)
         usageStore.cacheAppName(sbn.packageName, appLabelFor(sbn.packageName))
         usageStore.recordNotification(sbn.packageName)

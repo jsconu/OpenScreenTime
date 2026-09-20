@@ -6,6 +6,7 @@ import android.service.notification.StatusBarNotification
 import org.openscreentime.parent.data.NotificationDigestStore
 import org.openscreentime.parent.data.UsageStore
 import org.openscreentime.shared.model.DigestNotification
+import org.openscreentime.shared.model.NotificationDeduper
 import org.openscreentime.shared.model.shouldIncludeInDigest
 
 /**
@@ -18,6 +19,8 @@ import org.openscreentime.shared.model.shouldIncludeInDigest
  */
 class NotificationCountListenerService : NotificationListenerService() {
 
+    private val countDeduper = NotificationDeduper()
+
     override fun onNotificationPosted(sbn: StatusBarNotification) {
         val digestStore = NotificationDigestStore(this)
         val counting = AppLimitAccessibilityService.trackNotifications
@@ -28,7 +31,8 @@ class NotificationCountListenerService : NotificationListenerService() {
         val isGroupSummary = notification.flags and Notification.FLAG_GROUP_SUMMARY != 0
         if (!shouldIncludeInDigest(sbn.packageName, packageName, sbn.isOngoing, isGroupSummary, title, text)) return
         val label = appLabelFor(sbn.packageName)
-        if (counting) {
+        // An identical re-post of the same notification is not a new notification (see #39).
+        if (counting && countDeduper.shouldCount(sbn.key, title, text)) {
             val usageStore = UsageStore(this)
             usageStore.cacheAppName(sbn.packageName, label)
             usageStore.recordNotification(sbn.packageName)

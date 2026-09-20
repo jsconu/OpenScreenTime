@@ -224,16 +224,12 @@ fun ChildDetailScreen(
                 onAddDomain = {
                     val updated = addBlockedDomain(currentChild.blockedDomains, newBlockedDomain)
                     if (updated != currentChild.blockedDomains) {
-                        scope.launch { repository.updateBlockedDomains(parentUid, childId, updated) }
+                        scope.launch { repository.addBlockedDomain(parentUid, childId, updated.last()) }
                     }
                     newBlockedDomain = ""
                 },
                 onRemoveDomain = { domain ->
-                    scope.launch {
-                        repository.updateBlockedDomains(
-                            parentUid, childId, removeBlockedDomain(currentChild.blockedDomains, domain)
-                        )
-                    }
+                    scope.launch { repository.removeBlockedDomain(parentUid, childId, domain) }
                 }
             )
             appUsageSection(
@@ -244,12 +240,7 @@ fun ChildDetailScreen(
                 alwaysAllowedPackages = currentChild.alwaysAllowedPackages,
                 onEditApp = { editingApp = it },
                 onToggleAlwaysAllowed = { pkg, allowed ->
-                    val updated = if (allowed) {
-                        currentChild.alwaysAllowedPackages + pkg
-                    } else {
-                        currentChild.alwaysAllowedPackages - pkg
-                    }
-                    scope.launch { repository.updateAlwaysAllowedPackages(parentUid, childId, updated) }
+                    scope.launch { repository.setAlwaysAllowedPackage(parentUid, childId, pkg, allowed) }
                 }
             )
             removeChildSection(childName = currentChild.name, onRequestDelete = { showDeleteConfirm = true })
@@ -358,10 +349,7 @@ fun ChildDetailScreen(
             initialMinutes = currentChild.appLimits[pkg] ?: 60,
             onDismiss = { editingApp = null },
             onConfirm = { minutes ->
-                scope.launch {
-                    val updated = currentChild.appLimits.toMutableMap().apply { put(pkg, minutes) }
-                    repository.updateAppLimits(parentUid, childId, updated)
-                }
+                scope.launch { repository.setAppLimit(parentUid, childId, pkg, minutes) }
                 editingApp = null
             }
         )

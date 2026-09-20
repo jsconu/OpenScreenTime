@@ -182,9 +182,7 @@ struct ChildDetailView: View {
     }
 
     private func saveAppLimit(packageName: String, minutes: Int) {
-        guard var updated = child?.appLimits else { return }
-        updated[packageName] = minutes
-        Task { try? await repository.updateAppLimits(parentUid: parentUid, childId: childId, appLimits: updated) }
+        Task { try? await repository.setAppLimit(parentUid: parentUid, childId: childId, packageName: packageName, minutes: minutes) }
     }
 
     private func startListening() {
@@ -387,15 +385,13 @@ private struct WebsiteBlockingSection: View {
             .trimmingCharacters(in: CharacterSet(charactersIn: "."))
             .lowercased()
         if !domain.isEmpty && !child.blockedDomains.contains(domain) {
-            let updated = child.blockedDomains + [domain]
-            Task { try? await repository.updateBlockedDomains(parentUid: parentUid, childId: childId, domains: updated) }
+            Task { try? await repository.addBlockedDomain(parentUid: parentUid, childId: childId, domain: domain) }
         }
         newDomain = ""
     }
 
     private func removeDomain(_ domain: String) {
-        let updated = child.blockedDomains.filter { $0 != domain }
-        Task { try? await repository.updateBlockedDomains(parentUid: parentUid, childId: childId, domains: updated) }
+        Task { try? await repository.removeBlockedDomain(parentUid: parentUid, childId: childId, domain: domain) }
     }
 }
 
@@ -499,14 +495,8 @@ private struct AppUsageSection: View {
     }
 
     private func toggleAlwaysAllowed(_ packageName: String, _ allowed: Bool) {
-        var updated = child.alwaysAllowedPackages
-        if allowed {
-            if !updated.contains(packageName) { updated.append(packageName) }
-        } else {
-            updated.removeAll { $0 == packageName }
-        }
         Task {
-            try? await repository.updateAlwaysAllowedPackages(parentUid: parentUid, childId: childId, packages: updated)
+            try? await repository.setAlwaysAllowedPackage(parentUid: parentUid, childId: childId, packageName: packageName, allowed: allowed)
         }
     }
 }

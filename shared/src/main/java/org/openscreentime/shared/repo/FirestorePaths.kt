@@ -24,6 +24,8 @@ object FirestorePaths {
     fun dailyStatsCollection(parentUid: String, childId: String) = "${childDoc(parentUid, childId)}/$DAILY_STATS"
     fun dailyStatsDoc(parentUid: String, childId: String, date: String) =
         "${dailyStatsCollection(parentUid, childId)}/$date"
+    /** A kid device linked to this parent by pairing - see #39. */
+    fun linkedDeviceDoc(parentUid: String, deviceUid: String) = "$PARENTS/$parentUid/linkedDevices/$deviceUid"
     fun deviceInfoCollection(parentUid: String, childId: String) = "${childDoc(parentUid, childId)}/$DEVICE_INFO"
     fun installedAppsDoc(parentUid: String, childId: String) =
         "${deviceInfoCollection(parentUid, childId)}/$INSTALLED_APPS_DOC"

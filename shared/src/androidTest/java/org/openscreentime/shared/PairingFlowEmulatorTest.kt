@@ -298,7 +298,7 @@ class PairingFlowEmulatorTest {
         parentRepo.pushDailyStats(parentUid, self.id, DailyStats(date = "2024-01-01", totalScreenTimeMs = 1000))
         parentRepo.signOut()
 
-        // claimPairingCode appends this device's uid to linkedDeviceUids (see #18).
+        // claimPairingCode creates this device's linkedDevices doc (see #18, #39).
         val kidRepo = FamilyRepository()
         kidRepo.claimPairingCode(child.pairingCode)
 
@@ -467,6 +467,58 @@ class PairingFlowEmulatorTest {
         repo.signUpParent(uniqueEmail(), "testpass123")
         assertTrue(repo.verifyAccountPassword("testpass123"))
         assertTrue(!repo.verifyAccountPassword("not-the-password"))
+    }
+
+    @Test(timeout = TEST_TIMEOUT_MS)
+    fun aStrangerCannotLinkItselfToAnotherFamily() = runBlocking {
+        val parentRepo = FamilyRepository()
+        val parentUid = parentRepo.signUpParent(uniqueEmail(), "testpass123")
+        parentRepo.signOut()
+
+        val stranger = FamilyRepository()
+        val strangerUid = stranger.signInAnonymously()
+        val db = FirebaseFirestore.getInstance()
+
+        // The old way in: adding yourself to the parent's linkedDeviceUids array.
+        var oldPathThrew = false
+        try {
+            db.document("${FirestorePaths.PARENTS}/$parentUid")
+                .set(mapOf("linkedDeviceUids" to listOf(strangerUid)), com.google.firebase.firestore.SetOptions.merge())
+                .await()
+        } catch (e: Exception) {
+            oldPathThrew = true
+        }
+        assertTrue("A stranger must not be able to add itself to linkedDeviceUids any more", oldPathThrew)
+
+        // The new way: a linkedDevices doc with no claimed code behind it.
+        var newPathThrew = false
+        try {
+            db.document(FirestorePaths.linkedDeviceDoc(parentUid, strangerUid))
+                .set(mapOf("code" to "000000", "createdAt" to com.google.firebase.firestore.FieldValue.serverTimestamp()))
+                .await()
+        } catch (e: Exception) {
+            newPathThrew = true
+        }
+        assertTrue("A linkedDevices doc needs a claimed pairing code for that parent", newPathThrew)
+    }
+
+    @Test(timeout = TEST_TIMEOUT_MS)
+    fun aPairedDeviceIsRecordedAsLinked_andTheParentCanSeeIt() = runBlocking {
+        val parentRepo = FamilyRepository()
+        val parentEmail = uniqueEmail()
+        val parentUid = parentRepo.signUpParent(parentEmail, "testpass123")
+        val child = parentRepo.createChild(parentUid, "LinkedChild")
+        parentRepo.signOut()
+
+        val kidRepo = FamilyRepository()
+        kidRepo.claimPairingCode(child.pairingCode)
+        val kidUid = kidRepo.currentUid!!
+        kidRepo.signOut()
+
+        parentRepo.signInParent(parentEmail, "testpass123")
+        val snap = FirebaseFirestore.getInstance()
+            .document(FirestorePaths.linkedDeviceDoc(parentUid, kidUid)).get().await()
+        assertTrue("Pairing should leave a linkedDevices doc for the kid device", snap.exists())
     }
 
     @Test(timeout = TEST_TIMEOUT_MS)

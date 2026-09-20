@@ -4,7 +4,6 @@ import com.google.firebase.Timestamp
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.FirebaseFirestoreException
-import com.google.firebase.firestore.SetOptions
 import kotlinx.coroutines.tasks.await
 import org.openscreentime.shared.model.ChildProfile
 
@@ -34,12 +33,12 @@ internal class PairingRepository(
             val childRef = db.document(FirestorePaths.childDoc(parentUid, childId))
             txn.update(childRef, mapOf("deviceUid" to uid, "paired" to true))
             txn.update(codeRef, mapOf("used" to true, "claimedByUid" to uid))
-            // Lets this device later read the parent's self-tracked stats, if the parent
-            // has opted into self-tracking (see #18 - visible by default, not a separate
-            // opt-in). set(merge) rather than update(), since the parent doc may not
-            // exist yet (e.g. a parent who hasn't set a passcode has no doc at all).
-            val parentRef = db.document("${FirestorePaths.PARENTS}/$parentUid")
-            txn.set(parentRef, mapOf("linkedDeviceUids" to FieldValue.arrayUnion(uid)), SetOptions.merge())
+            // Lets this device later read the parent's self-tracked stats, if the parent has opted into
+            // self-tracking (see #18). Its own doc under the parent, created in this same transaction so
+            // the security rules can check it against the code being claimed (see #39) - it used to be an
+            // array on the parent doc that any signed-in user could add themselves to.
+            val linkedRef = db.document(FirestorePaths.linkedDeviceDoc(parentUid, uid))
+            txn.set(linkedRef, mapOf("code" to code, "createdAt" to FieldValue.serverTimestamp()))
             parentUid to childId
             }.await()
         } catch (e: FirebaseFirestoreException) {

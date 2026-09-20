@@ -179,8 +179,12 @@ public final class FamilyRepository {
         try await db.document(FirestorePaths.childDoc(parentUid, childId)).updateData(["dailyLimitMinutes": minutes])
     }
 
-    func updateAppLimits(parentUid: String, childId: String, appLimits: [String: Int]) async throws {
-        try await db.document(FirestorePaths.childDoc(parentUid, childId)).updateData(["appLimits": appLimits])
+    /// Sets ONE app's limit without rewriting the others, so two people editing different apps at the same
+    /// moment don't undo each other (see #39). Merged as a nested map key (not a dotted field path), since a
+    /// package name contains dots.
+    func setAppLimit(parentUid: String, childId: String, packageName: String, minutes: Int) async throws {
+        try await db.document(FirestorePaths.childDoc(parentUid, childId))
+            .setData(["appLimits": [packageName: minutes]], merge: true)
     }
 
     /// See #10 - informational only, never enforced/blocked.
@@ -222,11 +226,17 @@ public final class FamilyRepository {
         ])
     }
 
-    /// Replaces the whole blocked-domains list (see #19, `ChildProfile.blockedDomains`).
-    /// Enforcement only runs on the Android kid app today - this lets a parent on iOS
-    /// manage the same list.
-    func updateBlockedDomains(parentUid: String, childId: String, domains: [String]) async throws {
-        try await db.document(FirestorePaths.childDoc(parentUid, childId)).updateData(["blockedDomains": domains])
+    /// Adds or removes ONE blocked domain atomically (see #19, `ChildProfile.blockedDomains`, and #39 - a
+    /// whole-list write from a stale screen could silently undo someone else's edit). Enforcement only runs on
+    /// the Android kid app today - this lets a parent on iOS manage the same list.
+    func addBlockedDomain(parentUid: String, childId: String, domain: String) async throws {
+        try await db.document(FirestorePaths.childDoc(parentUid, childId))
+            .updateData(["blockedDomains": FieldValue.arrayUnion([domain])])
+    }
+
+    func removeBlockedDomain(parentUid: String, childId: String, domain: String) async throws {
+        try await db.document(FirestorePaths.childDoc(parentUid, childId))
+            .updateData(["blockedDomains": FieldValue.arrayRemove([domain])])
     }
 
     /// Turns one parent-controlled tracking/display toggle on or off (see #35).
@@ -234,10 +244,11 @@ public final class FamilyRepository {
         try await db.document(FirestorePaths.childDoc(parentUid, childId)).updateData([toggle.rawValue: enabled])
     }
 
-    /// Replaces the whole always-allowed list (see #28, `ChildProfile.alwaysAllowedPackages`).
-    func updateAlwaysAllowedPackages(parentUid: String, childId: String, packages: [String]) async throws {
-        try await db.document(FirestorePaths.childDoc(parentUid, childId))
-            .updateData(["alwaysAllowedPackages": packages])
+    /// Adds or removes ONE always-allowed package atomically (see #28, `ChildProfile.alwaysAllowedPackages`, #39).
+    func setAlwaysAllowedPackage(parentUid: String, childId: String, packageName: String, allowed: Bool) async throws {
+        try await db.document(FirestorePaths.childDoc(parentUid, childId)).updateData([
+            "alwaysAllowedPackages": allowed ? FieldValue.arrayUnion([packageName]) : FieldValue.arrayRemove([packageName])
+        ])
     }
 
     /// Grants `minutes` of temporary unlock starting now, and clears the pending request. See #23.

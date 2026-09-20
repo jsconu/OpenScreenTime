@@ -139,7 +139,7 @@ fun ParentControlsScreen(
         val number = readPickedPhoneNumber(context, uri) ?: return@rememberLauncherForActivityResult
         val updated = addAllowedContact(child.alwaysAllowedContacts, number)
         if (updated != child.alwaysAllowedContacts) {
-            scope.launch { repository.updateAlwaysAllowedContacts(parentUid, childId, updated) }
+            scope.launch { repository.addAllowedContact(parentUid, childId, updated.last()) }
         }
     }
     var showUnpairConfirm by remember { mutableStateOf(false) }
@@ -314,7 +314,7 @@ fun ParentControlsScreen(
                             onClick = {
                                 val updated = addAllowedContact(child.alwaysAllowedContacts, newAllowedContact)
                                 if (updated != child.alwaysAllowedContacts) {
-                                    scope.launch { repository.updateAlwaysAllowedContacts(parentUid, childId, updated) }
+                                    scope.launch { repository.addAllowedContact(parentUid, childId, updated.last()) }
                                 }
                                 newAllowedContact = ""
                             }
@@ -350,9 +350,7 @@ fun ParentControlsScreen(
                     trailingContent = {
                         TextButton(onClick = {
                             scope.launch {
-                                repository.updateAlwaysAllowedContacts(
-                                    parentUid, childId, removeAllowedContact(child.alwaysAllowedContacts, number)
-                                )
+                                repository.removeAllowedContact(parentUid, childId, number)
                             }
                         }) { Text("Remove") }
                     }
@@ -381,7 +379,7 @@ fun ParentControlsScreen(
                             onClick = {
                                 val updated = addBlockedDomain(child.blockedDomains, newBlockedDomain)
                                 if (updated != child.blockedDomains) {
-                                    scope.launch { repository.updateBlockedDomains(parentUid, childId, updated) }
+                                    scope.launch { repository.addBlockedDomain(parentUid, childId, updated.last()) }
                                 }
                                 newBlockedDomain = ""
                             }
@@ -404,9 +402,7 @@ fun ParentControlsScreen(
                     trailingContent = {
                         TextButton(onClick = {
                             scope.launch {
-                                repository.updateBlockedDomains(
-                                    parentUid, childId, removeBlockedDomain(child.blockedDomains, domain)
-                                )
+                                repository.removeBlockedDomain(parentUid, childId, domain)
                             }
                         }) { Text("Remove") }
                     }
@@ -453,13 +449,8 @@ fun ParentControlsScreen(
                             Checkbox(
                                 checked = app.packageName in child.alwaysAllowedPackages,
                                 onCheckedChange = { allowed ->
-                                    val updated = if (allowed) {
-                                        child.alwaysAllowedPackages + app.packageName
-                                    } else {
-                                        child.alwaysAllowedPackages - app.packageName
-                                    }
                                     scope.launch {
-                                        repository.updateAlwaysAllowedPackages(parentUid, childId, updated)
+                                        repository.setAlwaysAllowedPackage(parentUid, childId, app.packageName, allowed)
                                     }
                                 }
                             )
@@ -544,10 +535,7 @@ fun ParentControlsScreen(
             initialMinutes = child.appLimits[pkg] ?: 60,
             onDismiss = { editingApp = null },
             onConfirm = { minutes ->
-                scope.launch {
-                    val updated = child.appLimits.toMutableMap().apply { put(pkg, minutes) }
-                    repository.updateAppLimits(parentUid, childId, updated)
-                }
+                scope.launch { repository.setAppLimit(parentUid, childId, pkg, minutes) }
                 editingApp = null
             }
         )
