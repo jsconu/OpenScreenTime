@@ -6,7 +6,9 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
+import android.os.Handler
 import android.os.IBinder
+import android.os.Looper
 import org.openscreentime.kid.KidApp
 import org.openscreentime.kid.R
 import org.openscreentime.kid.data.UsageStore
@@ -46,28 +48,34 @@ class ScreenMonitorService : Service() {
                 addAction(Intent.ACTION_SCREEN_OFF)
             }
         )
-        startForeground(NOTIFICATION_ID, buildNotification())
+        // The very first notification is already the right icon, and the service keeps it fresh itself,
+        // so the status-bar icon doesn't wait on the accessibility service.
+        startForeground(NOTIFICATION_ID, StatusNotification.build(this, usageStore))
+        handler.postDelayed(refreshStatus, STATUS_REFRESH_MS)
+    }
+
+    private val handler = Handler(Looper.getMainLooper())
+
+    private val refreshStatus = object : Runnable {
+        override fun run() {
+            StatusNotification.post(this@ScreenMonitorService, usageStore)
+            handler.postDelayed(this, STATUS_REFRESH_MS)
+        }
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int = START_STICKY
 
     override fun onDestroy() {
         super.onDestroy()
+        handler.removeCallbacks(refreshStatus)
         runCatching { unregisterReceiver(receiver) }
     }
 
     override fun onBind(intent: Intent?): IBinder? = null
 
-    private fun buildNotification(): Notification = buildOngoingNotification(
-        context = this,
-        channelId = KidApp.MONITOR_CHANNEL_ID,
-        iconRes = R.drawable.ic_monitor,
-        title = getString(R.string.monitor_notification_title),
-        text = getString(R.string.monitor_notification_text)
-    )
-
     companion object {
         /** Also used by AppLimitAccessibilityService to update this same notification's icon. */
         const val NOTIFICATION_ID = 1001
+        private const val STATUS_REFRESH_MS = 30_000L
     }
 }

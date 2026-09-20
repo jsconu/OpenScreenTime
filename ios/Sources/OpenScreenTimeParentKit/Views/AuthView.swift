@@ -18,6 +18,21 @@ struct AuthView: View {
             Text("OpenScreenTime")
                 .font(.title2).bold()
 
+            // A segmented switch instead of a small text link: a returning parent sees "Sign in" right away.
+            Picker("", selection: $isSignUp) {
+                Text("Create account").tag(true)
+                Text("Sign in").tag(false)
+            }
+            .pickerStyle(.segmented)
+            .onChange(of: isSignUp) { _ in
+                errorMessage = nil
+                infoMessage = nil
+            }
+
+            Text(isSignUp ? "New here? Make an account to get started." : "Already have an account? Sign in with it.")
+                .font(.footnote)
+                .foregroundStyle(.secondary)
+
             TextField("Email", text: $email)
                 .textContentType(.emailAddress)
                 .keyboardType(.emailAddress)
@@ -53,12 +68,6 @@ struct AuthView: View {
                 .disabled(isSubmitting)
             }
 
-            Button(isSignUp ? "Already have an account? Sign in" : "Need an account? Create one") {
-                isSignUp.toggle()
-                errorMessage = nil
-                infoMessage = nil
-            }
-            .font(.footnote)
         }
         .padding(32)
     }

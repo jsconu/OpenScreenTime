@@ -9,6 +9,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Tab
+import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -41,7 +43,28 @@ fun AuthScreen(repository: FamilyRepository, onSignedIn: () -> Unit) {
         verticalArrangement = Arrangement.Center
     ) {
         Text("OpenScreenTime", style = MaterialTheme.typography.headlineMedium)
-        Spacer(Modifier.height(24.dp))
+        Spacer(Modifier.height(16.dp))
+        // Two clear tabs instead of a small text link: a returning parent sees "Sign in" right away.
+        TabRow(selectedTabIndex = if (isSignUp) 0 else 1) {
+            Tab(
+                selected = isSignUp,
+                onClick = { isSignUp = true; error = null; info = null },
+                text = { Text("Create account") },
+                modifier = Modifier.testTag("auth_tab_signup")
+            )
+            Tab(
+                selected = !isSignUp,
+                onClick = { isSignUp = false; error = null; info = null },
+                text = { Text("Sign in") },
+                modifier = Modifier.testTag("auth_tab_signin")
+            )
+        }
+        Spacer(Modifier.height(8.dp))
+        Text(
+            if (isSignUp) "New here? Make an account to get started." else "Already have an account? Sign in with it.",
+            style = MaterialTheme.typography.bodyMedium
+        )
+        Spacer(Modifier.height(16.dp))
         OutlinedTextField(
             value = email,
             onValueChange = { email = it },
@@ -114,10 +137,6 @@ fun AuthScreen(repository: FamilyRepository, onSignedIn: () -> Unit) {
                     }
                 }
             ) { Text("Forgot password?") }
-        }
-        Spacer(Modifier.height(8.dp))
-        TextButton(onClick = { isSignUp = !isSignUp; error = null; info = null }) {
-            Text(if (isSignUp) "Already have an account? Sign in" else "New here? Create an account")
         }
     }
 }

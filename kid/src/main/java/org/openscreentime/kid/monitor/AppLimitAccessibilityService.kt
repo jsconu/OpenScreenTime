@@ -244,34 +244,7 @@ class AppLimitAccessibilityService : AccessibilityService() {
      * just reflects current state whenever it's glanced at.
      */
     private fun updateStatusNotification() {
-        val status = currentStatus(usageStore)
-        val tier = status.tier
-        val iconRes = when (tier) {
-            StatusTier.STOP -> R.drawable.ic_status_stop
-            StatusTier.CAUTION -> R.drawable.ic_status_caution
-            StatusTier.GOOD -> R.drawable.ic_status_good
-        }
-
-        val openIntent = PendingIntent.getActivity(
-            this, 0, Intent(this, MainActivity::class.java),
-            PendingIntent.FLAG_IMMUTABLE
-        )
-        val notification = NotificationCompat.Builder(this, KidApp.MONITOR_CHANNEL_ID)
-            .setSmallIcon(iconRes)
-            // Android forces every status-bar icon to a flat white silhouette (alpha
-            // channel only, RGB ignored) - true for every app since Lollipop, not
-            // something a notification can opt out of. setColor() only reaches the
-            // pulled-down notification shade, tinting the icon's background circle
-            // there to match the tier, since that's the one place color can show at all.
-            .setColor(statusTierColor(tier))
-            .setContentTitle(STATUS_NOTIFICATION_TITLE)
-            .setContentText(statusNotificationMessage(tier, status.pausedByLockOrBedtime))
-            .setContentIntent(openIntent)
-            .setOngoing(true)
-            .setOnlyAlertOnce(true)
-            .setPriority(NotificationCompat.PRIORITY_MIN)
-            .build()
-        getSystemService(NotificationManager::class.java).notify(ScreenMonitorService.NOTIFICATION_ID, notification)
+        StatusNotification.post(this, usageStore)
     }
 
     override fun onInterrupt() {}
@@ -280,11 +253,4 @@ class AppLimitAccessibilityService : AccessibilityService() {
         private const val TICK_INTERVAL_MS = 30_000L
         private const val WARNING_NOTIFICATION_ID = 1002
     }
-}
-
-/** Matches the three status-icon colors used elsewhere (e.g. the Dashboard's "Granted" text, the lock button). */
-private fun statusTierColor(tier: StatusTier): Int = when (tier) {
-    StatusTier.GOOD -> Color.parseColor("#2E7D32")
-    StatusTier.CAUTION -> Color.parseColor("#F57C00")
-    StatusTier.STOP -> Color.parseColor("#B3261E")
 }
