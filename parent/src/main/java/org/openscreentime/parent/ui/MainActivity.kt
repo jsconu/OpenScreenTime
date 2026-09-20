@@ -23,6 +23,7 @@ import androidx.compose.ui.semantics.testTagsAsResourceId
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
+import androidx.navigation.NavController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -205,7 +206,7 @@ class MainActivity : FragmentActivity() {
                                     repository = repository,
                                     childId = childId,
                                     onOpenReport = { navController.navigate("report/$childId") },
-                                    onBack = { navController.popBackStack() },
+                                    onBack = { navController.popBack() },
                                     onOpenPermissions = if (isMe) ({ navController.navigate("self_permissions") }) else null,
                                     permissionsMissing = isMe && !selfPermissions.allGranted
                                 )
@@ -218,26 +219,26 @@ class MainActivity : FragmentActivity() {
                                 WeeklyReportScreen(
                                     repository = repository,
                                     childId = childId,
-                                    onBack = { navController.popBackStack() }
+                                    onBack = { navController.popBack() }
                                 )
                             }
                             composable("digest") {
                                 val digestStore = remember { NotificationDigestStore(this@MainActivity) }
                                 NotificationDigestScreen(
                                     loadEntries = { digestStore.entries },
-                                    onDone = { navController.popBackStack() }
+                                    onDone = { navController.popBack() }
                                 )
                             }
                             composable("help") {
                                 HelpBotScreen(
                                     audience = HelpAudience.PARENT,
-                                    onBack = { navController.popBackStack() }
+                                    onBack = { navController.popBack() }
                                 )
                             }
                             composable("settings") {
                                 PasscodeSettingsScreen(
                                     repository = repository,
-                                    onBack = { navController.popBackStack() }
+                                    onBack = { navController.popBack() }
                                 )
                             }
                             composable("appearance") {
@@ -248,7 +249,7 @@ class MainActivity : FragmentActivity() {
                                     onOpenColorSettings = {
                                         startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
                                     },
-                                    onBack = { navController.popBackStack() }
+                                    onBack = { navController.popBack() }
                                 )
                             }
                             composable("self") {
@@ -265,7 +266,7 @@ class MainActivity : FragmentActivity() {
                                         // Straight to their own screen time, replacing this opt-in screen.
                                         navController.navigate("child/${self.id}") { popUpTo("self") { inclusive = true } }
                                     },
-                                    onBack = { navController.popBackStack() }
+                                    onBack = { navController.popBack() }
                                 )
                             }
                             composable("self_permissions") {
@@ -304,7 +305,7 @@ class MainActivity : FragmentActivity() {
                                     },
                                     onRequestWebsiteFilter = { requestWebsiteFilter() },
                                     onRequestHomeScreen = { requestHomeScreen() },
-                                    onBack = { navController.popBackStack() }
+                                    onBack = { navController.popBack() }
                                 )
                             }
                         }
@@ -317,5 +318,16 @@ class MainActivity : FragmentActivity() {
 
     companion object {
         const val EXTRA_OPEN_DIGEST = "open_digest"
+    }
+}
+
+/**
+ * Goes back one screen, but never pops the last one and ignores a second tap while the first is still animating.
+ * A plain popBackStack() on a double tap (or a tap plus the back gesture) removes the dashboard too and leaves a blank
+ * white screen.
+ */
+private fun NavController.popBack() {
+    if (previousBackStackEntry != null && currentBackStackEntry?.lifecycle?.currentState == Lifecycle.State.RESUMED) {
+        popBackStack()
     }
 }
