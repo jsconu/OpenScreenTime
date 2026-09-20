@@ -2,6 +2,9 @@ package org.openscreentime.sharedui
 
 import android.content.Intent
 import androidx.activity.compose.BackHandler
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -31,6 +34,8 @@ class FocusDigest(val optedIn: Boolean, val load: () -> List<DigestNotification>
 class FocusUnlock(
     val buttonLabel: String,
     val available: () -> Boolean = { true },
+    /** Shown instead of [dialog] when [available] is false, so the button never does nothing. */
+    val unavailableMessage: String = "",
     val dialog: @Composable (onGranted: (untilMs: Long) -> Unit, onDismiss: () -> Unit) -> Unit
 )
 
@@ -54,6 +59,7 @@ fun FocusLauncherScreen(
     var nowMs by remember { mutableStateOf(System.currentTimeMillis()) }
     var showUnlock by remember { mutableStateOf(false) }
     var showCalm by remember { mutableStateOf(false) }
+    var showUnavailable by remember { mutableStateOf(false) }
 
     // Pick up changes the parent makes, and expire the "all apps" window on time.
     LaunchedEffect(Unit) {
@@ -84,10 +90,21 @@ fun FocusLauncherScreen(
                 }
             },
             onOpenCalm = { showCalm = true },
-            onRequestAllApps = { showUnlock = unlock.available() },
+            onRequestAllApps = {
+                if (unlock.available()) showUnlock = true else showUnavailable = true
+            },
             onCloseAllApps = { focus.openUntilMs = null; openUntil = null },
             onToggleTravel = { onToggleTravel?.invoke(it) },
             onTurnOff = onTurnOff
+        )
+    }
+
+    if (showUnavailable) {
+        AlertDialog(
+            onDismissRequest = { showUnavailable = false },
+            title = { Text("Ask a parent") },
+            text = { Text(unlock.unavailableMessage) },
+            confirmButton = { TextButton(onClick = { showUnavailable = false }) { Text("OK") } }
         )
     }
 

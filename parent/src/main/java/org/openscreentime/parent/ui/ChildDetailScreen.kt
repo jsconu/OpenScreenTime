@@ -212,6 +212,7 @@ fun ChildDetailScreen(
             )
             excludedFromTotalSection(
                 child = currentChild,
+                appNames = displayedApps.associate { it.packageName to it.appName },
                 onPickApps = { pickingExcludedApps = true }
             )
             focusModeSection(

@@ -49,6 +49,11 @@ class FocusMode(private val context: Context, private val launcher: ComponentNam
         setLauncherEnabled(child.focusMode)
     }
 
+    /** Switches the profile (Everyday or Travel) on this phone straight away; the saved profile follows. */
+    fun setProfileHere(profile: FocusProfile) {
+        prefs.setProfile(profile)
+    }
+
     /** This phone is no longer tracked (or unpaired): forget everything and stop offering the home screen. */
     fun stop() {
         prefs.clear()
@@ -122,6 +127,10 @@ internal class FocusPrefs(context: Context) {
 
     fun setEnabled(enabled: Boolean) {
         prefs.edit().putBoolean("enabled", enabled).apply()
+    }
+
+    fun setProfile(profile: FocusProfile) {
+        prefs.edit().putString("profile", profile.wireValue).apply()
     }
 
     fun clear() {

@@ -44,6 +44,8 @@ class FocusLauncherActivity : ComponentActivity() {
                     unlock = FocusUnlock(
                         buttonLabel = "Parent unlock",
                         available = { LiveChildState.parentPasscodeHash != null },
+                        unavailableMessage = "A parent hasn't set the family passcode yet, so other apps can't be " +
+                            "opened from here. Ask them to set it in the parent app, or to turn off the simple phone.",
                         dialog = { onGranted, onDismiss -> ParentPasscodeUnlock(onGranted, onDismiss) }
                     ),
                     digest = FocusDigest(digestStore.optedIn) { digestStore.entries }

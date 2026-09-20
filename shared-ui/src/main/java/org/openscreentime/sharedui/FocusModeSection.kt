@@ -15,11 +15,17 @@ import androidx.compose.material3.Checkbox
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
@@ -116,6 +122,10 @@ fun AppPickerDialog(
     onToggle: (packageName: String, allowed: Boolean) -> Unit,
     onDone: () -> Unit
 ) {
+    // Show a tick at once; the saved list follows from the server a moment later (or when back online).
+    var checked by remember { mutableStateOf(selected) }
+    LaunchedEffect(selected) { checked = selected }
+    var query by remember { mutableStateOf("") }
     AlertDialog(
         onDismissRequest = onDone,
         title = { Text(title) },
@@ -123,14 +133,36 @@ fun AppPickerDialog(
             if (apps.isEmpty()) {
                 Text("No apps to show yet. A kid's phone reports its apps about 15 minutes after it first connects.")
             } else {
-                LazyColumn(modifier = Modifier.heightIn(max = 380.dp)) {
-                    items(apps.sortedBy { it.appName.lowercase() }, key = { it.packageName }) { app ->
-                        val allowed = app.packageName in selected
-                        ListItem(
-                            modifier = Modifier.checkboxRow(allowed) { onToggle(app.packageName, it) },
-                            headlineContent = { Text(app.appName) },
-                            trailingContent = { Checkbox(checked = allowed, onCheckedChange = null) }
+                Column {
+                    if (apps.size > 8) {
+                        OutlinedTextField(
+                            value = query,
+                            onValueChange = { query = it },
+                            label = { Text("Search apps") },
+                            singleLine = true,
+                            modifier = Modifier.fillMaxWidth().testTag("app_picker_search")
                         )
+                        Spacer(Modifier.height(8.dp))
+                    }
+                    val shown = apps
+                        .sortedBy { it.appName.lowercase() }
+                        .filter { query.isBlank() || it.appName.contains(query.trim(), ignoreCase = true) }
+                    if (shown.isEmpty()) {
+                        Text("No apps match \"${query.trim()}\".", style = MaterialTheme.typography.bodyMedium)
+                    } else {
+                        LazyColumn(modifier = Modifier.heightIn(max = 340.dp)) {
+                            items(shown, key = { it.packageName }) { app ->
+                                val isOn = app.packageName in checked
+                                ListItem(
+                                    modifier = Modifier.checkboxRow(isOn) { on ->
+                                        checked = if (on) checked + app.packageName else checked - app.packageName
+                                        onToggle(app.packageName, on)
+                                    },
+                                    headlineContent = { Text(app.appName) },
+                                    trailingContent = { Checkbox(checked = isOn, onCheckedChange = null) }
+                                )
+                            }
+                        }
                     }
                 }
             }

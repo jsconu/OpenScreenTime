@@ -59,6 +59,7 @@ class FocusLauncherActivity : ComponentActivity() {
                     digest = FocusDigest(digestStore.optedIn) { digestStore.entries },
                     onToggleTravel = { travel ->
                         val profile = if (travel) FocusProfile.TRAVEL else FocusProfile.STANDARD
+                        focus.setProfileHere(profile)
                         launchForSelf { uid, id -> repository.setFocusProfile(uid, id, profile) }
                     },
                     onTurnOff = {

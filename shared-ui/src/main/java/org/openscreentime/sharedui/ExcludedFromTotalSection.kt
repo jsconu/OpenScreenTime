@@ -18,7 +18,12 @@ import org.openscreentime.shared.model.ChildProfile
  * "Time that doesn't count": apps whose time is left out of the overall daily limit, for an adult or a child.
  * Their time still shows in the app list, and their own per-app limit still applies.
  */
-fun LazyListScope.excludedFromTotalSection(child: ChildProfile, onPickApps: () -> Unit) {
+fun LazyListScope.excludedFromTotalSection(
+    child: ChildProfile,
+    /** Package name to app name, for the apps this phone reports; unknown ones fall back to the package's last word. */
+    appNames: Map<String, String>,
+    onPickApps: () -> Unit
+) {
     item {
         Column(Modifier.padding(16.dp)) {
             Text("Time that doesn't count", style = MaterialTheme.typography.labelLarge)
@@ -30,10 +35,19 @@ fun LazyListScope.excludedFromTotalSection(child: ChildProfile, onPickApps: () -
                 style = MaterialTheme.typography.bodySmall
             )
             Spacer(Modifier.height(8.dp))
+            val chosen = child.excludedFromTotalPackages
+                .map { appNames[it] ?: it.substringAfterLast('.') }
+                .sortedBy { it.lowercase() }
+            Text(
+                if (chosen.isEmpty()) "No apps chosen." else chosen.joinToString(", "),
+                style = MaterialTheme.typography.bodyMedium,
+                modifier = Modifier.testTag("excluded_summary")
+            )
+            Spacer(Modifier.height(8.dp))
             OutlinedButton(
                 onClick = onPickApps,
                 modifier = Modifier.fillMaxWidth().testTag("excluded_pick_apps")
-            ) { Text("Choose apps (${child.excludedFromTotalPackages.size})") }
+            ) { Text("Choose apps") }
         }
     }
 }
