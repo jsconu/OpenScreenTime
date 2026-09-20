@@ -31,4 +31,5 @@ dependencies {
     implementation(libs.compose.ui)
     implementation(libs.compose.material3)
     implementation(libs.lifecycle.runtime.ktx)
+    implementation(libs.activity.compose)
 }

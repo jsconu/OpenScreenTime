@@ -16,7 +16,6 @@ import org.openscreentime.parent.monitor.AppLimitAccessibilityService
 import org.openscreentime.parent.monitor.SyncWorker
 import org.openscreentime.parent.ui.BlockOverlayActivity
 import org.openscreentime.parent.ui.FocusLauncherActivity
-import org.openscreentime.shared.util.FocusPrefs
 import org.openscreentime.shared.model.BlockReason
 import org.openscreentime.shared.repo.FamilyRepository
 import java.util.concurrent.TimeUnit
@@ -83,7 +82,7 @@ class ParentApp : Application() {
             AppLimitAccessibilityService.trackNotifications = child.trackNotifications
             AppLimitAccessibilityService.trackWebsites = child.trackWebsites
             // "Dumb phone" (see #42): keep this phone's copy of the choice, and the home-screen option, in step.
-            FocusPrefs(this).update(this, child, FocusLauncherActivity.component(this))
+            FocusLauncherActivity.focusMode(this).sync(child)
             AppLimitAccessibilityService.blockedDomains = child.blockedDomains
 
             val wasLocked = AppLimitAccessibilityService.lockedCache

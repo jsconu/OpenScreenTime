@@ -1,6 +1,5 @@
 package org.openscreentime.kid.ui
 
-import org.openscreentime.shared.util.homeRoleIntent
 import android.content.Intent
 import android.net.Uri
 import android.net.VpnService
@@ -243,7 +242,7 @@ class MainActivity : ComponentActivity() {
                             onRequestNotificationListener = {
                                 startActivity(Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS))
                             },
-                            onRequestHomeScreen = { homeRoleLauncher.launch(homeRoleIntent(this@MainActivity)) },
+                            onRequestHomeScreen = { homeRoleLauncher.launch(FocusLauncherActivity.focusMode(this@MainActivity).homeRoleIntent()) },
                             showUnpair = child?.parentPasscodeHash == null,
                             onUnpair = {
                                 pairingStore.clear()

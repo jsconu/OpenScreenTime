@@ -2,7 +2,6 @@ package org.openscreentime.kid.monitor
 
 import android.content.Context
 import org.openscreentime.shared.model.ChildProfile
-import org.openscreentime.shared.util.FocusPrefs
 
 /**
  * The kid device's live view of the paired child's Firestore-synced settings - limits,
@@ -144,7 +143,7 @@ object LiveChildState {
 
     /** Forgets everything - used when this device is unpaired. */
     fun clear(context: Context) {
-        FocusPrefs(context).clear(context, org.openscreentime.kid.ui.FocusLauncherActivity.component(context))
+        org.openscreentime.kid.ui.FocusLauncherActivity.focusMode(context).stop()
         context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit().clear().apply()
         limitsCache = emptyMap()
         dailyLimitMinutes = Int.MAX_VALUE

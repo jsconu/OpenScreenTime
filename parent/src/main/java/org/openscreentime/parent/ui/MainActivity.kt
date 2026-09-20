@@ -36,8 +36,6 @@ import org.openscreentime.parent.data.SelfProfileStore
 import org.openscreentime.parent.monitor.ScreenMonitorService
 import org.openscreentime.parent.monitor.DnsSinkholeVpnService
 import org.openscreentime.parent.util.checkPermissions
-import org.openscreentime.shared.util.homeRoleIntent
-import org.openscreentime.shared.util.FocusPrefs
 import org.openscreentime.shared.model.HelpAudience
 import org.openscreentime.shared.model.PasscodeInfo
 import org.openscreentime.sharedui.AccessibilityDisclosureDialog
@@ -64,7 +62,7 @@ class MainActivity : FragmentActivity() {
         registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {}
 
     private fun requestHomeScreen() {
-        homeRoleLauncher.launch(homeRoleIntent(this))
+        homeRoleLauncher.launch(FocusLauncherActivity.focusMode(this).homeRoleIntent())
     }
 
     /** Set by the calm-notification summary and tile, which open the calm list straight away. */
@@ -273,7 +271,7 @@ class MainActivity : FragmentActivity() {
                                 SelfPermissionsScreen(
                                     permissions = selfPermissions,
                                     onStopTracking = {
-                                        FocusPrefs(this@MainActivity).clear(this@MainActivity, FocusLauncherActivity.component(this@MainActivity))
+                                        FocusLauncherActivity.focusMode(this@MainActivity).stop()
                                         selfProfileStore.clear()
                                         isSelfTracking = false
                                         navController.popBackStack("dashboard", false)
