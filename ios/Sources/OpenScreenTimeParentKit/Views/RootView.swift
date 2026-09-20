@@ -13,8 +13,10 @@ public struct RootView: View {
     public var body: some View {
         Group {
             if let parentUid = session.parentUid {
-                NavigationStack {
-                    DashboardView(repository: session.repository, parentUid: parentUid, session: session)
+                AppLockGate(repository: session.repository, parentUid: parentUid, session: session) {
+                    NavigationStack {
+                        DashboardView(repository: session.repository, parentUid: parentUid, session: session)
+                    }
                 }
             } else {
                 AuthView(repository: session.repository, session: session)
@@ -29,6 +31,8 @@ public struct RootView: View {
 final class SessionStore: ObservableObject {
     let repository: FamilyRepository
     @Published var parentUid: String?
+    /// True once the family passcode has been entered this launch (see `AppLockGate`).
+    @Published var unlocked = false
 
     init(repository: FamilyRepository) {
         self.repository = repository
@@ -38,5 +42,6 @@ final class SessionStore: ObservableObject {
     func signOut() {
         try? repository.signOut()
         parentUid = nil
+        unlocked = false
     }
 }

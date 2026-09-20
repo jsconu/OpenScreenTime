@@ -27,3 +27,34 @@ func parseHHmm(_ text: String) -> Int? {
 func formatHHmm(_ minutes: Int) -> String {
     String(format: "%02d:%02d", minutes / 60, minutes % 60)
 }
+
+/// Length of a bedtime window in minutes, counting across midnight (a start of 21:00 and end of 07:00 is 600).
+func bedtimeDurationMinutes(start: Int, end: Int) -> Int {
+    end > start ? end - start : end + 24 * 60 - start
+}
+
+/// A plain-language description of a bedtime window that makes the night-to-next-day shape explicit,
+/// e.g. "9:00 PM tonight to 7:00 AM tomorrow morning (10 hours)". Empty for start == end, which is not a
+/// valid window. Mirrors `describeBedtimeWindow` in `shared/model/Bedtime.kt`.
+func describeBedtimeWindow(start: Int, end: Int) -> String {
+    if start == end { return "" }
+    let duration = bedtimeDurationMinutes(start: start, end: end)
+    let hours = duration / 60
+    let minutes = duration % 60
+    let hourText = "\(hours) hour\(hours == 1 ? "" : "s")"
+    let length: String
+    if minutes == 0 {
+        length = hourText
+    } else if hours == 0 {
+        length = "\(minutes) min"
+    } else {
+        length = "\(hourText) \(minutes) min"
+    }
+    let noon = 12 * 60
+    if end < start {
+        let startLabel = start >= noon ? "\(formatMinutesOfDay(start)) tonight" : formatMinutesOfDay(start)
+        let endLabel = end < noon ? "\(formatMinutesOfDay(end)) tomorrow morning" : "\(formatMinutesOfDay(end)) tomorrow"
+        return "\(startLabel) to \(endLabel) (\(length))"
+    }
+    return "\(formatMinutesOfDay(start)) to \(formatMinutesOfDay(end)) the same day (\(length))"
+}

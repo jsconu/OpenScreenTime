@@ -12,6 +12,8 @@ struct PasscodeSettingsView: View {
     @State private var errorMessage: String?
     @State private var isSaving = false
     @State private var savedConfirmation = false
+    @State private var useDeviceAuth = UserDefaults.standard.bool(forKey: AppLock.deviceAuthKey)
+    @State private var deviceAuthAvailable = AppLock.deviceAuthAvailable()
 
     private var passcodesValid: Bool {
         newPasscode.count >= 4 && newPasscode.count <= 6 && newPasscode == confirmPasscode
@@ -26,6 +28,28 @@ struct PasscodeSettingsView: View {
                 )
                 .font(.footnote)
                 .foregroundStyle(.secondary)
+            }
+            if deviceAuthAvailable {
+                Section {
+                    Toggle("Unlock with Face ID, Touch ID, or your phone passcode", isOn: $useDeviceAuth)
+                        .onChange(of: useDeviceAuth) { wanted in
+                            if wanted {
+                                // Prove it works (and that it's really the owner) before turning it on.
+                                Task {
+                                    let ok = await AppLock.authenticateWithDevice(reason: "Turn on unlock with Face ID, Touch ID, or your phone passcode")
+                                    if ok {
+                                        UserDefaults.standard.set(true, forKey: AppLock.deviceAuthKey)
+                                    } else {
+                                        useDeviceAuth = false
+                                    }
+                                }
+                            } else {
+                                UserDefaults.standard.set(false, forKey: AppLock.deviceAuthKey)
+                            }
+                        }
+                } footer: {
+                    Text("Anyone whose face, fingerprint, or phone passcode works on this iPhone will be able to open the app, so leave this off if a child can unlock it. The family passcode still works, and it's still what a kid's phone asks for.")
+                }
             }
             Section {
                 SecureField("New passcode (4-6 digits)", text: $newPasscode)

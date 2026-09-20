@@ -47,6 +47,22 @@ public final class FamilyRepository {
         }
     }
 
+    /// True if `password` is the signed-in parent account's password, checked by re-authenticating
+    /// (this doesn't sign anyone in or out). A wrong password is `false`; a network problem or too
+    /// many attempts still throws. Used to recover a forgotten family passcode.
+    func verifyAccountPassword(_ password: String) async throws -> Bool {
+        guard let user = auth.currentUser, let email = user.email else { return false }
+        do {
+            try await user.reauthenticate(with: EmailAuthProvider.credential(withEmail: email, password: password))
+            return true
+        } catch let error as NSError
+            where error.code == AuthErrorCode.wrongPassword.rawValue
+                || error.code == AuthErrorCode.invalidCredential.rawValue
+                || error.code == AuthErrorCode.userNotFound.rawValue {
+            return false
+        }
+    }
+
     func signOut() throws {
         try auth.signOut()
     }
@@ -121,6 +137,23 @@ public final class FamilyRepository {
     ) -> ListenerRegistration {
         db.document(FirestorePaths.dailyStatsDoc(parentUid, childId, date)).addSnapshotListener { snapshot, _ in
             onChange(DailyStats.from(date: date, map: snapshot?.data() ?? [:]))
+        }
+    }
+
+    /// The apps the kid's phone last reported as installed (empty until it has synced once). Read
+    /// leniently: this doc is written by another device, so anything malformed is skipped, not fatal.
+    func listenInstalledApps(
+        parentUid: String,
+        childId: String,
+        onChange: @escaping ([InstalledApp]) -> Void
+    ) -> ListenerRegistration {
+        db.document(FirestorePaths.installedAppsDocPath(parentUid, childId)).addSnapshotListener { snapshot, error in
+            if error != nil { return }
+            let raw = snapshot?.data()?["apps"] as? [[String: Any]] ?? []
+            onChange(raw.compactMap { entry in
+                guard let pkg = entry["packageName"] as? String else { return nil }
+                return InstalledApp(packageName: pkg, label: entry["appName"] as? String ?? pkg)
+            })
         }
     }
 
@@ -248,6 +281,8 @@ public final class FamilyRepository {
             }
             try await batch.commit()
         }
+        // The installed-apps doc too (a plain delete, so a child that never had one is fine).
+        try await db.document(FirestorePaths.installedAppsDocPath(parentUid, childId)).delete()
         try await db.document(FirestorePaths.childDoc(parentUid, childId)).delete()
     }
 

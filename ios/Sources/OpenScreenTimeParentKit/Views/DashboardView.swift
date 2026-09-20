@@ -17,6 +17,8 @@ struct DashboardView: View {
     @State private var errorMessage: String?
     @State private var showFeedbackSheet = false
     @State private var showHelp = false
+    /// Assumed true until the check says otherwise, so the prompt never flashes up for someone who has one.
+    @State private var hasPasscode = true
 
     var body: some View {
         childList
@@ -40,11 +42,41 @@ struct DashboardView: View {
             }
             .onAppear(perform: startListening)
             .onDisappear { listener?.remove() }
+            .task { await checkPasscode() }
+    }
+
+    /// Rechecked whenever this screen comes back into view, so the prompt disappears once a passcode is set.
+    private func checkPasscode() async {
+        do {
+            let info = try await repository.getParentPasscode(parentUid: parentUid)
+            hasPasscode = info != nil
+        } catch {
+            // Couldn't check (offline etc.) - leave the prompt as it was rather than nagging.
+        }
     }
 
     @ViewBuilder
     private var childList: some View {
         List {
+            // First and fixed: nothing above it can appear later and push it out from under a finger.
+            Section {
+                Button("Add kid") { showAddChild = true }
+                    .buttonStyle(.borderedProminent)
+                    .frame(maxWidth: .infinity)
+            }
+            if !hasPasscode {
+                Section {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("Set your family passcode").font(.headline)
+                        Text("It protects this app, and it's how you unlock or change limits on your kid's phone without your own in hand. It only takes a moment.")
+                            .font(.subheadline)
+                        NavigationLink("Set passcode") {
+                            PasscodeSettingsView(repository: repository, parentUid: parentUid)
+                        }
+                    }
+                    .padding(.vertical, 4)
+                }
+            }
             if children.isEmpty {
                 Text("Add your first child to get started.")
                     .foregroundStyle(.secondary)
@@ -55,6 +87,7 @@ struct DashboardView: View {
                     }
                 }
             }
+            StatusIconGuide()
         }
     }
 
@@ -74,13 +107,6 @@ struct DashboardView: View {
         }
         ToolbarItem(placement: .navigationBarTrailing) {
             Button("Sign out") { session.signOut() }
-        }
-        ToolbarItem(placement: .primaryAction) {
-            Button {
-                showAddChild = true
-            } label: {
-                Image(systemName: "plus")
-            }
         }
     }
 
@@ -295,4 +321,24 @@ func formatDuration(_ ms: Int64) -> String {
     let h = totalMinutes / 60
     let m = totalMinutes % 60
     return h > 0 ? "\(h)h \(m)m" : "\(m)m"
+}
+
+/// What the calm status icons on a kid's phone mean - the same explanation the Android apps show: where the
+/// icon appears (top-left of the status bar) and what thumbs up / open hand / stop say. The iPhone app doesn't
+/// show these itself (there's no iPhone kid app), so this is here for the parent's understanding.
+private struct StatusIconGuide: View {
+    var body: some View {
+        Section {
+            Text("A small icon appears in the top-left of your kid's phone status bar, next to the clock. Pull down from the top of the screen to see \u{201C}Screen Time Status\u{201D} with a short message.")
+                .font(.footnote)
+            Label("Thumbs up: Great job! You're on track.", systemImage: "hand.thumbsup")
+            Label("Open hand: Slow down", systemImage: "hand.raised")
+            Label("Stop: You've reached your overall screen time limit", systemImage: "xmark.octagon")
+            Text("Kids see only this signal instead of exact numbers, so screen time stays something to notice, not something to keep checking - the details are here, for you.")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+        } header: {
+            Text("What the status icons mean")
+        }
+    }
 }

@@ -115,3 +115,10 @@ swift test    # runs PasscodeHasherTests, etc.
 enough to catch compile errors and test failures without Xcode - which is also exactly
 what `.github/workflows/ios-ci.yml` runs (via `xcodebuild`, which can target a Package.swift
 directly) on every push that touches this directory.
+
+## Face ID note for the Xcode app target
+
+The optional "Unlock with Face ID, Touch ID, or your phone passcode" setting (Passcode) uses the system
+`LocalAuthentication` prompt. Add an `NSFaceIDUsageDescription` entry to the app target's Info.plist, for
+example "OpenScreenTime uses Face ID to open the app when you choose to unlock with it." Without it, Face ID
+is unavailable (Touch ID and the phone passcode still work).

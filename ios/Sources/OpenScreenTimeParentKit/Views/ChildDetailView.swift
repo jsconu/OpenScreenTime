@@ -21,6 +21,8 @@ struct ChildDetailView: View {
     @State private var streakDays = 0
     @State private var childListener: ListenerRegistration?
     @State private var statsListener: ListenerRegistration?
+    @State private var installedListener: ListenerRegistration?
+    @State private var installedApps: [InstalledApp] = []
     @State private var showLimitDialog = false
     @State private var showUnlockGoalDialog = false
     @State private var showBedtimeDialog = false
@@ -97,6 +99,7 @@ struct ChildDetailView: View {
                     parentUid: parentUid,
                     childId: childId,
                     stats: stats,
+                    installedApps: installedApps,
                     child: child,
                     editingApp: $editingApp
                 )
@@ -167,7 +170,8 @@ struct ChildDetailView: View {
     }
 
     private func appLimitSheet(for item: EditingApp) -> some View {
-        let appName = stats.appUsage.first { $0.packageName == item.packageName }?.appName ?? item.packageName
+        let appName = mergeUsageWithInstalled(usage: stats.appUsage, installed: installedApps)
+            .first { $0.packageName == item.packageName }?.appName ?? item.packageName
         let initialMinutes = child?.appLimits[item.packageName] ?? 60
         return MinutesInputSheet(title: "Daily limit for \(appName)", initialMinutes: initialMinutes) { minutes in
             saveAppLimit(packageName: item.packageName, minutes: minutes)
@@ -190,11 +194,15 @@ struct ChildDetailView: View {
         statsListener = repository.listenDailyStats(parentUid: parentUid, childId: childId, date: todayDateString()) {
             stats = $0
         }
+        installedListener = repository.listenInstalledApps(parentUid: parentUid, childId: childId) {
+            installedApps = $0
+        }
     }
 
     private func stopListening() {
         childListener?.remove()
         statsListener?.remove()
+        installedListener?.remove()
     }
 }
 
@@ -326,7 +334,7 @@ private struct TodaySection: View {
         }
         Section {
             if let start = child.bedtimeStartMinutes, let end = child.bedtimeEndMinutes {
-                Text("Bedtime: \(formatMinutesOfDay(start)) - \(formatMinutesOfDay(end))").font(.caption)
+                Text("Bedtime: \(describeBedtimeWindow(start: start, end: end))").font(.caption)
             } else {
                 Text("No bedtime set").font(.caption)
             }
@@ -455,19 +463,26 @@ private struct AppUsageSection: View {
     let parentUid: String
     let childId: String
     let stats: DailyStats
+    let installedApps: [InstalledApp]
     let child: ChildProfile
     @Binding var editingApp: String?
+    @State private var sort: AppSort = .usage
 
-    private var sortedUsage: [AppUsage] {
-        stats.appUsage.sorted { $0.foregroundTimeMs > $1.foregroundTimeMs }
+    /// Every app the kid's phone reported, not only ones already used today, in the chosen order.
+    private var displayedApps: [AppUsage] {
+        sortApps(mergeUsageWithInstalled(usage: stats.appUsage, installed: installedApps), by: sort)
     }
 
     var body: some View {
         Section {
-            if stats.appUsage.isEmpty {
-                Text("No app usage synced yet.").foregroundStyle(.secondary)
+            Picker("Sort", selection: $sort) {
+                ForEach(AppSort.allCases) { Text($0.label).tag($0) }
             }
-            ForEach(sortedUsage) { app in
+            .pickerStyle(.segmented)
+            if displayedApps.isEmpty {
+                Text("No apps to show yet.").foregroundStyle(.secondary)
+            }
+            ForEach(displayedApps) { app in
                 AppUsageRow(
                     app: app,
                     limitMinutes: child.appLimits[app.packageName],
@@ -611,12 +626,18 @@ struct UnlockGoalInputSheet: View {
     }
 }
 
+/// Sets a bedtime in two plain steps, each with a 12-hour clock and AM/PM: first when bedtime STARTS (that
+/// evening or night), then when it ENDS (the next morning). A live sentence underneath spells out the result -
+/// "9:00 PM tonight to 7:00 AM tomorrow morning (10 hours)" - so nobody has to reason about a 24-hour clock or a
+/// window that crosses midnight. Mirrors `BedtimeWindowDialog.kt`. `onSave` gets (nil, nil) to turn bedtime off.
 struct BedtimeWindowSheet: View {
+    let hasExisting: Bool
     let onSave: (Int?, Int?) -> Void
     let onCancel: () -> Void
 
-    @State private var startText: String
-    @State private var endText: String
+    @State private var step = 0
+    @State private var startTime: Date
+    @State private var endTime: Date
 
     init(
         initialStartMinutes: Int?,
@@ -624,35 +645,73 @@ struct BedtimeWindowSheet: View {
         onSave: @escaping (Int?, Int?) -> Void,
         onCancel: @escaping () -> Void
     ) {
+        self.hasExisting = initialStartMinutes != nil && initialEndMinutes != nil
         self.onSave = onSave
         self.onCancel = onCancel
-        _startText = State(initialValue: initialStartMinutes.map(formatHHmm) ?? "")
-        _endText = State(initialValue: initialEndMinutes.map(formatHHmm) ?? "")
+        _startTime = State(initialValue: Self.date(fromMinutes: initialStartMinutes ?? 21 * 60))
+        _endTime = State(initialValue: Self.date(fromMinutes: initialEndMinutes ?? 7 * 60))
     }
+
+    private static func date(fromMinutes minutes: Int) -> Date {
+        Calendar.current.date(bySettingHour: minutes / 60, minute: minutes % 60, second: 0, of: Date()) ?? Date()
+    }
+
+    private static func minutes(from date: Date) -> Int {
+        let parts = Calendar.current.dateComponents([.hour, .minute], from: date)
+        return (parts.hour ?? 0) * 60 + (parts.minute ?? 0)
+    }
+
+    private var startMinutes: Int { Self.minutes(from: startTime) }
+    private var endMinutes: Int { Self.minutes(from: endTime) }
+    private var sameTime: Bool { startMinutes == endMinutes }
 
     var body: some View {
         NavigationStack {
             Form {
-                Text("Blocks every app during this window, independent of the daily limit. Leave both blank to turn it off.")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                TextField("Start (24h, e.g. 21:00)", text: $startText)
-                TextField("End (24h, e.g. 07:00)", text: $endText)
+                Section {
+                    Text(step == 0
+                        ? "Step 1 of 2 - the evening or night apps lock. Pick the time and AM or PM (for example 9:00 PM)."
+                        : "Step 2 of 2 - the next morning, when apps unlock again. Pick the time and AM or PM (for example 7:00 AM).")
+                        .font(.callout)
+                    DatePicker(
+                        step == 0 ? "Bedtime starts" : "Bedtime ends",
+                        selection: step == 0 ? $startTime : $endTime,
+                        displayedComponents: .hourAndMinute
+                    )
+                    .datePickerStyle(.wheel)
+                    // Forces a 12-hour clock with AM/PM, whatever the phone's regional setting.
+                    .environment(\.locale, Locale(identifier: "en_US"))
+                }
+                Section {
+                    Text(sameTime ? "Start and end can't be the same time." : describeBedtimeWindow(start: startMinutes, end: endMinutes))
+                        .font(.subheadline).bold()
+                        .foregroundStyle(sameTime ? Color.red : Color.accentColor)
+                    Text("Blocks every app during this window, independent of the daily limit.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+                if hasExisting {
+                    Section {
+                        Button("Turn bedtime off", role: .destructive) { onSave(nil, nil) }
+                    }
+                }
             }
-            .navigationTitle("Bedtime")
+            .navigationTitle(step == 0 ? "Bedtime starts" : "Bedtime ends")
+            .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel", action: onCancel)
+                    if step == 0 {
+                        Button("Cancel", action: onCancel)
+                    } else {
+                        Button("Back") { step = 0 }
+                    }
                 }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("Save") {
-                        let start = parseHHmm(startText)
-                        let end = parseHHmm(endText)
-                        if let start, let end {
-                            onSave(start, end)
-                        } else {
-                            onSave(nil, nil)
-                        }
+                    if step == 0 {
+                        Button("Next") { step = 1 }
+                    } else {
+                        Button("Save") { onSave(startMinutes, endMinutes) }
+                            .disabled(sameTime)
                     }
                 }
             }

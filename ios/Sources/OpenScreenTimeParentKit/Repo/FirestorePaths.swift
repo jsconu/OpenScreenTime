@@ -4,6 +4,9 @@ enum FirestorePaths {
     static let parents = "parents"
     static let children = "children"
     static let dailyStats = "dailyStats"
+    /// The apps installed on a paired kid device, so the parent app can offer limits for all of them.
+    static let deviceInfo = "deviceInfo"
+    static let installedAppsDoc = "installedApps"
     static let pairingCodes = "pairingCodes"
     /// See #22/#26 - in-app feedback. Write-only from the client; reviewed via the Firebase console.
     static let feedback = "feedback"
@@ -22,5 +25,9 @@ enum FirestorePaths {
 
     static func dailyStatsDoc(_ parentUid: String, _ childId: String, _ date: String) -> String {
         "\(dailyStatsCollection(parentUid, childId))/\(date)"
+    }
+
+    static func installedAppsDocPath(_ parentUid: String, _ childId: String) -> String {
+        "\(childDoc(parentUid, childId))/\(deviceInfo)/\(installedAppsDoc)"
     }
 }
