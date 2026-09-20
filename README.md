@@ -46,17 +46,21 @@ own phone, real screenshots to replace it are a very welcome contribution.
 
 | Kid: calm status | Kid: block screen | Kid: friction pause |
 | :---: | :---: | :---: |
-| <img src="design/screenshots/kid-02-status.png" width="220" alt="Kid status screen"> | <img src="design/screenshots/kid-05-block-overlay.png" width="220" alt="Kid block screen"> | <img src="design/screenshots/kid-06-pause-overlay.png" width="220" alt="Kid friction pause"> |
+| <img src="design/screenshots/kid-02-status.png" width="220" alt="Kid status screen"> | <img src="design/screenshots/kid-06-block-overlay.png" width="220" alt="Kid block screen"> | <img src="design/screenshots/kid-09-pause-overlay.png" width="220" alt="Kid friction pause"> |
 
 | Parent: dashboard | Parent: child detail | Parent: weekly report |
 | :---: | :---: | :---: |
-| <img src="design/screenshots/parent-03-dashboard.png" width="220" alt="Parent dashboard"> | <img src="design/screenshots/parent-06-child-detail.png" width="220" alt="Parent child detail"> | <img src="design/screenshots/parent-08-weekly-report.png" width="220" alt="Parent weekly report"> |
+| <img src="design/screenshots/parent-04-dashboard.png" width="220" alt="Parent dashboard"> | <img src="design/screenshots/parent-07-child-detail.png" width="220" alt="Parent child detail"> | <img src="design/screenshots/parent-11-weekly-report.png" width="220" alt="Parent weekly report"> |
 
 | Parent: optional tracking | Parent: unlocks and notifications | Help bot |
 | :---: | :---: | :---: |
-| <img src="design/screenshots/parent-07-optional-tracking.png" width="220" alt="Parent optional tracking toggles"> | <img src="design/screenshots/parent-09-weekly-report-unlocks-notifications.png" width="220" alt="Weekly report unlocks and notifications"> | <img src="design/screenshots/parent-13-help-parent.png" width="220" alt="Help bot"> |
+| <img src="design/screenshots/parent-10-optional-tracking.png" width="220" alt="Parent optional tracking toggles"> | <img src="design/screenshots/parent-12-weekly-report-unlocks-notifications.png" width="220" alt="Weekly report unlocks and notifications"> | <img src="design/screenshots/parent-18-help-parent.png" width="220" alt="Help bot"> |
 
-All 22 screens are in [`design/screenshots/`](design/screenshots/), rendered from
+| Kid: settings | Parent: bedtime (step 1) | Parent: forgot passcode |
+| :---: | :---: | :---: |
+| <img src="design/screenshots/kid-03-settings-kid.png" width="220" alt="Kid settings page"> | <img src="design/screenshots/parent-08-bedtime-starts.png" width="220" alt="Two-step bedtime editor with AM/PM"> | <img src="design/screenshots/parent-03-forgot-passcode.png" width="220" alt="Forgot passcode recovery"> |
+
+All 30 screens are in [`design/screenshots/`](design/screenshots/), rendered from
 the gallery above.
 
 ## How it works

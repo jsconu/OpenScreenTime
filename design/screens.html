@@ -384,7 +384,7 @@
     <p class="lede">
       A reproduction of the two shipped apps' actual Compose UI &mdash; real copy, real component
       states, real <code style="font-family:var(--font-mono);font-size:.92em;">Modifier.testTag</code>
-      identifiers from the codebase, not placeholder text. Twenty-two screens across the kid device app
+      identifiers from the codebase, not placeholder text. Thirty screens across the kid device app
       and the parent app, shown in their default light theme.
     </p>
     <div class="legend">
@@ -510,12 +510,23 @@
           <div class="body scroll" style="padding-top:12px;">
             <div style="display:flex;justify-content:space-between;align-items:center;"><div class="headline" style="margin-bottom:2px;">Hi, Mia</div><span class="m-text-btn" style="font-size:13px;">?</span></div>
             <p class="subtext" style="margin-bottom:6px;">Screen time monitoring is active.</p>
-            <div class="label-eyebrow" style="margin-top:0;">What the status icon means</div>
-            <div class="m-list-item" style="border:none;padding:3px 0;"><div class="sub" style="margin:0;">&#128077; Comfortably under today's goal</div></div>
-            <div class="m-list-item" style="border:none;padding:3px 0;"><div class="sub" style="margin:0;">&#9995; Approaching today's goal</div></div>
-            <div class="m-list-item" style="border-bottom:1px solid rgba(0,0,0,.06);padding:3px 0 8px;"><div class="sub" style="margin:0;">&#128721; At or over today's goal</div></div>
+            <div class="card-tint" style="display:flex;align-items:center;gap:10px;">
+              <div style="font-size:24px;">&#128077;</div>
+              <div><div class="label-eyebrow" style="margin:0 0 2px;">My screen time</div><p class="subtext tight" style="margin:0;">Great job! You're on track.</p></div>
+            </div>
+            <div class="card-tint">
+              <div class="label-eyebrow" style="margin:0 0 2px;">Parent's screen time today</div>
+              <p class="subtext tight" style="margin:0 0 2px;">Comfortably under goal</p>
+              <p class="subtext micro" style="margin:0;">1h 12m &middot; 9 unlocks</p>
+            </div>
+            <div class="card-tint">
+              <div style="display:flex;justify-content:space-between;align-items:center;"><div class="head" style="font-size:11px;font-weight:600;">Calm notification list</div><span class="m-switch on"></span></div>
+              <p class="subtext micro" style="margin:2px 0 6px;">A plain, read-only digest of today's notifications on this phone, grouped by app.</p>
+              <div class="m-btn-outline full" style="margin:0;padding:5px 12px;">Today's notifications</div>
+            </div>
+            <div class="label-eyebrow">What the status icons mean</div><p class="subtext micro" style="margin:0 0 4px;">Look for a small icon in the top-left of your phone's status bar, next to the clock. Pull down from the top of the screen to see &ldquo;Screen Time Status&rdquo; with a short message.</p><div class="m-list-item" style="border:none;padding:3px 0;"><div class="sub" style="margin:0;">&#128077; Thumbs up: Great job! You're on track.</div></div><div class="m-list-item" style="border:none;padding:3px 0;"><div class="sub" style="margin:0;">&#9995; Open hand: Slow down</div></div><div class="m-list-item" style="border-bottom:1px solid rgba(0,0,0,.06);padding:3px 0 8px;"><div class="sub" style="margin:0;">&#128721; Stop: You've reached your overall screen time limit</div></div>
             <div class="card-tint calm-banner" style="margin-top:6px;">
-              <p class="subtext micro" style="margin:0;">This app deliberately doesn't show exact numbers or a report here - just this signal, so screen time stays something to be aware of, not something to obsess over. Ask a parent if you want to talk through the details.</p>
+              <p class="subtext micro" style="margin:0;">This app deliberately doesn't show exact numbers or a detailed report here - just this simple signal, so screen time stays something to be aware of, not something to obsess over checking. Ask a parent if you want to talk through the details.</p>
             </div>
             <p class="subtext tight" style="color:var(--app-primary);font-weight:600;margin-top:8px;">5 days in a row under your goal</p>
             <div class="card-tint">
@@ -523,26 +534,38 @@
               <p class="subtext tight" style="margin:0 0 2px;">14 unlocks</p>
               <p class="subtext micro" style="margin:0;">Tracking numbers like these can make phone use feel more compulsive, not less - glance at them rather than checking them.</p>
             </div>
-            <div class="card-tint" style="margin-bottom:10px;">
-              <div class="label-eyebrow" style="margin:0 0 2px;">Parent's screen time today</div>
-              <p class="subtext tight" style="margin:0 0 2px;">Comfortably under goal</p>
-              <p class="subtext micro" style="margin:0;">1h 12m &middot; 9 unlocks</p>
-            </div>
-            <div class="m-list-item"><div><div class="head">Display over other apps</div><div class="sub">Shows a screen when a limit is reached</div></div><div class="trailing granted">Granted</div></div>
-            <div class="m-list-item"><div><div class="head">Accessibility service</div><div class="sub">Detects which app is open</div></div><div class="trailing granted">Granted</div></div>
-            <div class="m-list-item"><div><div class="head">Battery optimization</div><div class="sub">Stops the OS killing tracking</div></div><div class="trailing">Fix</div></div>
-            <div class="label-eyebrow">Display</div>
-            <div class="m-list-item"><div class="head">Theme</div><div class="trailing">System &nbsp;Change</div></div>
-            <div class="m-btn-outline full" style="padding:7px 16px;margin-top:6px;">Open Accessibility settings</div>
             <div class="m-btn-outline full">Suggest a change</div>
             <div class="m-btn full">Parent controls</div>
-            <div class="m-btn-outline full">Unpair this device</div>
+            <div class="m-btn-outline full">Settings</div>
           </div>
         </div></div>
         <div class="caption">
           <p class="screen-name">Status</p>
-          <p class="screen-desc">Home screen once paired. The icon legend now states outright why only this signal is shown, not exact numbers (#30). A streak line appears only once it's &gt; 0 days, never a broken-streak state (#13). When a parent has opted into self-tracking, their own calm status and numbers show here too (#18) - the arrangement isn't one-directional. A "?" opens the help bot (#36), and "Today so far" appears only if a parent chose to show a tracked count here (#35), always with its compulsive-checking note.</p>
-          <div class="tag-row"><span class="tag">status_greeting</span><span class="tag">status_icon_legend</span><span class="tag">status_streak</span><span class="tag">status_tracking_counts</span><span class="tag calm">01 calm signal</span><span class="tag calm">10 counting is opt-in</span></div>
+          <p class="screen-desc">Home screen once paired, kept to what matters today. A "My screen time" tile shows the same thumbs up / open hand / stop as the icon in the top-left of the status bar - both come from one function, so they can never disagree - with no numbers (#9). The parent's calm status sits under it, then the optional calm notification list, then a guide that says where the icon appears and what each one means (#30). A streak line appears only once it's &gt; 0 days, never a broken-streak state (#13). "Today so far" appears only if a parent chose to show a count here (#35). Permissions, display and unpairing moved to Settings so this page stays about today.</p>
+          <div class="tag-row"><span class="tag">status_greeting</span><span class="tag">status_my_screen_time</span><span class="tag">status_icon_legend</span><span class="tag">status_settings</span><span class="tag calm">01 calm signal</span><span class="tag calm">10 counting is opt-in</span></div>
+        </div>
+      </div>
+
+      <div class="screen-card">
+        <div class="phone"><div class="phone-inner">
+          <div class="appbar"><span class="title">Settings</span><span class="action">BACK</span></div>
+          <div class="body scroll">
+            <div class="label-eyebrow" style="margin-top:0;">Permissions</div>
+            <div class="m-list-item"><div><div class="head">Display over other apps</div><div class="sub">Shows a screen when a limit is reached</div></div><div class="trailing granted">Granted</div></div><div class="m-list-item"><div><div class="head">Accessibility service</div><div class="sub">Detects which app is open</div></div><div class="trailing granted">Granted</div></div><div class="m-list-item"><div><div class="head">Notifications</div><div class="sub">Shows the status icon at the top of the screen</div></div><div class="trailing granted">Granted</div></div><div class="m-list-item"><div><div class="head">Battery optimization</div><div class="sub">Stops the OS killing tracking</div></div><div class="trailing">Fix</div></div><div class="m-list-item"><div><div class="head">Website filter</div><div class="sub">Blocks sites a parent has restricted, in any browser</div></div><div class="trailing granted">Granted</div></div>
+            <p class="subtext micro" style="margin:4px 0;">If a blocked site still opens, turn off "Secure DNS" or "DNS over HTTPS" in the browser (Chrome: Settings &gt; Privacy and security &gt; Use secure DNS), then close the browser completely and try again.</p>
+            <p class="subtext micro" style="margin:0 0 4px;color:#b3261e;">Private DNS is on for this phone, so the website filter can be skipped. Turn it off in Android Settings.</p>
+            <div class="m-list-item"><div><div class="head">Notification access</div><div class="sub">Optional. For the calm notification list and bedtime text muting.</div></div><div class="trailing">Fix</div></div>
+            <div class="label-eyebrow">Display</div>
+            <div class="m-list-item"><div class="head">Theme</div><div class="trailing">System &nbsp;Change</div></div>
+            <div class="m-list-item"><div class="head">Text size</div><div class="trailing">Default &nbsp;Change</div></div>
+            <div class="m-btn-outline full" style="padding:7px 16px;margin-top:6px;">Open Accessibility settings</div>
+            <div class="m-btn-outline full">Unpair this device</div>
+          </div>
+        </div></div>
+        <div class="caption">
+          <p class="screen-name">Settings (kid)</p>
+          <p class="screen-desc">Everything that's set up once rather than looked at daily: the permission checklist, the website-filter tips, display options and unpairing. The home screen shows a "Finish setup in Settings" button while anything is missing. The filter works by answering the phone's own website lookups, so a browser's "Secure DNS" or Android's "Private DNS" can skip it - the page says so, and warns outright when Android reports Private DNS as on. "Unpair this device" is offered here only while no family passcode is set.</p>
+          <div class="tag-row"><span class="tag">KidSettingsScreen.kt</span><span class="tag">private_dns_warning</span><span class="tag">status_finish_setup</span></div>
         </div>
       </div>
 
@@ -583,24 +606,30 @@
             <div class="m-btn-outline danger full">End screen time now</div>
             <p class="subtext tight" style="margin-top:6px;">Daily limit: 120 min</p>
             <div class="m-btn-outline full">Change daily limit</div>
-            <p class="subtext tight">Bedtime: 9:00 PM - 7:00 AM</p>
+            <p class="subtext tight">Bedtime: 9:00 PM tonight to 7:00 AM tomorrow morning (10 hours)</p>
             <div class="m-btn-outline full">Change bedtime</div>
             <div class="label-eyebrow">Bedtime calls</div>
-            <p class="subtext micro" style="margin:0 0 4px;">During bedtime, only the numbers below can call or text. Texts are muted, not fully blocked.</p>
+            <p class="subtext micro" style="margin:0 0 4px;">During bedtime, calls from or to any number not listed below are blocked. Texts can't be blocked, only quieted.</p>
             <div class="m-list-item"><div class="head">+1 555 123 4567</div><div class="trailing">Remove</div></div>
+            <div class="m-btn-outline full" style="padding:7px 16px;">Choose from contacts</div>
             <div class="m-btn-outline full" style="padding:7px 16px;">Turn on incoming-call blocking</div>
+            <div class="label-eyebrow">Optional tracking</div>
+            <div class="m-list-item"><div><div class="head">Track unlocks</div></div><span class="m-switch on"></span></div>
+            <div class="m-list-item"><div><div class="head">Track notification counts</div></div><span class="m-switch"></span></div>
             <div class="label-eyebrow">Uninstall protection</div>
             <p class="subtext micro" style="margin:0 0 6px;">Off. Turning this on adds a warning before OpenScreenTime can be removed - a clear signal to ask a parent first.</p>
             <div class="m-btn-outline full" style="padding:7px 16px;">Turn on</div>
             <div class="label-eyebrow">App limits</div>
+            <div style="display:flex;gap:6px;margin-bottom:4px;"><span class="chip" style="background:var(--app-primary);color:var(--app-on-primary);">Most used</span><span class="chip">A to Z</span></div>
             <div class="m-list-item"><div><div class="head">Instagram</div><div class="sub">Limit: 30 min/day</div></div><div class="trailing"><span class="m-checkbox"></span>Limit</div></div>
             <div class="m-list-item"><div><div class="head">Minecraft</div><div class="sub">Always allowed</div></div><div class="trailing"><span class="m-checkbox checked"></span>Limit</div></div>
+            <div class="m-list-item"><div><div class="head">Calculator</div><div class="sub">No limit set</div></div><div class="trailing"><span class="m-checkbox"></span>Limit</div></div>
           </div>
         </div></div>
         <div class="caption">
           <p class="screen-name">Parent controls</p>
-          <p class="screen-desc">Reached only after the passcode unlock. Now includes bedtime editing, a pending "more time" request (#23), uninstall protection (#31), bedtime calls with an allowed-numbers list (#34), and an "always allow" checkbox per app (#28) alongside its minute limit - all mirroring the parent app's own ChildDetailScreen.</p>
-          <div class="tag-row"><span class="tag">ParentControlsScreen.kt</span></div>
+          <p class="screen-desc">Reached only after the passcode unlock (five wrong attempts lock it for 15 minutes). Includes bedtime, a pending "more time" request (#23), uninstall protection (#31), bedtime calls with an allowed-numbers list - now with a "Choose from contacts" picker that needs no contacts permission (#34) - the optional tracking switches (#35), and an "always allow" checkbox and minute limit for every app on the phone, most used first or A to Z. It never accepts a fingerprint or phone screen lock: a child's own would open it.</p>
+          <div class="tag-row"><span class="tag">ParentControlsScreen.kt</span><span class="tag">bedtime_pick_contact</span><span class="tag">sort_usage</span><span class="tag">sort_name</span></div>
         </div>
       </div>
 
@@ -622,6 +651,47 @@
           <p class="screen-name">Block overlay</p>
           <p class="screen-desc">Full-screen interrupt on top of whatever app was open, with an alternative-activity suggestion and a "request more time" ask (never offered for a parent lock, and never a self-serve grant). The back gesture no longer dismisses this without going through "OK" (#31) - that used to quietly drop you back into the blocked app.</p>
           <div class="tag-row"><span class="tag">reason=daily_limit</span><span class="tag">app_limit</span><span class="tag">parent_lock</span><span class="tag calm">03 off-ramp</span></div>
+        </div>
+      </div>
+
+      <div class="screen-card">
+        <div class="phone"><div class="phone-inner">
+          <div class="block-screen">
+            <div class="headline">Screen time is paused</div>
+            <p class="subtext">A parent has paused screen time. Ask them to resume it.</p>
+            <p class="subtext" style="color:var(--app-primary);font-weight:600;">In the meantime: go for a walk</p>
+            <div class="m-btn-outline" style="margin-top:12px;">Parent unlock</div>
+            <div class="m-btn" style="margin-top:10px;">OK</div>
+          </div>
+        </div></div>
+        <div class="caption">
+          <p class="screen-name">Block overlay: parent lock</p>
+          <p class="screen-desc">A parent's "Lock now" is absolute - no "ask for more time" here. A parent standing next to the phone can lift it with the family passcode instead of reaching for their own phone: "Parent unlock" appears once a passcode exists on the device. The status icon shows stop, with a message saying screen time is paused rather than claiming a limit was hit.</p>
+          <div class="tag-row"><span class="tag">reason=parent_lock</span><span class="tag">block_parent_unlock</span><span class="tag calm">03 off-ramp</span></div>
+        </div>
+      </div>
+
+      <div class="screen-card">
+        <div class="phone"><div class="phone-inner" style="position:relative;">
+          <div class="block-screen" style="opacity:.35;"><div class="headline">Screen time is paused</div></div>
+          <div class="dialog-scrim">
+            <div class="dialog-box">
+              <div class="d-title">Parent unlock</div>
+              <div class="d-text">Enter the family passcode to unlock. You can lock again any time from the parent app.</div>
+              <div class="label-eyebrow" style="margin:0 0 4px;">Lock again after</div>
+              <div class="sub" style="font-size:10px;margin-bottom:3px;">&#9679; 15 minutes</div>
+              <div class="sub" style="font-size:10px;margin-bottom:3px;">&#9675; 30 minutes</div>
+              <div class="sub" style="font-size:10px;margin-bottom:3px;">&#9675; 1 hour</div>
+              <div class="sub" style="font-size:10px;margin-bottom:8px;">&#9675; Until I lock it again</div>
+              <div class="m-field" style="margin-bottom:12px;"><span class="m-label">Passcode</span><div class="m-value dots">&bull;&bull;&bull;&bull;</div></div>
+              <div class="dialog-actions"><span class="m-text-btn">Cancel</span><span class="m-text-btn">Unlock</span></div>
+            </div>
+          </div>
+        </div></div>
+        <div class="caption">
+          <p class="screen-name">Parent unlock</p>
+          <p class="screen-desc">Checked entirely on the phone against the synced passcode hash, with the same 15-minute lockout after five misses as Parent controls. The lock lifts at once and then re-locks by itself after the chosen time; a parent pressing "Lock now" again in the meantime cancels the timer. The parent's own phone has the same button on its own lock screen.</p>
+          <div class="tag-row"><span class="tag">ParentUnlockDialog.kt</span><span class="tag">parent_unlock_passcode</span><span class="tag">shared/model/Relock.kt</span></div>
         </div>
       </div>
 
@@ -654,13 +724,15 @@
             <p class="subtext tight" style="margin-top:8px;">Daily limit: 120 min</p>
             <div class="m-btn-outline full">Suggest a new daily limit</div>
             <div class="label-eyebrow">App limits</div>
+            <div style="display:flex;gap:6px;margin-bottom:4px;"><span class="chip" style="background:var(--app-primary);color:var(--app-on-primary);">Most used</span><span class="chip">A to Z</span></div>
             <div class="m-list-item"><div><div class="head">Instagram</div><div class="sub">Limit: 30 min/day</div></div><div class="trailing">Suggest</div></div>
             <div class="m-list-item"><div><div class="head">YouTube</div><div class="sub">No limit set</div></div><div class="trailing">Suggest</div></div>
+            <div class="m-list-item"><div><div class="head">Calculator</div><div class="sub">No limit set</div></div><div class="trailing">Suggest</div></div>
           </div>
         </div></div>
         <div class="caption">
           <p class="screen-name">Suggest a change</p>
-          <p class="screen-desc">Reachable straight from Status with no passcode &mdash; a request, not an override (#14). Writes only proposedDailyLimitMinutes/proposedAppLimits; the real limit never changes until a parent approves.</p>
+          <p class="screen-desc">Reachable straight from Status with no passcode &mdash; a request, not an override (#14). Writes only proposedDailyLimitMinutes/proposedAppLimits; the real limit never changes until a parent approves. Lists every app on the phone, not only ones already used, most used first with an A-to-Z switch.</p>
           <div class="tag-row"><span class="tag">ProposeChangeScreen.kt</span><span class="tag calm">05 suggest, don't impose</span></div>
         </div>
       </div>
@@ -703,16 +775,21 @@
         <div class="phone"><div class="phone-inner">
           <div class="body centered">
             <div class="headline" style="font-size:17px;">OpenScreenTime</div>
+            <div style="display:flex;width:100%;margin-top:8px;border-bottom:1px solid rgba(0,0,0,.18);">
+              <div style="flex:1;text-align:center;padding:6px 0;font-size:10px;font-weight:700;color:var(--app-primary);border-bottom:2px solid var(--app-primary);">Create account</div>
+              <div style="flex:1;text-align:center;padding:6px 0;font-size:10px;color:#6b6a63;">Sign in</div>
+            </div>
+            <p class="subtext micro" style="margin:6px 0 0;width:100%;text-align:left;">New here? Make an account to get started.</p>
             <div class="m-field" style="width:100%;text-align:left;margin-top:10px;"><span class="m-label">Email</span><div class="m-value">jordan@family.com</div></div>
             <div class="m-field" style="width:100%;text-align:left;"><span class="m-label">Password</span><div class="m-value dots">&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;</div></div>
             <div class="m-btn full" style="margin-top:4px;">Create account</div>
-            <div class="m-text-btn" style="margin-top:6px;">Already have an account? Sign in</div>
+            <div class="m-text-btn" style="margin-top:6px;">Forgot password? <span style="color:#6b6a63;">(on the Sign in tab)</span></div>
           </div>
         </div></div>
         <div class="caption">
           <p class="screen-name">Sign up / sign in</p>
-          <p class="screen-desc">Firebase email/password auth. Same screen toggles between create-account and sign-in copy. Two parents on any mix of Android/iOS share access by signing into the same account.</p>
-          <div class="tag-row"><span class="tag">auth_email</span><span class="tag">auth_password</span><span class="tag">auth_submit</span></div>
+          <p class="screen-desc">Firebase email/password auth. Two clear tabs - Create account and Sign in - with a line saying which mode you're in, instead of a small text link. "Forgot password?" on the Sign in tab emails a reset link, and says the same thing whether or not an account exists so the screen can't be used to find out who has one. Two parents on any mix of Android/iOS share access by signing into the same account.</p>
+          <div class="tag-row"><span class="tag">auth_tab_signup</span><span class="tag">auth_tab_signin</span><span class="tag">auth_email</span><span class="tag">auth_password</span><span class="tag">auth_submit</span><span class="tag">auth_forgot_password</span></div>
         </div>
       </div>
 
@@ -723,24 +800,46 @@
             <div class="headline">Enter passcode</div>
             <div class="m-field" style="width:100%;text-align:left;margin-top:8px;"><span class="m-label">Passcode</span><div class="m-value dots">&bull;&bull;&bull;&bull;</div></div>
             <div class="m-btn full" style="margin-top:6px;">Unlock</div>
+            <div class="m-btn-outline full" style="margin-top:4px;padding:7px 16px;">Use fingerprint or screen lock</div>
+            <div class="m-text-btn" style="margin-top:6px;">Forgot passcode?</div>
           </div>
         </div></div>
         <div class="caption">
           <p class="screen-name">App-lock gate</p>
-          <p class="screen-desc">Shown on launch once a passcode is set &mdash; same passcode as the kid device's Parent controls. Skipped entirely if no passcode has been set yet.</p>
-          <div class="tag-row"><span class="tag">AppLockState.unlockedThisSession</span></div>
+          <p class="screen-desc">Shown on launch once a passcode is set &mdash; the same passcode as the kid device's Parent controls. The fingerprint / face / screen-lock button appears only if a parent turned that on (off by default), and it prompts straight away. It exists on the parent app only: on a kid's phone the child's own fingerprint would open it. Skipped entirely if no passcode has been set yet.</p>
+          <div class="tag-row"><span class="tag">AppLockState.unlockedThisSession</span><span class="tag">unlock_device_auth</span><span class="tag">forgot_passcode</span></div>
+        </div>
+      </div>
+
+      <div class="screen-card">
+        <div class="phone"><div class="phone-inner" style="position:relative;">
+          <div class="body centered" style="opacity:.3;"><div class="headline">Enter passcode</div></div>
+          <div class="dialog-scrim">
+            <div class="dialog-box">
+              <div class="d-title">Reset your passcode</div>
+              <div class="d-text">To make sure it's you, enter the password for your OpenScreenTime account (the one you sign in with). This is not your phone's screen lock.</div>
+              <div class="m-field" style="margin-bottom:12px;"><span class="m-label">Account password</span><div class="m-value dots">&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;</div></div>
+              <div class="dialog-actions"><span class="m-text-btn">Cancel</span><span class="m-text-btn">Continue</span></div>
+            </div>
+          </div>
+        </div></div>
+        <div class="caption">
+          <p class="screen-name">Forgot passcode</p>
+          <p class="screen-desc">Recovery re-verifies the ACCOUNT password (a fresh sign-in check, nothing changes), then asks for a new 4-6 digit passcode and saves it here and on every paired kid phone. It deliberately does not accept the phone's own screen lock: anyone who knows the phone's PIN could otherwise reset the passcode and walk into the parent controls.</p>
+          <div class="tag-row"><span class="tag">forgot_account_password</span><span class="tag">forgot_continue</span><span class="tag">SessionRepository.verifyAccountPassword</span></div>
         </div>
       </div>
 
       <!-- 10. Dashboard -->
       <div class="screen-card">
-        <div class="phone"><div class="phone-inner" style="position:relative;">
+        <div class="phone"><div class="phone-inner">
           <div class="appbar"><span class="title">Manage Your Screen Time</span><div class="actions"><span class="action">?</span><span class="action">&#8942;</span></div></div>
           <div class="body scroll">
-            <div class="card-tint" style="border-left:3px solid var(--app-primary);">
-              <div style="font-size:11px;font-weight:600;margin-bottom:2px;">Off-screen idea</div>
-              <div class="sub" style="margin-bottom:4px;">Step outside for five minutes, no phone.</div>
-              <div style="display:flex;align-items:center;gap:6px;"><span class="m-checkbox"></span><span class="sub" style="margin:0;">I did this</span></div>
+            <div class="m-btn full" style="margin-top:0;">Add kid</div>
+            <div class="card-tint" style="background:#f3e6ee;">
+              <div style="font-size:11px;font-weight:600;margin-bottom:2px;">Set your family passcode</div>
+              <div class="sub" style="margin-bottom:6px;">It protects this app, and it's how you unlock or change limits on your kid's phone without your own in hand. It only takes a moment.</div>
+              <div class="m-btn full" style="margin:0;padding:5px 12px;">Set passcode</div>
             </div>
             <div class="card-tint">
               <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
@@ -755,20 +854,36 @@
               </div>
               <div class="sub">5 days in a row under goal</div>
             </div>
-            <div class="card-tint" style="margin-bottom:0;">
+            <div class="card-tint">
               <div style="font-size:12px;font-weight:600;margin-bottom:4px;">My screen time</div>
-              <div class="stat-row" style="margin-bottom:0;">
+              <div class="stat-row" style="margin-bottom:6px;">
                 <div class="stat"><div class="num">1h 12m</div><div class="label">SCREEN TIME</div></div>
                 <div class="stat"><div class="num">9</div><div class="label">UNLOCKS</div></div>
               </div>
+              <div class="m-btn-outline full" style="margin:0;padding:5px 12px;">Customize Screen Time goals</div>
+            </div>
+            <div class="card-tint" style="border-left:3px solid var(--app-primary);">
+              <div style="font-size:11px;font-weight:600;margin-bottom:2px;">Off-screen idea</div>
+              <div class="sub" style="margin-bottom:4px;">Step outside for five minutes.</div>
+              <div style="display:flex;align-items:center;gap:6px;"><span class="m-checkbox"></span><span class="sub" style="margin:0;">I did this</span></div>
+            </div>
+            <div class="card-tint">
+              <div class="label-eyebrow" style="margin:0 0 2px;">What the status icons mean</div>
+              <div class="sub">Look for a small icon in the top-left of the status bar, next to the clock.</div>
+              <div class="sub">&#128077; Thumbs up: Great job! You're on track.</div>
+              <div class="sub">&#9995; Open hand: Slow down</div>
+              <div class="sub">&#128721; Stop: You've reached your overall screen time limit</div>
+            </div>
+            <div class="card-tint">
+              <div style="display:flex;justify-content:space-between;align-items:center;"><div class="head" style="font-size:11px;font-weight:600;">Calm notification list</div><span class="m-switch"></span></div>
+              <p class="subtext micro" style="margin:2px 0 0;">A plain, read-only list of today's notifications on this phone. It stays on this phone.</p>
             </div>
           </div>
-          <div style="position:absolute;right:12px;bottom:14px;width:36px;height:36px;border-radius:50%;background:var(--app-primary);color:#fff;display:flex;align-items:center;justify-content:center;font-size:18px;box-shadow:0 4px 10px rgba(0,0,0,.25);">+</div>
         </div></div>
         <div class="caption">
           <p class="screen-name">Dashboard</p>
-          <p class="screen-desc">Header retitled from "Your children" for clarity (#27); four separate top-bar actions collapsed into one "&#8942;" menu (Style / Passcode / Feedback / Sign out), next to a "?" that opens the help bot (#36). The parent's own self-tracking card now shows live numbers directly here, reusing the exact same card as a kid's (#27, #18) &mdash; walking the walk, not just saying it.</p>
-          <div class="tag-row"><span class="tag">dashboard_add_child</span><span class="tag">dashboard_child_lock_toggle</span><span class="tag calm">09 walk the walk</span></div>
+          <p class="screen-desc">An "Add kid" button opens the list, always first so nothing that loads later can move it (it replaced the floating + button). A card asks for the family passcode until one is set. Kids come first, then the parent's own "My screen time" tile - now with "Customize Screen Time goals", a shortcut alongside "Lock now" - then the off-screen idea, the same status-icon explanation the kid app shows (#30), and the parent's own opt-in calm notification list. Tapping the "My screen time" tile goes straight to View my screen time; permissions are their own screen.</p>
+          <div class="tag-row"><span class="tag">dashboard_add_child</span><span class="tag">dashboard_passcode_prompt</span><span class="tag">dashboard_self_customize_goals</span><span class="tag">status_icon_legend</span><span class="tag calm">09 walk the walk</span></div>
         </div>
       </div>
 
@@ -786,7 +901,7 @@
         </div></div>
         <div class="caption">
           <p class="screen-name">Add a child</p>
-          <p class="screen-desc">Opened from the dashboard's + button. Creating generates the pairing code shown next.</p>
+          <p class="screen-desc">Opened from the dashboard's "Add kid" button. Creating generates the pairing code shown next.</p>
           <div class="tag-row"><span class="tag">add_child_name</span><span class="tag">add_child_create</span></div>
         </div>
       </div>
@@ -800,13 +915,14 @@
               <div class="d-title">Pairing code</div>
               <div class="d-text">Enter this code in OpenScreenTime Kid on your child's phone:</div>
               <div class="dialog-code">349217</div>
-              <div class="dialog-actions"><span class="m-text-btn">Done</span></div>
+              <div class="d-text" style="font-size:9px;">Copied to your clipboard. It works for 30 minutes.</div>
+              <div class="dialog-actions"><span class="m-text-btn">Copy again</span><span class="m-text-btn">Done</span></div>
             </div>
           </div>
         </div></div>
         <div class="caption">
           <p class="screen-name">Pairing code</p>
-          <p class="screen-desc">Shown once, immediately after creating a child. The code itself expires 30 minutes after this moment.</p>
+          <p class="screen-desc">Shown once, immediately after creating a child, and copied to the clipboard the moment it appears so it can be pasted straight into the kid app (a "Copy code" button also sits on a kid still waiting to pair). The code itself expires 30 minutes after this moment.</p>
           <div class="tag-row"><span class="tag">pairing_code_value</span><span class="tag">pairing_code_done</span></div>
         </div>
       </div>
@@ -832,17 +948,62 @@
             </div>
             <p class="subtext tight" style="color:var(--app-primary);font-weight:600;">5 days in a row under goal</p>
             <div class="m-progress"><div class="fill" style="width:85%"></div></div>
-            <p class="subtext tight">Daily limit: 120 min &middot; Bedtime: 9:00 PM - 7:00 AM</p>
+            <p class="subtext tight">Daily limit: 120 min</p>
+            <p class="subtext tight">Bedtime: 9:00 PM tonight to 7:00 AM tomorrow morning (10 hours)</p>
+            <div class="m-btn-outline full">Change bedtime</div>
             <div class="m-btn-outline full" style="margin-bottom:10px;">View weekly report</div>
             <div class="label-eyebrow">App usage today</div>
+            <div style="display:flex;gap:6px;margin-bottom:4px;"><span class="chip" style="background:var(--app-primary);color:var(--app-on-primary);">Most used</span><span class="chip">A to Z</span></div>
             <div class="m-list-item"><div><div class="head">Instagram</div><div class="sub over">45m of 30m limit</div></div><div class="trailing"><span class="m-checkbox"></span>Limit</div></div>
             <div class="m-list-item"><div><div class="head">Google Maps</div><div class="sub">Always allow</div></div><div class="trailing"><span class="m-checkbox checked"></span>Limit</div></div>
+            <div class="m-list-item"><div><div class="head">Calculator</div><div class="sub">0m</div></div><div class="trailing"><span class="m-checkbox"></span>Limit</div></div>
           </div>
         </div></div>
         <div class="caption">
           <p class="screen-name">Child detail</p>
-          <p class="screen-desc">Now includes a pending "more time" grant/decline card (#23), a bedtime summary, an "always allow" checkbox per app (#28), and a single "View weekly report" button &mdash; the detailed numbers stay one tap away rather than shown inline here, deliberately (#29).</p>
-          <div class="tag-row"><span class="tag">ChildDetailScreen.kt</span><span class="tag calm">06 detail stays with parent</span></div>
+          <p class="screen-desc">Includes a pending "more time" grant/decline card (#23), a bedtime summary that spells out the night, and a single "View weekly report" button &mdash; the detailed numbers stay one tap away rather than shown inline, deliberately (#29). The app list shows every app on the kid's phone (published by that phone, refreshed when it changes), not only ones used today - most used first, with an A-to-Z switch - and an "always allow" checkbox and limit for each (#28).</p>
+          <div class="tag-row"><span class="tag">ChildDetailScreen.kt</span><span class="tag">sort_usage</span><span class="tag">sort_name</span><span class="tag calm">06 detail stays with parent</span></div>
+        </div>
+      </div>
+
+      <div class="screen-card">
+        <div class="phone"><div class="phone-inner" style="position:relative;">
+          <div class="appbar"><span class="title">Mia</span><span class="action" style="opacity:.4">BACK</span></div>
+          <div class="dialog-scrim">
+            <div class="dialog-box">
+              <div class="d-title">Bedtime starts</div>
+              <div class="d-text" style="margin-bottom:6px;">Step 1 of 2 - the evening or night apps lock. Pick the time and AM or PM (for example 9:00 PM).</div>
+              <div style="display:flex;justify-content:center;align-items:center;gap:8px;margin:2px 0 8px;"><div style="font-size:22px;font-weight:700;font-variant-numeric:tabular-nums;">9:00</div><div style="border:1px solid rgba(0,0,0,.25);border-radius:6px;font-size:8.5px;font-weight:700;overflow:hidden;"><div style="padding:4px 7px;">AM</div><div style="padding:4px 7px;background:var(--app-primary);color:var(--app-on-primary);">PM</div></div></div><div style="position:relative;width:108px;height:108px;margin:0 auto 8px;border-radius:50%;background:var(--app-surface-variant);"><span style="position:absolute;left:69.5%;top:16.2%;transform:translate(-50%,-50%);font-size:8px;">1</span><span style="position:absolute;left:83.8%;top:30.5%;transform:translate(-50%,-50%);font-size:8px;">2</span><span style="position:absolute;left:89.0%;top:50.0%;transform:translate(-50%,-50%);font-size:8px;">3</span><span style="position:absolute;left:83.8%;top:69.5%;transform:translate(-50%,-50%);font-size:8px;">4</span><span style="position:absolute;left:69.5%;top:83.8%;transform:translate(-50%,-50%);font-size:8px;">5</span><span style="position:absolute;left:50.0%;top:89.0%;transform:translate(-50%,-50%);font-size:8px;">6</span><span style="position:absolute;left:30.5%;top:83.8%;transform:translate(-50%,-50%);font-size:8px;">7</span><span style="position:absolute;left:16.2%;top:69.5%;transform:translate(-50%,-50%);font-size:8px;">8</span><span style="position:absolute;left:11.0%;top:50.0%;transform:translate(-50%,-50%);font-size:8px;background:var(--app-primary);color:var(--app-on-primary);border-radius:50%;width:15px;height:15px;display:flex;align-items:center;justify-content:center;font-weight:700;">9</span><span style="position:absolute;left:16.2%;top:30.5%;transform:translate(-50%,-50%);font-size:8px;">10</span><span style="position:absolute;left:30.5%;top:16.2%;transform:translate(-50%,-50%);font-size:8px;">11</span><span style="position:absolute;left:50.0%;top:11.0%;transform:translate(-50%,-50%);font-size:8px;">12</span><div style="position:absolute;left:50%;top:50%;width:5px;height:5px;border-radius:50%;background:var(--app-primary);transform:translate(-50%,-50%);"></div></div>
+              <div style="font-size:10px;font-weight:700;color:var(--app-primary);margin-bottom:8px;">9:00 PM tonight to 7:00 AM tomorrow morning (10 hours)</div>
+              <div class="dialog-actions"><span class="m-text-btn">Cancel</span><span class="m-text-btn">Next</span></div>
+            </div>
+          </div>
+        </div></div>
+        <div class="caption">
+          <p class="screen-name">Bedtime: starts</p>
+          <p class="screen-desc">Bedtime is set in two plain steps, each with a 12-hour clock and an AM/PM switch - no 24-hour times. Step 1 is when it STARTS (that evening or night). A live sentence underneath spells out the whole night, so nobody has to reason about a window that crosses midnight. It works like Apple's Sleep schedule, Google's Bedtime mode and Family Link: a start, an end, and a summary. Bedtime is per person: each child has their own (set from their screen here, or from their phone's Parent controls), and the parent's own "My screen time" has one too.</p>
+          <div class="tag-row"><span class="tag">BedtimeWindowDialog.kt</span><span class="tag">bedtime_next</span><span class="tag">bedtime_summary</span></div>
+        </div>
+      </div>
+
+      <div class="screen-card">
+        <div class="phone"><div class="phone-inner" style="position:relative;">
+          <div class="appbar"><span class="title">Mia</span><span class="action" style="opacity:.4">BACK</span></div>
+          <div class="dialog-scrim">
+            <div class="dialog-box">
+              <div class="d-title">Bedtime ends</div>
+              <div class="d-text" style="margin-bottom:6px;">Step 2 of 2 - the next morning, when apps unlock again. Pick the time and AM or PM (for example 7:00 AM).</div>
+              <div style="display:flex;justify-content:center;align-items:center;gap:8px;margin:2px 0 8px;"><div style="font-size:22px;font-weight:700;font-variant-numeric:tabular-nums;">7:00</div><div style="border:1px solid rgba(0,0,0,.25);border-radius:6px;font-size:8.5px;font-weight:700;overflow:hidden;"><div style="padding:4px 7px;background:var(--app-primary);color:var(--app-on-primary);">AM</div><div style="padding:4px 7px;">PM</div></div></div><div style="position:relative;width:108px;height:108px;margin:0 auto 8px;border-radius:50%;background:var(--app-surface-variant);"><span style="position:absolute;left:69.5%;top:16.2%;transform:translate(-50%,-50%);font-size:8px;">1</span><span style="position:absolute;left:83.8%;top:30.5%;transform:translate(-50%,-50%);font-size:8px;">2</span><span style="position:absolute;left:89.0%;top:50.0%;transform:translate(-50%,-50%);font-size:8px;">3</span><span style="position:absolute;left:83.8%;top:69.5%;transform:translate(-50%,-50%);font-size:8px;">4</span><span style="position:absolute;left:69.5%;top:83.8%;transform:translate(-50%,-50%);font-size:8px;">5</span><span style="position:absolute;left:50.0%;top:89.0%;transform:translate(-50%,-50%);font-size:8px;">6</span><span style="position:absolute;left:30.5%;top:83.8%;transform:translate(-50%,-50%);font-size:8px;background:var(--app-primary);color:var(--app-on-primary);border-radius:50%;width:15px;height:15px;display:flex;align-items:center;justify-content:center;font-weight:700;">7</span><span style="position:absolute;left:16.2%;top:69.5%;transform:translate(-50%,-50%);font-size:8px;">8</span><span style="position:absolute;left:11.0%;top:50.0%;transform:translate(-50%,-50%);font-size:8px;">9</span><span style="position:absolute;left:16.2%;top:30.5%;transform:translate(-50%,-50%);font-size:8px;">10</span><span style="position:absolute;left:30.5%;top:16.2%;transform:translate(-50%,-50%);font-size:8px;">11</span><span style="position:absolute;left:50.0%;top:11.0%;transform:translate(-50%,-50%);font-size:8px;">12</span><div style="position:absolute;left:50%;top:50%;width:5px;height:5px;border-radius:50%;background:var(--app-primary);transform:translate(-50%,-50%);"></div></div>
+              <div style="font-size:10px;font-weight:700;color:var(--app-primary);margin-bottom:4px;">9:00 PM tonight to 7:00 AM tomorrow morning (10 hours)</div>
+              <div class="m-text-btn" style="margin-bottom:8px;">Turn bedtime off</div>
+              <div class="dialog-actions"><span class="m-text-btn">Back</span><span class="m-text-btn">Save</span></div>
+            </div>
+          </div>
+        </div></div>
+        <div class="caption">
+          <p class="screen-name">Bedtime: ends</p>
+          <p class="screen-desc">Step 2 is when it ENDS - the next morning. Save is disabled if start and end are the same time, and "Turn bedtime off" appears once a bedtime is set. Blocks every app during the window, independent of the daily limit; apps marked "always allow" and allowed phone numbers still get through.</p>
+          <div class="tag-row"><span class="tag">bedtime_save</span><span class="tag">bedtime_turn_off</span><span class="tag">describeBedtimeWindow</span></div>
         </div>
       </div>
 
@@ -935,6 +1096,7 @@
           <div class="appbar"><span class="title">Family passcode</span><span class="action">BACK</span></div>
           <div class="body">
             <p class="subtext">This locks the app, and can be entered on a paired kid device to unlock &ldquo;Parent controls&rdquo; there. Set a new one to replace it.</p>
+            <div class="m-list-item"><div><div class="head">Unlock with fingerprint or screen lock</div><div class="sub">Open this app with this phone's fingerprint, face, or screen lock instead of typing the passcode. Anyone whose fingerprint or screen lock works on this phone will be able to open the app, so leave it off if a child can unlock this phone.</div></div><span class="m-switch"></span></div>
             <div class="m-field"><span class="m-label">New passcode (4-6 digits)</span><div class="m-value dots">&bull;&bull;&bull;&bull;</div></div>
             <div class="m-field"><span class="m-label">Confirm passcode</span><div class="m-value dots">&bull;&bull;&bull;&bull;</div></div>
             <div class="m-btn full" style="margin-top:2px;">Save passcode</div>
@@ -942,8 +1104,8 @@
         </div></div>
         <div class="caption">
           <p class="screen-name">Family passcode</p>
-          <p class="screen-desc">Hashed with PBKDF2-HMAC-SHA256 on save, then fanned out to every child doc so already-paired kid devices pick it up.</p>
-          <div class="tag-row"><span class="tag">PasscodeSettingsScreen.kt</span></div>
+          <p class="screen-desc">Hashed with PBKDF2-HMAC-SHA256 on save, then fanned out to every child doc so already-paired kid devices pick it up. The optional unlock switch is off by default, appears only on phones that support it, and asks you to authenticate before it turns on. The passcode is a deterrent against casual changes, not a lock against a determined, skilled user with the child's phone.</p>
+          <div class="tag-row"><span class="tag">PasscodeSettingsScreen.kt</span><span class="tag">passcode_device_auth_toggle</span></div>
         </div>
       </div>
 
@@ -976,20 +1138,53 @@
         <div class="phone"><div class="phone-inner">
           <div class="appbar"><span class="title">My screen time</span><span class="action">BACK</span></div>
           <div class="body">
-            <p class="subtext">Track and limit your own screen time on this device, the same way you can for your kids &mdash; walking the walk.</p>
-            <div class="m-list-item"><div><div class="head">Display over other apps</div></div><div class="trailing granted">Granted</div></div>
-            <div class="m-list-item"><div><div class="head">Accessibility service</div></div><div class="trailing granted">Granted</div></div>
-            <div class="m-list-item"><div><div class="head">Battery optimization</div></div><div class="trailing">Fix</div></div>
-            <div class="m-list-item"><div><div class="head">Notification access (optional)</div><div class="sub">Only for notification-count tracking. Counts only.</div></div><div class="trailing">Fix</div></div>
+            <p class="subtext">Track and limit your own screen time on this device, the same way you can for your kids. Parents modeling healthy limits themselves is one of the more effective things a family can actually do about screen time.</p>
             <div style="flex:1;"></div>
-            <div class="m-btn full">View my screen time</div>
-            <div class="m-btn-outline full">Stop tracking my screen time</div>
+            <div class="m-btn full">Start tracking my screen time</div>
           </div>
         </div></div>
         <div class="caption">
           <p class="screen-name">Self tracking</p>
-          <p class="screen-desc">Opt-in parental self-tracking (#8) &mdash; the core mechanic behind the "diametrical opposite of an addiction machine" goal. Once started, "View my screen time" reuses Child detail (and its weekly report) for the parent's own profile, unchanged from a kid's.</p>
+          <p class="screen-desc">Opt-in parental self-tracking (#8) &mdash; the core mechanic behind the "diametrical opposite of an addiction machine" goal. Shown only the first time: after "Start tracking", tapping the "My screen time" tile goes straight to View my screen time (Child detail and its weekly report for the parent's own profile), no longer through this screen.</p>
           <div class="tag-row"><span class="tag">SelfTrackingScreen.kt</span><span class="tag calm">09 walk the walk</span></div>
+        </div>
+      </div>
+
+      <div class="screen-card">
+        <div class="phone"><div class="phone-inner">
+          <div class="appbar"><span class="title">Permissions</span><span class="action">BACK</span></div>
+          <div class="body">
+            <p class="subtext">A few permissions are needed on this device too.</p>
+            <div class="m-list-item"><div><div class="head">Display over other apps</div></div><div class="trailing granted">Granted</div></div><div class="m-list-item"><div><div class="head">Accessibility service</div></div><div class="trailing granted">Granted</div></div><div class="m-list-item"><div><div class="head">Notifications</div></div><div class="trailing granted">Granted</div></div><div class="m-list-item"><div><div class="head">Battery optimization</div></div><div class="trailing">Fix</div></div><div class="m-list-item"><div><div class="head">Notification access (optional)</div><div class="sub">Only for notification-count tracking or the calm notification list. Counts only.</div></div><div class="trailing">Fix</div></div>
+            <div style="flex:1;"></div>
+            <div class="m-btn-outline full">Stop tracking my screen time</div>
+          </div>
+        </div></div>
+        <div class="caption">
+          <p class="screen-name">Permissions (parent)</p>
+          <p class="screen-desc">What self-tracking needs on this phone, on its own screen instead of buried in the opt-in page. Reached from a "Permissions" card at the top of View my screen time, which turns red and reads "Fix permissions" while something is missing. "Stop tracking" lives here.</p>
+          <div class="tag-row"><span class="tag">SelfPermissionsScreen</span><span class="tag">self_open_permissions</span></div>
+        </div>
+      </div>
+
+      <div class="screen-card">
+        <div class="phone"><div class="phone-inner">
+          <div class="appbar"><span class="title">Today's notifications</span><span class="action">BACK</span></div>
+          <div class="body scroll">
+            <div style="padding:6px 0;"><div class="head" style="font-size:12px;font-weight:600;margin-bottom:4px;">Messages</div>
+              <div class="digest-row"><span>9:41 AM &nbsp;Sam &mdash; are you free later?</span></div>
+              <div class="digest-row"><span>11:02 AM &nbsp;Mom &mdash; call me when you can</span></div>
+            </div>
+            <div style="padding:6px 0;"><div class="head" style="font-size:12px;font-weight:600;margin-bottom:4px;">Calendar</div>
+              <div class="digest-row"><span>2:30 PM &nbsp;Dentist in 30 minutes</span></div>
+            </div>
+            <p class="subtext micro" style="margin-top:8px;">Read-only. Tapping a row does nothing on purpose - this is not a way back into the app.</p>
+          </div>
+        </div></div>
+        <div class="caption">
+          <p class="screen-name">Calm notification list</p>
+          <p class="screen-desc">An optional, plain, read-only list of today's notifications, grouped by app, kept only on the phone it's on and never uploaded. The parent app has its own switch on the home screen (the kid app has the same list on its home screen). It needs notification access, and starts empty each day.</p>
+          <div class="tag-row"><span class="tag">NotificationDigestScreen.kt</span><span class="tag">dashboard_open_digest</span><span class="tag calm">01 calm signal</span></div>
         </div>
       </div>
 
