@@ -6,10 +6,9 @@ import androidx.work.WorkerParameters
 import org.openscreentime.kid.KidApp
 import org.openscreentime.kid.data.PairingStore
 import org.openscreentime.kid.data.UsageStore
-import org.openscreentime.shared.model.AppUsage
-import org.openscreentime.shared.model.DailyStats
-import org.openscreentime.shared.model.toAppCounts
+import org.openscreentime.shared.util.buildDailyStats
 import org.openscreentime.shared.util.listLaunchableApps
+import org.openscreentime.shared.util.trackingChoices
 
 /** Periodically pushes the on-device usage snapshot up to Firestore. */
 class SyncWorker(context: Context, params: WorkerParameters) : CoroutineWorker(context, params) {
@@ -19,32 +18,7 @@ class SyncWorker(context: Context, params: WorkerParameters) : CoroutineWorker(c
         val parentUid = pairingStore.parentUid ?: return Result.success()
         val childId = pairingStore.childId ?: return Result.success()
 
-        val usageStore = UsageStore(applicationContext)
-        val appUsage = usageStore.appUsageMs.map { (pkg, ms) ->
-            AppUsage(packageName = pkg, appName = usageStore.appNames[pkg] ?: pkg, foregroundTimeMs = ms)
-        }
-        val stats = DailyStats(
-            date = usageStore.date,
-            totalScreenTimeMs = usageStore.totalScreenTimeMs,
-            unlockCount = usageStore.unlockCount,
-            appUsage = appUsage,
-            lastSyncedAtMs = System.currentTimeMillis(),
-            // See #35 - only uploaded while a parent has the matching tracking toggle on, so
-            // turning one off also stops any counts already on the device from being sent.
-            notificationCount = if (LiveChildState.trackNotifications) usageStore.notificationCount else 0,
-            notificationsByApp = if (LiveChildState.trackNotifications) {
-                toAppCounts(usageStore.notificationCountsByApp, usageStore.appNames)
-            } else {
-                emptyList()
-            },
-            unlockFirstApps = if (LiveChildState.trackUnlocks) {
-                toAppCounts(usageStore.firstAppsAfterUnlock, usageStore.appNames)
-            } else {
-                emptyList()
-            },
-            // See #41 - only while a parent has website tracking on for this phone.
-            websiteCounts = if (LiveChildState.trackWebsites) toAppCounts(usageStore.websiteCounts, emptyMap()) else emptyList()
-        )
+        val stats = buildDailyStats(UsageStore(applicationContext), LiveChildState.trackingChoices(), System.currentTimeMillis())
 
         val repository = (applicationContext as KidApp).repository
         return try {
