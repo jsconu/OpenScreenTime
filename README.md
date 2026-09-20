@@ -320,6 +320,13 @@ use, it matters who you trust to run it, so here is how to tell the official pro
   opt-in and clearly explained) aren't enforceable by a license. If a fork drops them, that's the
   fork's choice, not this project's.
 
+## Installing the Android apps
+
+New to installing an app that isn't from the Play Store? [docs/INSTALL_ANDROID.md](docs/INSTALL_ANDROID.md) is
+a plain-language, step-by-step guide: downloading the two APKs, the "install unknown apps" and Play Protect
+prompts, pairing, each permission, Android's "Allow restricted settings" step for Accessibility, phone-maker
+battery settings, and what to do if a blocked website still opens.
+
 ## Publishing your own build
 
 Building a signed release, and putting it on a private Google Play internal-testing track, is

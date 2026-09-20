@@ -16,6 +16,10 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
+import android.os.Build
+import android.net.ConnectivityManager
+import android.content.Context
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
@@ -100,6 +104,7 @@ fun KidSettingsScreen(
             permissions.vpn,
             permissionActions.onRequestVpn
         )
+        WebsiteFilterTips()
         Spacer(Modifier.height(8.dp))
         Text(
             "Some phone makers (Samsung, Xiaomi, and others) have their own extra battery " +
@@ -150,5 +155,46 @@ fun KidSettingsScreen(
         }
         Spacer(Modifier.height(24.dp))
     }
+    }
+}
+
+/**
+ * The website filter works by answering this phone's DNS lookups, so anything that does its own name lookups
+ * skips it. Two settings do that, and neither can be turned off from an app: a browser's "Secure DNS" and
+ * Android's "Private DNS". Says so, and warns outright when Android reports Private DNS as active.
+ */
+@Composable
+private fun WebsiteFilterTips() {
+    val context = LocalContext.current
+    val privateDns = remember { isPrivateDnsActive(context) }
+    Column(Modifier.fillMaxWidth().padding(vertical = 8.dp)) {
+        if (privateDns) {
+            Text(
+                "Private DNS is on for this phone, so the website filter can be skipped. Turn it off in " +
+                    "Android Settings: search for \"Private DNS\" and choose Off.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.error,
+                modifier = Modifier.testTag("private_dns_warning")
+            )
+            Spacer(Modifier.height(4.dp))
+        }
+        Text(
+            "If a blocked site still opens, check the browser's own settings: turn off \"Secure DNS\" or " +
+                "\"DNS over HTTPS\" (Chrome: Settings > Privacy and security > Use secure DNS; Firefox: " +
+                "Settings > Privacy > DNS over HTTPS), then close the browser completely and try again.",
+            style = MaterialTheme.typography.bodySmall
+        )
+    }
+}
+
+/** True when Android says encrypted "Private DNS" is in use on the current network (needs Android 9+). */
+private fun isPrivateDnsActive(context: Context): Boolean {
+    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.P) return false
+    return try {
+        val cm = context.getSystemService(ConnectivityManager::class.java)
+        val network = cm.activeNetwork ?: return false
+        cm.getLinkProperties(network)?.isPrivateDnsActive == true
+    } catch (e: Exception) {
+        false
     }
 }
