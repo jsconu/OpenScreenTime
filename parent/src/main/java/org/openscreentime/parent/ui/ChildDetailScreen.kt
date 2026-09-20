@@ -105,18 +105,11 @@ fun ChildDetailScreen(
     var child by remember { mutableStateOf<ChildProfile?>(null) }
     var stats by remember { mutableStateOf(DailyStats(date = todayDateString())) }
     var streakDays by remember { mutableIntStateOf(0) }
-    var showLimitDialog by remember { mutableStateOf(false) }
-    var showUnlockGoalDialog by remember { mutableStateOf(false) }
-    var showBedtimeDialog by remember { mutableStateOf(false) }
-    var showFrequentCheckWarning by remember { mutableStateOf(false) }
-    var editingApp by remember { mutableStateOf<String?>(null) }
-    var showLockConfirm by remember { mutableStateOf(false) }
-    var showDeleteConfirm by remember { mutableStateOf(false) }
+    // The one dialog open over this page, if any.
+    var dialog by remember { mutableStateOf<DetailDialog?>(null) }
     var newBlockedDomain by remember { mutableStateOf("") }
     var kidInstalledApps by remember { mutableStateOf<List<InstalledApp>>(emptyList()) }
     var appSort by rememberSaveable { mutableStateOf(AppSort.USAGE) }
-    // Which per-app list is being edited in the app picker, if any.
-    var pickingList by remember { mutableStateOf<AppList?>(null) }
 
     DisposableEffect(childId) {
         val reg1 = repository.listenChildren(parentUid) { list ->
@@ -206,27 +199,29 @@ fun ChildDetailScreen(
                 stats = stats,
                 streakDays = streakDays,
                 onToggleLock = { scope.launch { repository.setLocked(parentUid, childId, false) } },
-                onRequestLockConfirm = { showLockConfirm = true },
-                onChangeLimit = { showLimitDialog = true },
-                onChangeUnlockGoal = { showUnlockGoalDialog = true },
-                onChangeBedtime = { showBedtimeDialog = true }
+                onRequestLockConfirm = { dialog = DetailDialog.LockConfirm },
+                onChangeLimit = { dialog = DetailDialog.DailyLimit },
+                onChangeUnlockGoal = { dialog = DetailDialog.UnlockGoal },
+                onChangeBedtime = { dialog = DetailDialog.Bedtime }
             )
             excludedFromTotalSection(
                 child = currentChild,
                 appNames = displayedApps.associate { it.packageName to it.appName },
-                onPickApps = { pickingList = AppList.EXCLUDED_FROM_TOTAL }
+                onPickApps = { dialog = DetailDialog.AppPicker(AppList.EXCLUDED_FROM_TOTAL) }
             )
             focusModeSection(
                 child = currentChild,
                 isOwnPhone = currentChild.isSelf,
                 onSetEnabled = { enabled -> scope.launch { repository.setFocusMode(parentUid, childId, enabled) } },
                 onSetProfile = { profile -> scope.launch { repository.setFocusProfile(parentUid, childId, profile) } },
-                onPickApps = { travelOnly -> pickingList = if (travelOnly) AppList.TRAVEL_ALLOWED else AppList.FOCUS_ALLOWED }
+                onPickApps = { travelOnly ->
+                    dialog = DetailDialog.AppPicker(if (travelOnly) AppList.TRAVEL_ALLOWED else AppList.FOCUS_ALLOWED)
+                }
             )
             weeklyReportSection(
                 onOpenReport = {
                     if (reportTracker.todayOpenCount >= FREQUENT_CHECK_THRESHOLD) {
-                        showFrequentCheckWarning = true
+                        dialog = DetailDialog.FrequentCheck
                     } else {
                         reportTracker.recordOpen()
                         onOpenReport()
@@ -263,134 +258,29 @@ fun ChildDetailScreen(
                 appUsage = displayedApps,
                 appLimits = currentChild.appLimits,
                 alwaysAllowedPackages = currentChild.alwaysAllowedPackages,
-                onEditApp = { editingApp = it },
+                onEditApp = { dialog = DetailDialog.AppLimit(it) },
                 onToggleAlwaysAllowed = { pkg, allowed ->
                     scope.launch { repository.setAppListMember(parentUid, childId, AppList.ALWAYS_ALLOWED, pkg, allowed) }
                 }
             )
-            removeChildSection(childName = currentChild.name, onRequestDelete = { showDeleteConfirm = true })
+            removeChildSection(childName = currentChild.name, onRequestDelete = { dialog = DetailDialog.DeleteConfirm })
         }
     }
 
-    if (showLimitDialog) {
-        MinutesInputDialog(
-            title = "Daily screen time limit",
-            initialMinutes = currentChild.dailyLimitMinutes,
-            onDismiss = { showLimitDialog = false },
-            onConfirm = { minutes ->
-                scope.launch { repository.updateDailyLimit(parentUid, childId, minutes) }
-                showLimitDialog = false
-            }
-        )
-    }
-
-    if (showUnlockGoalDialog) {
-        UnlockGoalInputDialog(
-            initialGoal = currentChild.dailyUnlockGoal,
-            onDismiss = { showUnlockGoalDialog = false },
-            onConfirm = { goal ->
-                scope.launch { repository.updateDailyUnlockGoal(parentUid, childId, goal) }
-                showUnlockGoalDialog = false
-            }
-        )
-    }
-
-    if (showBedtimeDialog) {
-        BedtimeWindowDialog(
-            initialStartMinutes = currentChild.bedtimeStartMinutes,
-            initialEndMinutes = currentChild.bedtimeEndMinutes,
-            onDismiss = { showBedtimeDialog = false },
-            onConfirm = { start, end ->
-                scope.launch { repository.updateBedtimeWindow(parentUid, childId, start, end) }
-                showBedtimeDialog = false
-            }
-        )
-    }
-
-    if (showFrequentCheckWarning) {
-        AlertDialog(
-            onDismissRequest = { showFrequentCheckWarning = false },
-            title = { Text("Check in, not check up") },
-            text = {
-                Text(
-                    "You've opened a report a few times today already. A quick look now and " +
-                        "then makes sense, but checking constantly can turn this into its own " +
-                        "source of stress. Still want to open it?"
-                )
-            },
-            confirmButton = {
-                TextButton(onClick = {
-                    reportTracker.recordOpen()
-                    showFrequentCheckWarning = false
-                    onOpenReport()
-                }) { Text("Open anyway") }
-            },
-            dismissButton = { TextButton(onClick = { showFrequentCheckWarning = false }) { Text("Not now") } }
-        )
-    }
-
-    if (showLockConfirm) {
-        AlertDialog(
-            onDismissRequest = { showLockConfirm = false },
-            title = { Text("End screen time now?") },
-            text = { Text("This blocks every app on ${currentChild.name}'s device until you resume it.") },
-            confirmButton = {
-                TextButton(onClick = {
-                    scope.launch { repository.setLocked(parentUid, childId, true) }
-                    showLockConfirm = false
-                }) { Text("End now") }
-            },
-            dismissButton = { TextButton(onClick = { showLockConfirm = false }) { Text("Cancel") } }
-        )
-    }
-
-    if (showDeleteConfirm) {
-        AlertDialog(
-            onDismissRequest = { showDeleteConfirm = false },
-            title = { Text("Remove ${currentChild.name}?") },
-            text = {
-                Text(
-                    "This deletes ${currentChild.name}'s profile and all of their screen time history. " +
-                        "The kid app will need to be unpaired and re-paired to track again. This can't be undone."
-                )
-            },
-            confirmButton = {
-                TextButton(onClick = {
-                    scope.launch {
-                        repository.deleteChild(parentUid, childId)
-                        onBack()
-                    }
-                    showDeleteConfirm = false
-                }) { Text("Remove") }
-            },
-            dismissButton = { TextButton(onClick = { showDeleteConfirm = false }) { Text("Cancel") } }
-        )
-    }
-
-    pickingList?.let { list ->
-        AppPickerDialog(
-            title = list.pickerTitle,
-            apps = displayedApps,
-            selected = currentChild.packages(list).toSet(),
-            onToggle = { pkg, member ->
-                scope.launch { repository.setAppListMember(parentUid, childId, list, pkg, member) }
-            },
-            onDone = { pickingList = null }
-        )
-    }
-
-    editingApp?.let { pkg ->
-        val appName = displayedApps.firstOrNull { it.packageName == pkg }?.appName ?: pkg
-        MinutesInputDialog(
-            title = "Daily limit for $appName",
-            initialMinutes = currentChild.appLimits[pkg] ?: 60,
-            onDismiss = { editingApp = null },
-            onConfirm = { minutes ->
-                scope.launch { repository.setAppLimit(parentUid, childId, pkg, minutes) }
-                editingApp = null
-            }
-        )
-    }
+    ChildDetailDialogs(
+        dialog = dialog,
+        onClose = { dialog = null },
+        child = currentChild,
+        apps = displayedApps,
+        repository = repository,
+        parentUid = parentUid,
+        childId = childId,
+        onOpenReportAnyway = {
+            reportTracker.recordOpen()
+            onOpenReport()
+        },
+        onChildRemoved = onBack
+    )
 }
 
 private fun LazyListScope.pendingProposalSection(

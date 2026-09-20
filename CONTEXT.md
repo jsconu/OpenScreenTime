@@ -17,3 +17,11 @@ Terms used in the code and docs, so the two apps and their modules name things t
 **Family passcode.** A 4 to 6 digit code a parent sets, stored as a salted hash. It is a deterrent, not a security boundary.
 
 **Own phone.** The phone that is tracking itself: the parent app on the parent's phone.
+
+**Day ledger.** One phone's usage for today and the rules for keeping it (`DayLedger`): it rolls over at local midnight, adds up screen-on sessions, per-app time and counts, and takes time in excluded apps off the total the daily limit uses. `DailyUsageStore` is its SharedPreferences adapter.
+
+**Time that doesn't count.** Apps a parent excludes from the overall daily limit (`AppList.EXCLUDED_FROM_TOTAL`). Their time still shows in the app list and their own limit still applies. Not the same as **Always allow**, which keeps an app usable past limits and bedtime.
+
+**App list.** One of a person's per-app lists (`AppList`): always allowed, focus allowed, travel allowed, excluded from the total. Each is stored under a fixed Firestore field.
+
+**Upload gate.** `buildDailyStats`, the one place that decides what a phone may send: the basics always, each optional category only while its tracking choice is on.
