@@ -44,7 +44,10 @@ fun LazyListScope.focusModeSection(
         Column(Modifier.padding(16.dp)) {
             Text("Dumb phone", style = MaterialTheme.typography.labelLarge)
             Spacer(Modifier.height(4.dp))
-            Row(verticalAlignment = Alignment.CenterVertically) {
+            Row(
+                modifier = Modifier.fillMaxWidth().switchRow(child.focusMode, onSetEnabled),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
                 Column(Modifier.weight(1f)) {
                     Text(
                         if (isOwnPhone) "Keep my phone simple" else "Keep ${child.name}'s phone simple",
@@ -59,7 +62,7 @@ fun LazyListScope.focusModeSection(
                 }
                 Switch(
                     checked = child.focusMode,
-                    onCheckedChange = onSetEnabled,
+                    onCheckedChange = null,
                     modifier = Modifier.testTag("focus_mode_switch")
                 )
             }
@@ -97,9 +100,10 @@ fun LazyListScope.focusModeSection(
 @Composable
 private fun FocusProfileRow(selected: Boolean, title: String, detail: String, onSelect: () -> Unit) {
     ListItem(
+        modifier = Modifier.radioRow(selected, onSelect),
         headlineContent = { Text(title) },
         supportingContent = { Text(detail) },
-        leadingContent = { RadioButton(selected = selected, onClick = onSelect) }
+        leadingContent = { RadioButton(selected = selected, onClick = null) }
     )
 }
 
@@ -121,14 +125,11 @@ fun FocusAppPickerDialog(
             } else {
                 LazyColumn(modifier = Modifier.heightIn(max = 380.dp)) {
                     items(apps.sortedBy { it.appName.lowercase() }, key = { it.packageName }) { app ->
+                        val allowed = app.packageName in selected
                         ListItem(
+                            modifier = Modifier.checkboxRow(allowed) { onToggle(app.packageName, it) },
                             headlineContent = { Text(app.appName) },
-                            trailingContent = {
-                                Checkbox(
-                                    checked = app.packageName in selected,
-                                    onCheckedChange = { onToggle(app.packageName, it) }
-                                )
-                            }
+                            trailingContent = { Checkbox(checked = allowed, onCheckedChange = null) }
                         )
                     }
                 }

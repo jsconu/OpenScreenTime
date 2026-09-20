@@ -32,6 +32,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import org.openscreentime.sharedui.mergedRow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
@@ -299,7 +300,7 @@ private fun TipOfTheDayCard() {
                 color = MaterialTheme.colorScheme.onPrimaryContainer
             )
             Spacer(Modifier.height(8.dp))
-            Row(verticalAlignment = Alignment.CenterVertically) {
+            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.mergedRow()) {
                 Checkbox(
                     checked = acknowledged,
                     onCheckedChange = { checked ->
@@ -330,6 +331,7 @@ private fun NotificationDigestCard(
 
     Text("Optional", style = MaterialTheme.typography.labelLarge)
     ListItem(
+        modifier = Modifier.mergedRow(),
         headlineContent = { Text("Calm notification list") },
         supportingContent = {
             Text("A plain, read-only digest of today's notifications on this phone, grouped by app.")

@@ -105,8 +105,9 @@ private fun TrackingToggleRow(
     onCheckedChange: (Boolean) -> Unit
 ) {
     ListItem(
+        modifier = Modifier.switchRow(checked, onCheckedChange),
         headlineContent = { Text(title) },
         supportingContent = { Text(description) },
-        trailingContent = { Switch(checked = checked, onCheckedChange = onCheckedChange) }
+        trailingContent = { Switch(checked = checked, onCheckedChange = null) }
     )
 }

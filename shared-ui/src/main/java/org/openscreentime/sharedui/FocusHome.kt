@@ -9,6 +9,8 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -31,6 +33,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.delay
 import org.openscreentime.shared.model.FocusApp
@@ -68,7 +71,8 @@ fun FocusHomeScreen(
         }
     }
     Surface(modifier = Modifier.fillMaxSize()) {
-        Column(modifier = Modifier.fillMaxSize().padding(horizontal = 28.dp, vertical = 24.dp)) {
+        // targetSdk 35 draws behind the system bars, so keep the clock and buttons clear of them.
+        Column(modifier = Modifier.fillMaxSize().safeDrawingPadding().padding(horizontal = 28.dp, vertical = 24.dp)) {
             // The top of the screen: a swipe down here opens the calm notification list.
             Column(
                 modifier = Modifier
@@ -95,7 +99,10 @@ fun FocusHomeScreen(
                         "Swipe down for calm notifications",
                         style = MaterialTheme.typography.labelMedium,
                         color = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.clickable(onClick = onOpenCalm).testTag("focus_calm_hint")
+                        modifier = Modifier
+                            .heightIn(min = 48.dp)
+                            .clickable(role = Role.Button, onClick = onOpenCalm)
+                            .testTag("focus_calm_hint")
                     )
                 }
             }
@@ -117,7 +124,7 @@ fun FocusHomeScreen(
                         style = MaterialTheme.typography.headlineSmall,
                         modifier = Modifier
                             .fillMaxWidth()
-                            .clickable { onLaunch(app.packageName) }
+                            .clickable(role = Role.Button) { onLaunch(app.packageName) }
                             .padding(vertical = 10.dp)
                     )
                 }
@@ -125,7 +132,10 @@ fun FocusHomeScreen(
 
             if (allApps == null) {
                 if (showTravelSwitch) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth().switchRow(travelOn, onToggleTravel),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
                         Column(Modifier.weight(1f)) {
                             Text("Travel mode", style = MaterialTheme.typography.titleSmall)
                             Text(
@@ -133,7 +143,7 @@ fun FocusHomeScreen(
                                 style = MaterialTheme.typography.bodySmall
                             )
                         }
-                        Switch(checked = travelOn, onCheckedChange = onToggleTravel, modifier = Modifier.testTag("focus_travel"))
+                        Switch(checked = travelOn, onCheckedChange = null, modifier = Modifier.testTag("focus_travel"))
                     }
                     Spacer(Modifier.height(8.dp))
                 }

@@ -28,6 +28,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.fragment.app.FragmentActivity
+import org.openscreentime.sharedui.mergedRow
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -81,7 +82,7 @@ fun PasscodeSettingsScreen(repository: FamilyRepository, onBack: () -> Unit) {
             )
             if (deviceAuthAvailable) {
                 Spacer(Modifier.height(16.dp))
-                Row(verticalAlignment = Alignment.CenterVertically) {
+                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.mergedRow()) {
                     Column(Modifier.weight(1f)) {
                         Text("Unlock with fingerprint or screen lock", style = MaterialTheme.typography.titleSmall)
                         Text(

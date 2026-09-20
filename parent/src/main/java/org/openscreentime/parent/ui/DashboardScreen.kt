@@ -55,6 +55,8 @@ import androidx.lifecycle.LifecycleEventObserver
 import kotlinx.coroutines.launch
 import org.openscreentime.parent.R
 import org.openscreentime.parent.data.CalmModePrefs
+import org.openscreentime.sharedui.mergedRow
+import org.openscreentime.sharedui.switchRow
 import org.openscreentime.parent.data.NotificationDigestStore
 import org.openscreentime.parent.monitor.CalmSummary
 import org.openscreentime.parent.util.isNotificationListenerEnabled
@@ -493,7 +495,7 @@ private fun TipOfTheDayCard(modifier: Modifier = Modifier) {
                 color = MaterialTheme.colorScheme.onPrimaryContainer
             )
             Spacer(Modifier.height(8.dp))
-            Row(verticalAlignment = Alignment.CenterVertically) {
+            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.mergedRow()) {
                 Checkbox(
                     checked = acknowledged,
                     onCheckedChange = { checked ->
@@ -645,7 +647,7 @@ private fun NotificationDigestCard(
     Card(modifier = modifier) {
         Column(Modifier.padding(16.dp)) {
             Row(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier.fillMaxWidth().mergedRow(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
@@ -678,7 +680,15 @@ private fun NotificationDigestCard(
                 val calmPrefs = remember { CalmModePrefs(context) }
                 var hideOthers by remember { mutableStateOf(calmPrefs.hideOthers) }
                 Spacer(Modifier.height(8.dp))
-                Row(verticalAlignment = Alignment.CenterVertically) {
+                val setHideOthers: (Boolean) -> Unit = {
+                    hideOthers = it
+                    calmPrefs.hideOthers = it
+                    if (!it) CalmSummary.clear(context)
+                }
+                Row(
+                    modifier = Modifier.fillMaxWidth().switchRow(hideOthers, setHideOthers),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
                     Column(Modifier.weight(1f)) {
                         Text("Hide other notifications", style = MaterialTheme.typography.titleSmall)
                         Text(
@@ -691,11 +701,7 @@ private fun NotificationDigestCard(
                     }
                     Switch(
                         checked = hideOthers,
-                        onCheckedChange = {
-                            hideOthers = it
-                            calmPrefs.hideOthers = it
-                            if (!it) CalmSummary.clear(context)
-                        },
+                        onCheckedChange = null,
                         modifier = Modifier.testTag("dashboard_hide_others")
                     )
                 }
