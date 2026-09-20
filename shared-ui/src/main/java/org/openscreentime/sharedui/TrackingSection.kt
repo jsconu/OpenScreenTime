@@ -76,6 +76,16 @@ fun LazyListScope.trackingSection(
             )
         }
     }
+    item {
+        TrackingToggleRow(
+            title = "Track websites",
+            description = "Counts which sites are looked up while a browser is open - site names only, never " +
+                "pages, searches or time. Needs the website filter turned on on that phone, and only sees " +
+                "browsers that use the phone's own DNS.",
+            checked = child.trackWebsites,
+            onCheckedChange = { onToggle(TrackingToggle.TRACK_WEBSITES, it) }
+        )
+    }
     if (!child.isSelf && (child.showUnlocksOnKid || child.showNotificationsOnKid)) {
         item {
             Text(

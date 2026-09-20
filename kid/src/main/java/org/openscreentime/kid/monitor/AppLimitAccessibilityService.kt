@@ -84,6 +84,7 @@ class AppLimitAccessibilityService : AccessibilityService() {
     override fun onAccessibilityEvent(event: AccessibilityEvent?) {
         if (event?.eventType != AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) return
         val pkg = event.packageName?.toString() ?: return
+        LiveChildState.foregroundPackage = pkg
         recordFirstAppIfPending(pkg)
         if (pkg == packageName || pkg == currentPackage) return
 

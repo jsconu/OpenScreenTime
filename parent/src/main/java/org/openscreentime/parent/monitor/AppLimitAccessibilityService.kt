@@ -78,6 +78,7 @@ class AppLimitAccessibilityService : AccessibilityService() {
     override fun onAccessibilityEvent(event: AccessibilityEvent?) {
         if (event?.eventType != AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) return
         val pkg = event.packageName?.toString() ?: return
+        foregroundPackage = pkg
         recordFirstAppIfPending(pkg)
         if (pkg == packageName || pkg == currentPackage) return
 
@@ -280,6 +281,12 @@ class AppLimitAccessibilityService : AccessibilityService() {
         /** See #35 - parent-controlled tracking toggles for this device's own self profile. */
         @Volatile var trackUnlocks: Boolean = false
         @Volatile var trackNotifications: Boolean = false
+        /** See #41 - count sites looked up while a browser is open, on this (the parent's own) phone. */
+        @Volatile var trackWebsites: Boolean = false
+        /** Domains blocked on this phone by the website filter; mirrors the self profile's list. */
+        @Volatile var blockedDomains: List<String> = emptyList()
+        /** The package in front right now, so the website filter counts only browser lookups. */
+        @Volatile var foregroundPackage: String? = null
     }
 }
 

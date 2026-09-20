@@ -120,6 +120,10 @@ parent app  <---sync--->  Firebase (Firestore + Auth)  <---sync--->  kid app
   an archive to pore over. Opening it repeatedly in one day triggers its own
   "check in, not check up" prompt, the same friction-pause idea used on the
   kid side, turned back on the parent.
+- Optional **website tracking**, per phone (a kid's, or your own): which sites a browser looked up, site names
+  only - never pages, searches or time - using the same on-device website filter that does the blocking. Off by
+  default; see [docs/INSTALL_ANDROID.md](docs/INSTALL_ANDROID.md#website-tracking-optional-what-has-to-happen)
+  for what has to be turned on.
 - Turn on optional **unlock tracking** (which app was opened first after each
   unlock) and **notification-count tracking** (overall and by app - counts
   only, never content), each per kid and for the parent's own device. Off by

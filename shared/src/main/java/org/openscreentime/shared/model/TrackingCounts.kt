@@ -4,6 +4,7 @@ package org.openscreentime.shared.model
 enum class TrackingToggle(val field: String) {
     TRACK_UNLOCKS("trackUnlocks"),
     TRACK_NOTIFICATIONS("trackNotifications"),
+    TRACK_WEBSITES("trackWebsites"),
     SHOW_UNLOCKS_ON_KID("showUnlocksOnKid"),
     SHOW_NOTIFICATIONS_ON_KID("showNotificationsOnKid")
 }

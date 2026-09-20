@@ -26,7 +26,9 @@ data class DailyStats(
      */
     val notificationCount: Int = 0,
     val notificationsByApp: List<AppCount> = emptyList(),
-    val unlockFirstApps: List<AppCount> = emptyList()
+    val unlockFirstApps: List<AppCount> = emptyList(),
+    /** See #41 - sites looked up in a browser today (AppCount.packageName is the site), only while tracked. */
+    val websiteCounts: List<AppCount> = emptyList()
 ) {
     fun toMap(): Map<String, Any?> = mapOf(
         "totalScreenTimeMs" to totalScreenTimeMs,
@@ -41,7 +43,8 @@ data class DailyStats(
         "lastSyncedAtMs" to lastSyncedAtMs,
         "notificationCount" to notificationCount,
         "notificationsByApp" to notificationsByApp.map(::appCountMap),
-        "unlockFirstApps" to unlockFirstApps.map(::appCountMap)
+        "unlockFirstApps" to unlockFirstApps.map(::appCountMap),
+        "websiteCounts" to websiteCounts.map(::appCountMap)
     )
 
     companion object {
@@ -63,7 +66,8 @@ data class DailyStats(
                 lastSyncedAtMs = (map["lastSyncedAtMs"] as? Number)?.toLong() ?: 0,
                 notificationCount = (map["notificationCount"] as? Number)?.toInt() ?: 0,
                 notificationsByApp = appCounts(map["notificationsByApp"]),
-                unlockFirstApps = appCounts(map["unlockFirstApps"])
+                unlockFirstApps = appCounts(map["unlockFirstApps"]),
+                websiteCounts = appCounts(map["websiteCounts"])
             )
         }
 

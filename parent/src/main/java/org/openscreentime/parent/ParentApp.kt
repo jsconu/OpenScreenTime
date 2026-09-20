@@ -76,6 +76,8 @@ class ParentApp : Application() {
             AppLimitAccessibilityService.alwaysAllowedCache = child.alwaysAllowedPackages.toSet()
             AppLimitAccessibilityService.trackUnlocks = child.trackUnlocks
             AppLimitAccessibilityService.trackNotifications = child.trackNotifications
+            AppLimitAccessibilityService.trackWebsites = child.trackWebsites
+            AppLimitAccessibilityService.blockedDomains = child.blockedDomains
 
             val wasLocked = AppLimitAccessibilityService.lockedCache
             AppLimitAccessibilityService.lockedCache = child.locked

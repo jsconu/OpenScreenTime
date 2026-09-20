@@ -59,6 +59,9 @@ struct ChildProfile: Identifiable, Equatable {
     var trackNotifications: Bool = false
     var showUnlocksOnKid: Bool = false
     var showNotificationsOnKid: Bool = false
+    /// See #41 - counts which SITES the device looks up while a browser is open (names only, never pages or
+    /// time), via the Android website filter. Needs that filter turned on on the device.
+    var trackWebsites: Bool = false
 
     func toMap() -> [String: Any] {
         var map: [String: Any] = [
@@ -75,7 +78,8 @@ struct ChildProfile: Identifiable, Equatable {
             "trackUnlocks": trackUnlocks,
             "trackNotifications": trackNotifications,
             "showUnlocksOnKid": showUnlocksOnKid,
-            "showNotificationsOnKid": showNotificationsOnKid
+            "showNotificationsOnKid": showNotificationsOnKid,
+            "trackWebsites": trackWebsites
         ]
         map["deviceUid"] = deviceUid
         map["parentPasscodeHash"] = parentPasscodeHash
@@ -117,7 +121,8 @@ struct ChildProfile: Identifiable, Equatable {
             trackUnlocks: map["trackUnlocks"] as? Bool ?? false,
             trackNotifications: map["trackNotifications"] as? Bool ?? false,
             showUnlocksOnKid: map["showUnlocksOnKid"] as? Bool ?? false,
-            showNotificationsOnKid: map["showNotificationsOnKid"] as? Bool ?? false
+            showNotificationsOnKid: map["showNotificationsOnKid"] as? Bool ?? false,
+            trackWebsites: map["trackWebsites"] as? Bool ?? false
         )
     }
 }

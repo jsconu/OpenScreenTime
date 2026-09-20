@@ -204,6 +204,24 @@
       "answer": "On the sign-in screen, enter your email and tap \"Forgot password?\". If there's an account for that email, you'll get a link to choose a new password - check your spam folder if it doesn't show up. This resets your account password only. The family passcode (the PIN under the menu's Passcode) is a separate thing."
     },
     {
+      "id": "website-tracking",
+      "audience": "parent",
+      "topic": "app",
+      "question": "Can I see which websites my child visits?",
+      "keywords": [
+        "website tracking",
+        "track websites",
+        "which websites",
+        "sites visited",
+        "browsing",
+        "browser history",
+        "websites my child visits",
+        "what sites",
+        "site activity"
+      ],
+      "answer": "Yes, if you turn it on: open your child, find Optional tracking, and switch on Track websites. It counts which SITES the phone looks up while a browser is open - site names only, never pages, searches, or time spent - and a bigger number means more activity, not a visit count. It needs the website filter turned on on that phone (Settings > Website filter), and it cannot see a browser that does its own private lookups: turn off Secure DNS in the browser and Private DNS in Android settings. Your child sees a note in their Settings saying it is on. It is off by default, and the same switch works for your own phone under My screen time."
+    },
+    {
       "id": "weekly-report",
       "audience": "parent",
       "topic": "app",

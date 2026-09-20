@@ -1,6 +1,7 @@
 package org.openscreentime.parent.util
 
 import android.content.Context
+import android.net.VpnService
 import android.os.PowerManager
 import android.provider.Settings
 import android.text.TextUtils
@@ -11,7 +12,9 @@ data class PermissionState(
     val overlay: Boolean,
     val accessibility: Boolean,
     val notifications: Boolean,
-    val ignoringBatteryOptimizations: Boolean
+    val ignoringBatteryOptimizations: Boolean,
+    /** The optional website filter (a local VPN) has been allowed. Not part of [allGranted] - see #41. */
+    val vpn: Boolean = false
 ) {
     val allGranted: Boolean get() = overlay && accessibility && notifications && ignoringBatteryOptimizations
 }
@@ -24,7 +27,8 @@ fun checkPermissions(context: Context): PermissionState = PermissionState(
     overlay = Settings.canDrawOverlays(context),
     accessibility = isAccessibilityServiceEnabled(context),
     notifications = NotificationManagerCompat.from(context).areNotificationsEnabled(),
-    ignoringBatteryOptimizations = isIgnoringBatteryOptimizations(context)
+    ignoringBatteryOptimizations = isIgnoringBatteryOptimizations(context),
+    vpn = VpnService.prepare(context) == null
 )
 
 private fun isIgnoringBatteryOptimizations(context: Context): Boolean {

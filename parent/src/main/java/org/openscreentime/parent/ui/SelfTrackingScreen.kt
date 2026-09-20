@@ -95,6 +95,7 @@ fun SelfPermissionsScreen(
     onRequestNotifications: () -> Unit,
     onRequestBatteryExemption: () -> Unit,
     onRequestNotificationListener: () -> Unit,
+    onRequestWebsiteFilter: () -> Unit,
     onBack: () -> Unit
 ) {
     Scaffold(
@@ -151,6 +152,16 @@ fun SelfPermissionsScreen(
                     "Counts only - nothing about a notification's content is kept.",
                 isNotificationListenerEnabled(LocalContext.current),
                 onRequestNotificationListener
+            )
+
+            PermissionRow(
+                "Website filter (optional)",
+                "Blocks the sites you chose on this phone, and - if you turn on \"Track websites\" - counts which " +
+                    "sites your browser looks up (site names only, never pages or time). Android will ask to set " +
+                    "up a VPN connection: it's a small filter on this phone and sends your browsing nowhere. If a " +
+                    "site still opens, turn off \"Secure DNS\" in the browser and \"Private DNS\" in Android settings.",
+                permissions.vpn,
+                onRequestWebsiteFilter
             )
 
             Spacer(Modifier.height(24.dp))

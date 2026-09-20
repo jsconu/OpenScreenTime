@@ -42,6 +42,10 @@ object LiveChildState {
     /** See #35 - parent-controlled tracking toggles; nothing is collected while these are off. */
     @Volatile var trackUnlocks: Boolean = false
     @Volatile var trackNotifications: Boolean = false
+    /** See #41 - count sites looked up while a browser is open (needs the website filter on). */
+    @Volatile var trackWebsites: Boolean = false
+    /** The package in front right now (not persisted); lets the website filter count only browser lookups. */
+    @Volatile var foregroundPackage: String? = null
     /** The family passcode's salted hash, so the lock screen can check a parent's PIN offline. */
     @Volatile var parentPasscodeHash: String? = null
     @Volatile var parentPasscodeSalt: String? = null
@@ -63,6 +67,7 @@ object LiveChildState {
         alwaysAllowedContacts = child.alwaysAllowedContacts
         trackUnlocks = child.trackUnlocks
         trackNotifications = child.trackNotifications
+        trackWebsites = child.trackWebsites
         lockedCache = child.locked
         // A parent locking it again (or it already being locked) cancels any pending timed re-lock.
         if (child.locked) relockAtMs = null
@@ -101,6 +106,7 @@ object LiveChildState {
         e.putString("contacts", alwaysAllowedContacts.joinToString("\n"))
         e.putBoolean("trackUnlocks", trackUnlocks)
         e.putBoolean("trackNotifications", trackNotifications)
+        e.putBoolean("trackWebsites", trackWebsites)
         e.putBoolean("locked", lockedCache)
         e.putLong("relockAt", relockAtMs ?: -1L)
         e.putString("pcHash", parentPasscodeHash)
@@ -128,6 +134,7 @@ object LiveChildState {
         alwaysAllowedContacts = lines("contacts")
         trackUnlocks = p.getBoolean("trackUnlocks", false)
         trackNotifications = p.getBoolean("trackNotifications", false)
+        trackWebsites = p.getBoolean("trackWebsites", false)
         lockedCache = p.getBoolean("locked", false)
         relockAtMs = p.getLong("relockAt", -1L).takeIf { it >= 0 }
         parentPasscodeHash = p.getString("pcHash", null)
@@ -148,6 +155,8 @@ object LiveChildState {
         alwaysAllowedContacts = emptyList()
         trackUnlocks = false
         trackNotifications = false
+        trackWebsites = false
+        foregroundPackage = null
         lockedCache = false
         parentPasscodeHash = null
         parentPasscodeSalt = null

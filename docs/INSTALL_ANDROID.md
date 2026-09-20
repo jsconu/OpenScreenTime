@@ -130,6 +130,29 @@ If limits stop working after a while, look in the phone's settings for:
 6. To try the website filter, on the parent's phone open the child, add a website (for example `example.com`)
    under **Blocked websites**, then try to open it on the kid's phone.
 
+## Website tracking (optional): what has to happen
+
+Besides blocking, a parent can choose to see **which websites** a phone looked up. It's off by default, it's
+per phone, and it only works when all four of these are true:
+
+1. **The website filter is on for that phone.** On a kid's phone: the kid app's **Settings** > **Website
+   filter** says **Granted**. On the parent's own phone: **Permissions** (from **My screen time**) >
+   **Website filter (optional)** > **Fix**, then **OK** on the "set up a VPN connection" box.
+2. **A parent turns on Track websites.** In the parent app open the child (or **My screen time** for your own
+   phone), find **Optional tracking**, and switch on **Track websites**. Your child sees a note in their
+   Settings that it's on.
+3. **The browser uses the phone's normal lookups.** In Chrome turn **Use secure DNS** off (Settings > Privacy
+   and security), in Firefox turn **DNS over HTTPS** off, and in Android Settings set **Private DNS** to **Off**
+   or **Automatic**. Then close the browser completely and reopen it. A browser using its own private lookups is
+   invisible to this.
+4. **A browser is open.** Only lookups made while a browser is in front count; an app's own background
+   activity is ignored.
+
+**What you'll see:** on the child's screen, a **Websites looked up today** list of site names with a number
+beside each, refreshed about every 15 minutes. It shows *site names only* - never page addresses, searches, or
+what's on the page - and the number means *more or less activity*, not a count of visits or minutes. Sites that
+are only background plumbing (ad networks, content delivery, Google/Apple services) are left out.
+
 ## If a blocked website still opens
 
 The website filter answers the phone's own website lookups. Two settings skip that, and no app can turn
@@ -154,6 +177,7 @@ Also check that the **Website filter** row says **Granted**, and that no other V
 | No status icon at the top of the kid's screen | Make sure **Notifications** says Granted. On Android 13+ the icon is hidden without it. On Samsung, also check Settings > Notifications > Status bar. |
 | "That code isn't active" | The code is only good for 30 minutes and only once. Tap **Copy code**/make a new one on the parent's phone. |
 | The parent app shows no apps for the child | It fills in about 15 minutes after the kid phone first connects. |
+| **Websites looked up today** is empty | Check all four points under **Website tracking** above - most often the website filter isn't on for that phone, or the browser's Secure DNS is on. |
 | Forgot the family passcode | Parent app lock screen > **Forgot passcode?** > enter your account password. |
 | Forgot the account password | Parent app > **Sign in** tab > **Forgot password?** |
 

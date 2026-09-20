@@ -93,6 +93,9 @@ struct ChildDetailView: View {
                     child: child,
                     newDomain: $newBlockedDomain
                 )
+                if child.trackWebsites {
+                    WebsitesLookedUpSection(stats: stats)
+                }
                 TrackingSection(repository: repository, parentUid: parentUid, childId: childId, child: child)
                 AppUsageSection(
                     repository: repository,
@@ -401,6 +404,7 @@ enum TrackingToggle: String {
     case trackNotifications
     case showUnlocksOnKid
     case showNotificationsOnKid
+    case trackWebsites
 }
 
 /// See #35 - optional tracking categories, off by default. Serves a kid's profile and (on Android,
@@ -432,6 +436,7 @@ private struct TrackingSection: View {
             if !child.isSelf && child.trackUnlocks {
                 Toggle("Show unlocks on \(child.name)'s phone", isOn: binding(.showUnlocksOnKid, child.showUnlocksOnKid))
             }
+            Toggle("Track websites", isOn: binding(.trackWebsites, child.trackWebsites))
             Toggle("Track notification counts", isOn: binding(.trackNotifications, child.trackNotifications))
             if !child.isSelf && child.trackNotifications {
                 Toggle(
@@ -445,8 +450,9 @@ private struct TrackingSection: View {
             Text(
                 "Off by default. The plain daily unlock count is always kept for the unlock goal; " +
                 "turning a category on adds more detail. Notification " +
-                "tracking counts only, never content. Anything shown on their phone carries a note " +
-                "that watching counts can make phone use feel more compulsive."
+                "tracking counts only, never content. Website tracking counts site names only - never pages, " +
+                "searches or time - and needs the website filter turned on on that Android phone. Anything " +
+                "shown on their phone carries a note that watching counts can make phone use feel more compulsive."
             )
         }
     }
@@ -705,6 +711,35 @@ struct BedtimeWindowSheet: View {
                     }
                 }
             }
+        }
+    }
+}
+
+/// See #41 - which sites the device looked up while a browser was open today. Shown only while "Track websites"
+/// is on. Site names only: no pages, searches or time, and one entry means "a burst of activity", not a visit
+/// count you can multiply into minutes. Anything that uses its own DNS (a browser's Secure DNS, Android's
+/// Private DNS) doesn't show up.
+private struct WebsitesLookedUpSection: View {
+    let stats: DailyStats
+
+    var body: some View {
+        Section {
+            if stats.websiteCounts.isEmpty {
+                Text("Nothing yet. Sites appear here once the website filter is on for that phone and a browser has been used.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+            ForEach(stats.websiteCounts.prefix(25)) { site in
+                HStack {
+                    Text(site.site)
+                    Spacer()
+                    Text("\(site.count)").foregroundStyle(.secondary)
+                }
+            }
+        } header: {
+            Text("Websites looked up today")
+        } footer: {
+            Text("Site names only, counted while a browser was open - not pages, searches, or time spent. A bigger number means more activity, not a visit count. Anything a browser looks up privately isn't seen.")
         }
     }
 }

@@ -41,7 +41,9 @@ class SyncWorker(context: Context, params: WorkerParameters) : CoroutineWorker(c
                 toAppCounts(usageStore.firstAppsAfterUnlock, usageStore.appNames)
             } else {
                 emptyList()
-            }
+            },
+            // See #41 - only while a parent has website tracking on for this phone.
+            websiteCounts = if (LiveChildState.trackWebsites) toAppCounts(usageStore.websiteCounts, emptyMap()) else emptyList()
         )
 
         val repository = (applicationContext as KidApp).repository

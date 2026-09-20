@@ -55,6 +55,7 @@ import org.openscreentime.shared.model.addBlockedDomain
 import org.openscreentime.shared.model.computeStreak
 import org.openscreentime.shared.model.formatDuration
 import org.openscreentime.shared.model.removeBlockedDomain
+import org.openscreentime.shared.model.AppCount
 import org.openscreentime.shared.model.AppSort
 import org.openscreentime.shared.model.describeBedtimeWindow
 import org.openscreentime.shared.model.sortApps
@@ -232,6 +233,9 @@ fun ChildDetailScreen(
                     scope.launch { repository.removeBlockedDomain(parentUid, childId, domain) }
                 }
             )
+            if (currentChild.trackWebsites) {
+                websiteActivitySection(stats.websiteCounts)
+            }
             appUsageSection(
                 sort = appSort,
                 onSortChange = { appSort = it },
@@ -649,5 +653,42 @@ private fun StatBlock(label: String, value: String) {
     Column {
         Text(value, style = MaterialTheme.typography.headlineSmall)
         Text(label, style = MaterialTheme.typography.bodySmall)
+    }
+}
+
+/**
+ * See #41 - which sites the device looked up while a browser was open today. Shown only while "Track websites"
+ * is on. Site names only: no pages, searches or time, and one entry means "a burst of activity", not a visit
+ * count you can multiply into minutes. Anything that uses its own DNS (a browser's Secure DNS, Android's
+ * Private DNS) doesn't show up.
+ */
+private fun LazyListScope.websiteActivitySection(sites: List<AppCount>) {
+    item {
+        Text(
+            "Websites looked up today",
+            style = MaterialTheme.typography.labelLarge,
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+        )
+        Text(
+            "Site names only, counted while a browser was open - not pages, searches, or time spent. A bigger " +
+                "number means more activity, not a visit count. Anything a browser looks up privately isn't seen.",
+            style = MaterialTheme.typography.bodySmall,
+            modifier = Modifier.padding(horizontal = 16.dp)
+        )
+    }
+    if (sites.isEmpty()) {
+        item {
+            Text(
+                "Nothing yet. Sites appear here once the website filter is on for that phone and a browser has been used.",
+                style = MaterialTheme.typography.bodySmall,
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+            )
+        }
+    }
+    items(sites.take(25), key = { it.packageName }) { site ->
+        ListItem(
+            headlineContent = { Text(site.packageName) },
+            trailingContent = { Text("${site.count}", style = MaterialTheme.typography.labelLarge) }
+        )
     }
 }

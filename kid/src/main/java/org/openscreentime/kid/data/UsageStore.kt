@@ -4,6 +4,7 @@ import android.content.Context
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+import org.openscreentime.shared.model.capWebsites
 import org.openscreentime.shared.model.todayDateString
 
 /**
@@ -24,6 +25,7 @@ class UsageStore(context: Context) {
                 .putString("appUsage", "{}")
                 .putString("notificationsByApp", "{}")
                 .putString("firstAppsAfterUnlock", "{}")
+                .putString("websiteCounts", "{}")
                 .remove("unlockAwaitingMs")
                 .putBoolean("warnedDaily", false)
                 .putStringSet("warnedApps", emptySet())
@@ -170,6 +172,24 @@ class UsageStore(context: Context) {
         get() {
             rolloverIfNeeded()
             return decode(prefs.getString("firstAppsAfterUnlock", "{}")!!)
+        }
+
+    // --- See #41: optional website tracking. Sites looked up while a browser was open; only written to
+    // while the matching toggle is on. Site names only - never a page, search or time. ---
+
+    /** Adds [counts] (site -> lookups) to today's tally, keeping only the busiest sites. */
+    fun addWebsiteCounts(counts: Map<String, Int>) {
+        if (counts.isEmpty()) return
+        rolloverIfNeeded()
+        val merged = websiteCounts.toMutableMap()
+        counts.forEach { (site, n) -> merged[site] = (merged[site] ?: 0) + n }
+        prefs.edit().putString("websiteCounts", json.encodeToString(capWebsites(merged))).apply()
+    }
+
+    val websiteCounts: Map<String, Int>
+        get() {
+            rolloverIfNeeded()
+            return decode(prefs.getString("websiteCounts", "{}")!!)
         }
 
     fun cacheAppName(packageName: String, name: String) {

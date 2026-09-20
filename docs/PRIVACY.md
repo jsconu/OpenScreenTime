@@ -18,6 +18,9 @@ this build connects to. Contact: trumpetmadnesshq@gmail.com.
   it's used or what's in it). It is sent to the parent's account so a parent can set a limit on any
   app, not only ones already used. It is refreshed when the list changes, and at least weekly.
 - How many times the phone was unlocked each day.
+- Only if a parent turns on **Track websites**: the **names of sites** the phone looked up while a browser was
+  open (for example `youtube.com`), as a count per site per day. Never page addresses, searches, what's on a
+  page, passwords, or time spent, and lookups apps make on their own are ignored.
 - Only if a parent turns the matching option on: which app was opened first after each unlock, and
   how many notifications each app sent (counts only).
 - Settings a parent chooses: the child's display name, daily and per-app limits, bedtime window,
@@ -28,7 +31,8 @@ this build connects to. Contact: trumpetmadnesshq@gmail.com.
 **On a parent's phone (parent app)**
 - The parent's email address and a password handled by Firebase Authentication.
 - The same per-app time and unlock information for the parent's own phone, only if the parent turns
-  on tracking their own device. The parent's own list of installed apps is only read on the phone
+  on tracking their own device - and, if the parent also turns on **Track websites** for themselves, the
+  same site-name counts (this uses the optional website filter on the parent's own phone). The parent's own list of installed apps is only read on the phone
   to build the limits screen; it is not uploaded.
 - An optional "calm notification list" of today's notifications on the parent's phone. It is kept
   only on that phone and never uploaded (the child's phone has the same optional list).
@@ -46,9 +50,11 @@ this build connects to. Contact: trumpetmadnesshq@gmail.com.
   window content.
 - Notification **content** is never uploaded. The optional calm notification list, on a child's phone
   or a parent's, stays on that phone.
-- The website filter checks website *names* on the device against the parent's blocked list; it does
-  not record or upload browsing history. Allowed lookups are passed to a public DNS resolver
-  (Cloudflare, 1.1.1.1) as they would be without the filter.
+- The website filter checks website *names* on the device against the parent's blocked list. By default it
+  records and uploads nothing about sites. Only if a parent turns on **Track websites** does it count the
+  site names a browser looked up (see above) and upload those counts; it never sees or stores page addresses,
+  searches, or page content. Allowed lookups are passed to a public DNS resolver (Cloudflare, 1.1.1.1) as they
+  would be without the filter.
 - No advertising, no analytics beyond crash reports, and no selling or sharing of data.
 
 ## Where the data goes

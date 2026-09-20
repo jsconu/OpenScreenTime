@@ -26,6 +26,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import org.openscreentime.kid.data.TextSize
+import org.openscreentime.kid.monitor.LiveChildState
 import org.openscreentime.kid.data.ThemeMode
 import org.openscreentime.kid.data.label
 import org.openscreentime.kid.util.PermissionActions
@@ -100,7 +101,7 @@ fun KidSettingsScreen(
         )
         PermissionRow(
             "Website filter",
-            "Blocks sites a parent has restricted, in any browser",
+            "Blocks sites a parent has restricted, in any browser. If a parent turns on \"Track websites\", it also counts which sites this phone looks up in a browser.",
             permissions.vpn,
             permissionActions.onRequestVpn
         )
@@ -167,7 +168,19 @@ fun KidSettingsScreen(
 private fun WebsiteFilterTips() {
     val context = LocalContext.current
     val privateDns = remember { isPrivateDnsActive(context) }
+    val tracking = remember { LiveChildState.trackWebsites }
     Column(Modifier.fillMaxWidth().padding(vertical = 8.dp)) {
+        if (tracking) {
+            // Said plainly to the person whose phone it is: what is counted, and what isn't.
+            Text(
+                "A parent has turned on website tracking for this phone. While a browser is open, the names of " +
+                    "the sites it looks up are counted - not pages, searches, passwords, or time spent. Only a " +
+                    "parent sees this.",
+                style = MaterialTheme.typography.bodySmall,
+                modifier = Modifier.testTag("website_tracking_notice")
+            )
+            Spacer(Modifier.height(4.dp))
+        }
         if (privateDns) {
             Text(
                 "Private DNS is on for this phone, so the website filter can be skipped. Turn it off in " +

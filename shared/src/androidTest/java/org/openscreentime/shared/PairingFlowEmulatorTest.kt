@@ -522,6 +522,31 @@ class PairingFlowEmulatorTest {
     }
 
     @Test(timeout = TEST_TIMEOUT_MS)
+    fun pairedKidCanTurnOnWebsiteTracking_andReportSiteCounts_butNotOversized() = runBlocking {
+        val parentRepo = FamilyRepository()
+        val parentUid = parentRepo.signUpParent(uniqueEmail(), "testpass123")
+        val child = parentRepo.createChild(parentUid, "WebsiteChild")
+        parentRepo.signOut()
+
+        val kidRepo = FamilyRepository()
+        kidRepo.claimPairingCode(child.pairingCode)
+        kidRepo.setTrackingToggle(parentUid, child.id, org.openscreentime.shared.model.TrackingToggle.TRACK_WEBSITES, true)
+
+        val today = org.openscreentime.shared.model.todayDateString()
+        val sites = listOf(org.openscreentime.shared.model.AppCount("example.org", "example.org", 3))
+        kidRepo.pushDailyStats(parentUid, child.id, DailyStats(date = today, websiteCounts = sites))
+
+        var oversizedThrew = false
+        try {
+            val many = (1..501).map { org.openscreentime.shared.model.AppCount("s$it.com", "s$it.com", 1) }
+            kidRepo.pushDailyStats(parentUid, child.id, DailyStats(date = today, websiteCounts = many))
+        } catch (e: Exception) {
+            oversizedThrew = true
+        }
+        assertTrue("More than 500 sites in a day must be rejected", oversizedThrew)
+    }
+
+    @Test(timeout = TEST_TIMEOUT_MS)
     fun claimedDeviceCannotListSiblingChildren() = runBlocking {
         val parentRepo = FamilyRepository()
         val parentUid = parentRepo.signUpParent(uniqueEmail(), "testpass123")

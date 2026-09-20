@@ -1,6 +1,7 @@
 package org.openscreentime.parent.ui
 
 import android.content.Intent
+import android.net.VpnService
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
@@ -33,6 +34,7 @@ import org.openscreentime.parent.data.NotificationDigestStore
 import org.openscreentime.parent.data.AppearancePrefs
 import org.openscreentime.parent.data.SelfProfileStore
 import org.openscreentime.parent.monitor.ScreenMonitorService
+import org.openscreentime.parent.monitor.DnsSinkholeVpnService
 import org.openscreentime.parent.util.checkPermissions
 import org.openscreentime.shared.model.HelpAudience
 import org.openscreentime.shared.model.PasscodeInfo
@@ -45,11 +47,29 @@ class MainActivity : FragmentActivity() {
     private val notificationPermissionLauncher =
         registerForActivityResult(ActivityResultContracts.RequestPermission()) {}
 
+    // The optional website filter is a local VPN, which Android makes you approve in a system prompt.
+    private val vpnPermissionLauncher =
+        registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+            if (result.resultCode == RESULT_OK) startWebsiteFilter()
+        }
+
+    private fun startWebsiteFilter() {
+        ContextCompat.startForegroundService(this, Intent(this, DnsSinkholeVpnService::class.java))
+    }
+
+    private fun requestWebsiteFilter() {
+        val consent = VpnService.prepare(this)
+        if (consent != null) vpnPermissionLauncher.launch(consent) else startWebsiteFilter()
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         val repository = (application as ParentApp).repository
         val appearancePrefs = AppearancePrefs(this)
         val selfProfileStore = SelfProfileStore(this)
+
+        // If the parent already allowed the website filter, keep it running while they track themselves.
+        if (selfProfileStore.isTracking && VpnService.prepare(this) == null) startWebsiteFilter()
 
         setContent {
             var themeMode by remember { mutableStateOf(appearancePrefs.themeMode) }
@@ -255,6 +275,7 @@ class MainActivity : FragmentActivity() {
                                     onRequestNotificationListener = {
                                         startActivity(Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS))
                                     },
+                                    onRequestWebsiteFilter = { requestWebsiteFilter() },
                                     onBack = { navController.popBackStack() }
                                 )
                             }

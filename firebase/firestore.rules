@@ -152,7 +152,7 @@ service cloud.firestore {
                          'bedtimeStartMinutes', 'bedtimeEndMinutes', 'blockedDomains',
                          'temporaryUnlockUntilMs', 'requestedExtraMinutes', 'alwaysAllowedPackages',
                          'alwaysAllowedContacts', 'trackUnlocks', 'trackNotifications',
-                         'showUnlocksOnKid', 'showNotificationsOnKid']);
+                         'showUnlocksOnKid', 'showNotificationsOnKid', 'trackWebsites']);
 
         // Negotiated limits (#14) and "more time" requests (#23): the linked device may
         // write these with no passcode/parent-mode gate at all - deliberately separate from
@@ -172,14 +172,15 @@ service cloud.firestore {
           let d = request.resource.data;
           return date.matches('[0-9]{4}-[0-9]{2}-[0-9]{2}')
             && d.keys().hasOnly(['totalScreenTimeMs', 'unlockCount', 'appUsage', 'lastSyncedAtMs',
-                                 'notificationCount', 'notificationsByApp', 'unlockFirstApps'])
+                                 'notificationCount', 'notificationsByApp', 'unlockFirstApps', 'websiteCounts'])
             && d.get('totalScreenTimeMs', 0) is int
             && d.get('unlockCount', 0) is int
             && d.get('lastSyncedAtMs', 0) is int
             && d.get('notificationCount', 0) is int
             && d.get('appUsage', []) is list && d.get('appUsage', []).size() <= 500
             && d.get('notificationsByApp', []) is list && d.get('notificationsByApp', []).size() <= 500
-            && d.get('unlockFirstApps', []) is list && d.get('unlockFirstApps', []).size() <= 500;
+            && d.get('unlockFirstApps', []) is list && d.get('unlockFirstApps', []).size() <= 500
+            && d.get('websiteCounts', []) is list && d.get('websiteCounts', []).size() <= 500;
         }
 
         // The apps installed on the kid's device (name + package only), so the parent app can offer a

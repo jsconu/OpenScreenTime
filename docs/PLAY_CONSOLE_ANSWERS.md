@@ -48,6 +48,7 @@ that as "not shared".) Data is encrypted in transit. Users can request deletion 
 | App activity - **installed apps** (name and package of each app with a launcher icon, from the kid's phone) | Yes | App functionality (lets a parent set a limit on any app) | Required (kid app) |
 | App activity - unlock counts | Yes | App functionality | Required |
 | App activity - first app after unlock, notification counts per app | Yes | App functionality | **Optional** (parent turns on) |
+| Web browsing history - **site names only** (domains looked up while a browser is open, as counts) | Yes | App functionality | **Optional** (parent turns on "Track websites") |
 | Phone numbers allowed during bedtime | Yes | App functionality | Optional |
 | Crash logs and diagnostics | Yes | App stability | Required (not user-configurable) |
 | Feedback text (free text a parent sends) | Yes | App functionality | Optional |
@@ -57,7 +58,8 @@ tick for the row above. The parent app reads its own phone's installed apps only
 the limits screen, and doesn't upload them, so it collects nothing extra for that.)*
 
 Not collected: location, contacts list, messages/SMS/call history, photos, audio, files, health data,
-financial info, precise device identifiers for advertising, web browsing history. Notification content
+financial info, precise device identifiers for advertising, full web addresses/URLs, searches or page content.
+Only when a parent turns on "Track websites" are site NAMES (domains) counted - see the table. Notification content
 is never uploaded (the calm notification list on either app stays on that phone).
 
 Security practices: data encrypted in transit; you can request data be deleted. Do **not** claim an
@@ -82,8 +84,11 @@ Each answer should say *why* the permission is core to the app's purpose, and wh
 - **Purpose:** a *local* DNS-filter so a parent can block chosen websites in any browser. It runs on
   the device and receives only the device's DNS lookups (not web traffic): a lookup for a parent's
   blocked domain gets a blocked answer, and every other lookup is forwarded to a public resolver
-  (1.1.1.1). It does not inspect traffic content, does not record lookups, and does not route web
-  traffic through any remote server. Declared as a foreground service of type special use.
+  (1.1.1.1). It does not inspect traffic content and does not route web traffic through any remote server.
+  It records nothing about lookups unless a parent turns on the optional "Track websites" setting, in which
+  case it counts site names (domains only, never URLs) looked up while a browser is open and uploads those
+  counts to the parent's account. The parent app runs the same filter on the parent's own phone, only if the
+  parent allows the VPN prompt from the Permissions screen. Declared as a foreground service of type special use.
 
 ### Device administration (kid app)
 - **Purpose:** an optional "uninstall protection" deterrent - the child must get a parent's approval to

@@ -62,6 +62,19 @@
         </service>
 
         <service
+            android:name=".monitor.DnsSinkholeVpnService"
+            android:exported="false"
+            android:permission="android.permission.BIND_VPN_SERVICE"
+            android:foregroundServiceType="specialUse">
+            <property
+                android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+                android:value="Website filtering and optional site tracking on the parent's own phone" />
+            <intent-filter>
+                <action android:name="android.net.VpnService" />
+            </intent-filter>
+        </service>
+
+        <service
             android:name=".monitor.NotificationCountListenerService"
             android:exported="true"
             android:label="@string/notification_count_service_label"

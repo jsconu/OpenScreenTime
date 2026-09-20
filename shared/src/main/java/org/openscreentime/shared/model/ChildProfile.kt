@@ -102,6 +102,11 @@ data class ChildProfile(
     val trackUnlocks: Boolean = false,
     val trackNotifications: Boolean = false,
     /**
+     * See #41 - counts which SITES this device looks up while a browser is open (names only, never pages
+     * or time), via the website filter. Needs that filter turned on on the device.
+     */
+    val trackWebsites: Boolean = false,
+    /**
      * Whether today's count for a tracked category is also shown on the kid's own phone, with
      * a note that watching counts can feed compulsive checking. Off by default, and only
      * meaningful while the matching track flag is on. Unused on the self profile.
@@ -132,6 +137,7 @@ data class ChildProfile(
         "alwaysAllowedContacts" to alwaysAllowedContacts,
         "trackUnlocks" to trackUnlocks,
         "trackNotifications" to trackNotifications,
+        "trackWebsites" to trackWebsites,
         "showUnlocksOnKid" to showUnlocksOnKid,
         "showNotificationsOnKid" to showNotificationsOnKid
     )
@@ -170,6 +176,7 @@ data class ChildProfile(
             alwaysAllowedContacts = (map["alwaysAllowedContacts"] as? List<*>)?.filterIsInstance<String>() ?: emptyList(),
             trackUnlocks = map["trackUnlocks"] as? Boolean ?: false,
             trackNotifications = map["trackNotifications"] as? Boolean ?: false,
+            trackWebsites = map["trackWebsites"] as? Boolean ?: false,
             showUnlocksOnKid = map["showUnlocksOnKid"] as? Boolean ?: false,
             showNotificationsOnKid = map["showNotificationsOnKid"] as? Boolean ?: false
         )
