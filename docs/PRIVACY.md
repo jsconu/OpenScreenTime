@@ -48,7 +48,7 @@ this build connects to. Contact: trumpetmadnesshq@gmail.com.
 
 **On any device, for stability**
 - Crash reports (stack traces, device model, Android version, app version) sent to Firebase
-  Crashlytics.
+  the operator's own Firebase project.
 
 ## What the apps do **not** collect
 
@@ -62,11 +62,13 @@ this build connects to. Contact: trumpetmadnesshq@gmail.com.
   site names a browser looked up (see above) and upload those counts; it never sees or stores page addresses,
   searches, or page content. Allowed lookups are passed to a public DNS resolver (Cloudflare, 1.1.1.1) as they
   would be without the filter.
-- No advertising, no analytics beyond crash reports, and no selling or sharing of data.
+- No advertising, no analytics, no crash reporting, and no selling or sharing of data. A crash
+  leaves a note on the phone itself, which a person can read and send on if they choose - nothing
+  is uploaded automatically.
 
 ## Where the data goes
 
-To Google Firebase (Authentication, Firestore, Crashlytics) in a project operated by the service
+To Google Firebase (Authentication and Firestore) in a project operated by the service
 operator named above. Firebase is provided by Google; see Google's privacy policy for how they
 process it. Data is protected in transit, and access is restricted by security rules to the family
 that created it. This is a community project and has **not had an independent security audit**. The

@@ -37,7 +37,6 @@ dependencies {
     api(platform(libs.firebase.bom))
     api(libs.firebase.firestore)
     api(libs.firebase.auth)
-    api(libs.firebase.crashlytics)
     implementation(libs.coroutines.play.services)
 
     androidTestImplementation(libs.androidx.test.junit)

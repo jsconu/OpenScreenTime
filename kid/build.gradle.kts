@@ -5,7 +5,6 @@ plugins {
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.kotlin.serialization)
-    alias(libs.plugins.firebase.crashlytics)
 }
 
 // Release signing comes from an untracked keystore.properties at the repo root (see
@@ -66,8 +65,6 @@ android {
         }
     }
 
-    // Nothing to upload for a local build: it contains no Crashlytics, and no Firebase project
-    // to upload to. Left on for cloud builds so their operator gets readable stack traces.
     buildTypes {
         release {
             isMinifyEnabled = true
