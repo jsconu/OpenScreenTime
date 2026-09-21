@@ -41,6 +41,7 @@ import org.openscreentime.shared.model.calmParentStatusLabel
 import org.openscreentime.shared.model.computeStreak
 import org.openscreentime.shared.model.todayDateString
 import org.openscreentime.shared.repo.FirestorePaths
+import org.openscreentime.sharedui.ScreenUnavailable
 import org.openscreentime.sharedui.AccessibilityDisclosureDialog
 import org.openscreentime.sharedui.HelpBotScreen
 import org.openscreentime.sharedui.NotificationDigestScreen
@@ -278,6 +279,18 @@ class MainActivity : ComponentActivity() {
                                         screen = KidScreen.STATUS
                                     }
                                 )
+                            } else {
+                                ScreenUnavailable(
+                                    message = "Still loading, or this phone isn't linked to a family any more.",
+                                    onBack = { screen = KidScreen.STATUS },
+                                    actionLabel = "Unpair this device",
+                                    onAction = {
+                                        pairingStore.clear()
+                                        LiveChildState.clear(this@MainActivity)
+                                        paired = false
+                                        screen = KidScreen.STATUS
+                                    }
+                                )
                             }
                         }
                         KidScreen.PROPOSE_CHANGE -> {
@@ -291,6 +304,18 @@ class MainActivity : ComponentActivity() {
                                     childId = childId,
                                     child = currentChild,
                                     onDone = { screen = KidScreen.STATUS }
+                                )
+                            } else {
+                                ScreenUnavailable(
+                                    message = "Still loading, or this phone isn't linked to a family any more.",
+                                    onBack = { screen = KidScreen.STATUS },
+                                    actionLabel = "Unpair this device",
+                                    onAction = {
+                                        pairingStore.clear()
+                                        LiveChildState.clear(this@MainActivity)
+                                        paired = false
+                                        screen = KidScreen.STATUS
+                                    }
                                 )
                             }
                         }

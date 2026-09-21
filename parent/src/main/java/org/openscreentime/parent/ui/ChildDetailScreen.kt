@@ -66,6 +66,7 @@ import org.openscreentime.shared.util.listLaunchableApps
 import org.openscreentime.shared.model.todayDateString
 import org.openscreentime.shared.repo.FamilyRepository
 import org.openscreentime.shared.model.AppList
+import org.openscreentime.sharedui.ScreenUnavailable
 import org.openscreentime.sharedui.AppPickerDialog
 import org.openscreentime.sharedui.pickerTitle
 import org.openscreentime.sharedui.excludedFromTotalSection
@@ -97,7 +98,10 @@ fun ChildDetailScreen(
     /** True while a permission this device needs for tracking is still missing (self profile only). */
     permissionsMissing: Boolean = false
 ) {
-    val parentUid = repository.currentUid ?: return
+    val parentUid = repository.currentUid ?: run {
+        ScreenUnavailable(message = "You've been signed out. Go back and sign in again.", onBack = onBack)
+        return
+    }
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
     val reportTracker = remember { ReportOpenTracker(context) }
@@ -131,7 +135,10 @@ fun ChildDetailScreen(
         if (child != null) hadChild = true else if (hadChild) onBack()
     }
 
-    val currentChild = child ?: return
+    val currentChild = child ?: run {
+        ScreenUnavailable(message = "Loading...", onBack = onBack)
+        return
+    }
 
     // Every app on the device, not only ones already used today. On the parent's own "Me" profile this
     // phone is the device; for a paired kid it's the list their phone last published (see

@@ -55,6 +55,7 @@ import androidx.lifecycle.LifecycleEventObserver
 import kotlinx.coroutines.launch
 import org.openscreentime.parent.R
 import org.openscreentime.parent.data.CalmModePrefs
+import org.openscreentime.sharedui.ScreenUnavailable
 import org.openscreentime.sharedui.mergedRow
 import org.openscreentime.sharedui.switchRow
 import org.openscreentime.parent.data.NotificationDigestStore
@@ -87,7 +88,14 @@ fun DashboardScreen(
     onRequestNotificationListener: () -> Unit,
     onSignOut: () -> Unit
 ) {
-    val parentUid = repository.currentUid ?: return
+    val parentUid = repository.currentUid ?: run {
+        ScreenUnavailable(
+            message = "You've been signed out.",
+            actionLabel = "Sign in again",
+            onAction = onSignOut
+        )
+        return
+    }
     val scope = rememberCoroutineScope()
     var children by remember { mutableStateOf<List<ChildProfile>>(emptyList()) }
     var selfProfile by remember { mutableStateOf<ChildProfile?>(null) }

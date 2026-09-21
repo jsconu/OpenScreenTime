@@ -24,6 +24,7 @@ import androidx.core.content.ContextCompat
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.navigation.NavController
+import kotlinx.coroutines.withTimeoutOrNull
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -40,6 +41,7 @@ import org.openscreentime.parent.monitor.DnsSinkholeVpnService
 import org.openscreentime.parent.util.checkPermissions
 import org.openscreentime.shared.model.HelpAudience
 import org.openscreentime.shared.model.PasscodeInfo
+import org.openscreentime.sharedui.ScreenUnavailable
 import org.openscreentime.sharedui.AccessibilityDisclosureDialog
 import org.openscreentime.sharedui.HelpBotScreen
 import org.openscreentime.sharedui.NotificationDigestScreen
@@ -137,8 +139,11 @@ class MainActivity : FragmentActivity() {
                         // the app - fail open, the same as "no passcode set yet." This isn't a
                         // real security regression: it only affects this app's own lock screen,
                         // and whoever has the phone unlocked already has physical access to it.
+                        // Bounded: offline, the read can hang, which used to leave a blank white screen at start.
+                        val uid = repository.currentUid
+                        if (uid == null) signedIn = false
                         passcode = try {
-                            repository.getParentPasscode(repository.currentUid!!)
+                            if (uid == null) null else withTimeoutOrNull(PASSCODE_CHECK_TIMEOUT_MS) { repository.getParentPasscode(uid) }
                         } catch (e: Exception) {
                             null
                         }
@@ -164,7 +169,10 @@ class MainActivity : FragmentActivity() {
                                 locked = false
                             }
                         )
-                    } else if (passcodeChecked) {
+                    } else if (!passcodeChecked) {
+                        // Checking whether an app passcode is set: show something rather than a blank screen.
+                        ScreenUnavailable(message = "Opening OpenScreenTime...")
+                    } else {
                         // Opened by the calm summary notification or the Quick Settings tile (after any unlock above).
                         LaunchedEffect(openDigest.value) {
                             if (openDigest.value) {
@@ -318,6 +326,7 @@ class MainActivity : FragmentActivity() {
 
     companion object {
         const val EXTRA_OPEN_DIGEST = "open_digest"
+        private const val PASSCODE_CHECK_TIMEOUT_MS = 8_000L
     }
 }
 

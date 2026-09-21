@@ -28,6 +28,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.fragment.app.FragmentActivity
+import org.openscreentime.sharedui.ScreenUnavailable
 import org.openscreentime.sharedui.mergedRow
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -44,7 +45,10 @@ import org.openscreentime.shared.repo.FamilyRepository
  */
 @Composable
 fun PasscodeSettingsScreen(repository: FamilyRepository, onBack: () -> Unit) {
-    val parentUid = repository.currentUid ?: return
+    val parentUid = repository.currentUid ?: run {
+        ScreenUnavailable(message = "You've been signed out. Go back and sign in again.", onBack = onBack)
+        return
+    }
     val scope = rememberCoroutineScope()
 
     var hasPasscode by remember { mutableStateOf<Boolean?>(null) }

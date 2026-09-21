@@ -85,8 +85,11 @@ fun FocusLauncherScreen(
             travelOn = config.profile == FocusProfile.TRAVEL,
             canOpenCalm = digest?.optedIn == true,
             onLaunch = { pkg ->
-                context.packageManager.getLaunchIntentForPackage(pkg)?.let {
-                    context.startActivity(it.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+                // An app that was just removed, or won't start, must not take the home screen down with it.
+                runCatching {
+                    context.packageManager.getLaunchIntentForPackage(pkg)?.let {
+                        context.startActivity(it.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+                    }
                 }
             },
             onOpenCalm = { showCalm = true },

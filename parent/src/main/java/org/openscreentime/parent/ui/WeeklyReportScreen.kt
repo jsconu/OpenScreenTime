@@ -34,6 +34,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import java.text.SimpleDateFormat
 import java.util.Locale
+import org.openscreentime.sharedui.ScreenUnavailable
 import org.openscreentime.shared.model.AppCountTrend
 import org.openscreentime.shared.model.ChildProfile
 import org.openscreentime.shared.model.DailyStats
@@ -63,7 +64,10 @@ fun WeeklyReportScreen(
     childId: String,
     onBack: () -> Unit
 ) {
-    val parentUid = repository.currentUid ?: return
+    val parentUid = repository.currentUid ?: run {
+        ScreenUnavailable(message = "You've been signed out. Go back and sign in again.", onBack = onBack)
+        return
+    }
     var child by remember { mutableStateOf<ChildProfile?>(null) }
     var todayStats by remember { mutableStateOf(DailyStats(date = todayDateString())) }
     var historicalStats by remember { mutableStateOf<List<DailyStats>>(emptyList()) }
