@@ -57,6 +57,10 @@ internal class ChildrenRepository(
         return code
     }
 
+    suspend fun rename(parentUid: String, childId: String, name: String) {
+        db.document(FirestorePaths.childDoc(parentUid, childId)).update("name", name.trim()).await()
+    }
+
     suspend fun setLocked(parentUid: String, childId: String, locked: Boolean) {
         db.document(FirestorePaths.childDoc(parentUid, childId))
             .update("locked", locked).await()

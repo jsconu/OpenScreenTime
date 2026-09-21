@@ -17,7 +17,7 @@ object FirestorePaths {
      * needs to be able to construct this path directly to read it (#18) - a fixed id
      * means it never has to look the id up first.
      */
-    const val SELF_CHILD_ID = "self"
+    const val SELF_CHILD_ID = Profiles.SELF_CHILD_ID
 
     fun childrenCollection(parentUid: String) = "$PARENTS/$parentUid/$CHILDREN"
     fun childDoc(parentUid: String, childId: String) = "${childrenCollection(parentUid)}/$childId"

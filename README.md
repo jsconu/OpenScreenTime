@@ -14,10 +14,17 @@ your own backend, send patches back.
 
 | App | Platform | Status | Notes |
 | --- | --- | --- | --- |
-| **Parent** | Android | ✅ **Ready** | Pairing, limits, bedtime, locking, weekly report, optional tracking, dumb phone mode, time that doesn't count, help bot. Build it from source; not on Google Play yet. |
-| **Kid** | Android | ✅ **Ready** | Calm status icon, block screen, friction pause, enforcement, parent controls, optional dumb phone home screen. Build it from source; not on Google Play yet. |
+| **Parent** | Android | ✅ **Ready** | Pairing, limits, bedtime, locking, weekly report, optional tracking, time that doesn't count, help bot. Build it from source; not on Google Play yet. |
+| **Kid** | Android | ✅ **Ready** | Calm status icon, block screen, friction pause, enforcement, parent controls. Build it from source; not on Google Play yet. |
 | **Parent** | iOS | 🛠 **Built, not yet in the App Store** | Manages Android kids, limits, bedtime and tracking toggles. Build it yourself with Xcode. No weekly report yet. |
 | **Kid** | iOS | 🌱 **Future project - community welcome** | Needs Apple's Family Controls entitlement, which this project doesn't have. See [issue #7](https://github.com/jsconu/OpenScreenTime/issues/7). |
+
+**Local or cloud.** Both apps build two ways, and it is the first thing to decide. A **local** build
+keeps everything on the phone it is installed on: no account, no pairing, no setup, and no Firebase
+code in the APK at all. A **cloud** build adds what needs a second phone - a parent seeing and
+changing a child's limits from their own phone, locking it, granting more time - and needs a
+Firebase project you run yourself. What each one can and cannot do is set out in
+[docs/LOCAL_AND_CLOUD.md](docs/LOCAL_AND_CLOUD.md).
 
 "Ready" means feature-complete and used day to day on real Android devices - it is still a beta: no
 independent security audit and limited phone-maker coverage (see [Project status](#project-status)).
@@ -341,8 +348,20 @@ an initial pass, not a full audit).
 
 ## Building
 
+> **Want a parent's phone and a child's phone linked?** That is the **cloud** build, and
+> [**docs/SELF_HOSTING.md**](docs/SELF_HOSTING.md) is the whole process written out step by step
+> for someone who isn't a developer — about 45 minutes, start to finish, no cost. The summary
+> below assumes you already know your way around Android Studio.
+
 You'll need [Android Studio](https://developer.android.com/studio)
 (Ladybug or newer) with a JDK 17 and Android SDK 35.
+
+> **For one phone, with nothing to set up,** build the **local** flavor:
+> `gradle :parent:assembleLocalRelease :kid:assembleLocalRelease`, or choose `localRelease` in
+> Android Studio's Build Variants panel. No Firebase project, no account, no configuration, and
+> no cloud code in the APK. Skip the Firebase steps below entirely - they are only for the
+> **cloud** flavor, which is what the rest of this section covers. See
+> [docs/LOCAL_AND_CLOUD.md](docs/LOCAL_AND_CLOUD.md) for the difference.
 
 1. **Create a Firebase project** at [console.firebase.google.com](https://console.firebase.google.com)
    (the free Spark plan is enough — no credit card required).
@@ -384,12 +403,17 @@ access** (also powers muting non-allowed texts during bedtime), and, from
 the passcode-gated Parent controls screen, **uninstall protection** and
 **bedtime call blocking** (Android 10+ only for the latter).
 
-**Dumb phone** (a parent-chosen Focus mode, for a child or for a parent's own phone) turns the phone into calls,
-texts, authenticator apps and a short list of allowed apps on a plain home screen. A parent gets a **Travel**
-profile (tickets, maps, mail...) and an **All apps** button that opens everything for 10 minutes after a short pause;
-a child needs a parent's passcode. On a parent's phone, **Hide other notifications** collects everything but calls,
-texts, alarms and sign-in codes into the calm list, reachable from one summary notification, a Quick Settings tile,
-or a swipe down on the dumb-phone home screen. See [`docs/INSTALL_ANDROID.md`](docs/INSTALL_ANDROID.md).
+**Hide other notifications** (on a parent's own phone) collects everything but calls, texts, alarms and sign-in
+codes into the calm list, reachable from one summary notification or a Quick Settings tile. See
+[`docs/INSTALL_ANDROID.md`](docs/INSTALL_ANDROID.md).
+
+> **Dumb phone is not in this release.** A plain home screen keeping only calls, texts, sign-in codes and a few
+> allowed apps is built - `FocusMode`, `FocusHome`, `FocusDevice` and the rest are all in the tree - but it isn't
+> good enough to put in front of a family yet, so it's switched off in one place (`Features.DUMB_PHONE`) rather
+> than deleted. Replacing a phone's home screen touches the launcher role, the foreground guard and the app list
+> at once, and getting it wrong leaves someone holding a phone that won't open anything. **It would make an
+> excellent community feature**, and whoever takes it on starts from working code rather than a blank page - see
+> [issue #46](https://github.com/jsconu/OpenScreenTime/issues/46).
 
 A parent can also leave chosen apps out of the overall daily limit (**Time that doesn't count**, on a person's page): an
 audiobook, reading, maps or school app then doesn't use up the day. Their time still shows in the app list and their own
@@ -402,11 +426,21 @@ fork and even sell it. That's intentional. But because this is an app that can s
 use, it matters who you trust to run it, so here is how to tell the official project apart:
 
 - **The only official source is this repository:**
-  <https://github.com/jsconu/OpenScreenTime>. Official releases and any official store listing will be
-  linked from here. If you found the app somewhere that this page doesn't link to, it isn't an
-  official build.
-- **This project has no ads, no in-app purchases, no analytics beyond crash reports, and no paid
-  tier.** If an app using this code asks you to pay or shows ads, it's someone else's fork.
+  <https://github.com/jsconu/OpenScreenTime>. Any official release or store listing will be linked
+  from here. If you found the app somewhere that this page doesn't link to, it isn't an official
+  build.
+- **Released APKs are always local builds, and only local builds.** A local build contains no
+  cloud code at all, so it has nowhere to send anything and nobody - including this project - can
+  see what it records. A cloud build is permanently wired at build time to one Firebase project,
+  and whoever owns that project can read the data of every family using that build, so publishing
+  one would quietly make this project's maintainer the operator of your child's usage data. That
+  is why cloud builds are never handed out: you build one yourself, against a Firebase project of
+  your own ([docs/SELF_HOSTING.md](docs/SELF_HOSTING.md)), and nobody but you holds the data. See
+  [docs/LOCAL_AND_CLOUD.md](docs/LOCAL_AND_CLOUD.md) for what each build can do.
+- **This project has no ads, no in-app purchases and no paid tier.** A local build has no analytics or
+  crash reporting either - it sends nothing anywhere, and its Feedback menu opens
+  [the issue tracker](https://github.com/jsconu/OpenScreenTime/issues) rather than a box that goes
+  nowhere. If an app using this code asks you to pay or shows ads, it's someone else's fork.
 - **Check where the data goes.** Every build talks to a Firebase project run by whoever published it.
   In the official project that's described in [docs/PRIVACY.md](docs/PRIVACY.md). A fork may send data
   somewhere else, so read its privacy policy before pairing a child's phone.

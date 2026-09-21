@@ -20,8 +20,21 @@ child's phone has to be Android for now.
 
 ## Part 1 - Get the two files onto the phone **[APK only]**
 
-You should have been given two files: `parent-release.apk` and `kid-release.apk`. An `.apk` file is an
-Android app.
+You should have two files from
+[the latest release](https://github.com/jsconu/OpenScreenTime/releases/latest):
+
+- **`OpenScreenTime-Parent-0.2.0-local.apk`** - goes on the parent's phone
+- **`OpenScreenTime-Kid-0.2.0-local.apk`** - goes on the child's phone
+
+An `.apk` file is an Android app. Download both on whichever phone is easiest and move the other across,
+or download each one directly on the phone it belongs on.
+
+> **Don't have them yet?** Download them from
+> [the latest release](https://github.com/jsconu/OpenScreenTime/releases/latest). Those are **local**
+> builds: everything each phone records stays on that phone, there's no account and nothing to set up.
+> A parent can't see or change the child's phone from their own — for that you build the **cloud**
+> flavor yourself against your own Firebase project, free, in about 45 minutes
+> ([SELF_HOSTING.md](SELF_HOSTING.md)). [LOCAL_AND_CLOUD.md](LOCAL_AND_CLOUD.md) compares the two.
 
 1. On **each phone**, get the file it needs (the parent app on the parent's phone, the kid app on the kid's
    phone). Any of these works:
@@ -34,15 +47,32 @@ Android app.
 
 ## Part 2 - Install it **[APK only]**
 
-1. In **Files**, open **Downloads** and tap the app file (`parent-release.apk` on the parent's phone).
+1. In **Files**, open **Downloads** and tap the app file (the **Parent** one on the parent's phone).
 2. Android asks permission to install from this source. You'll see something like **"For your security, your
    phone isn't allowed to install unknown apps from this source."** Tap **Settings**.
 3. Switch on **Allow from this source** (the wording varies: "Allow app installs", "Install unknown apps").
    Press the back arrow to return.
 4. Tap **Install**.
-5. If a **Play Protect** box appears ("App blocked to protect your device" or "Send app for scanning?"):
-   this app isn't in the Play Store, so Google hasn't seen it. It's your own family's app - tap **More
-   details**, then **Install anyway**. (Choose **Don't send** if it asks about sending the app to Google.)
+5. **Google will probably warn you. That is expected, and here is exactly what it means.**
+
+   Google Play Protect checks every app installed on an Android phone. It has never seen this one, because
+   it isn't distributed through the Play Store - so it warns you. The warning is about *unfamiliarity*, not
+   about anything Google found in the app. You will see one of these:
+
+   | What you see | What to tap |
+   | --- | --- |
+   | "Unsafe app blocked" or "App blocked to protect your device" | **More details**, then **Install anyway** |
+   | "Send app for scanning?" | **Don't send** (or **Send** - either is fine; "Don't send" means the file never leaves your phone) |
+   | "This app was built for an older version of Android" | **OK** - it runs fine |
+   | "Harmful app blocked" | **Stop.** That wording means Play Protect matched something it considers malicious. Don't install it, and please [open an issue](https://github.com/jsconu/OpenScreenTime/issues) - a genuine OpenScreenTime release should never produce it. |
+
+   You do **not** need to turn Play Protect off, and you shouldn't. It carries on working normally
+   afterwards.
+
+   If you'd rather not take anyone's word for which file you have, every release lists the fingerprint of
+   the key it was signed with and the checksum of each file, so you can check both before installing - see
+   [the release page](https://github.com/jsconu/OpenScreenTime/releases/latest).
+
 6. Wait for **App installed**, then tap **Open**.
 
 Afterwards you can switch **Allow from this source** back **off** for your browser or Files app: Android
@@ -76,24 +106,38 @@ Settings > Apps > (your browser) > Install unknown apps.
 **Accessibility** is how the app knows *which* app is open, so it can count time and show the block screen.
 It never reads what's on the screen.
 
-1. Tap **Fix** next to **Accessibility service**, read the box that explains it, and tap **I agree -
-   continue**.
-2. Android's Accessibility settings open. Tap **Downloaded apps** (or **Installed apps**), then
-   **OpenScreenTime Kid**, then turn the switch **On**, and confirm.
+This is the fiddliest part of the whole setup, and it is fiddly on purpose: Android deliberately makes it
+awkward to give accessibility access to an app that didn't come from the Play Store. Expect about eight taps
+across three different screens. It only has to be done once per phone.
 
-**If the switch is greyed out, or a box says "Restricted setting" / "For your security, this setting is
-currently unavailable":** that's Android 13 and newer protecting you from apps that didn't come from the
-Play Store. It's normal, and it takes a minute to allow:
+**Step by step, on the kid's phone:**
 
-1. Leave the settings and open **Android Settings > Apps** (**Apps** or **Applications**).
-2. Find and tap **OpenScreenTime Kid**.
-3. Tap the **three dots (⋮)** in the top-right corner.
-4. Tap **Allow restricted settings**. (If you don't see the three dots, go back and try to turn on the
-   Accessibility switch once first; that makes the option appear. On some phones you may be asked for your
-   phone's PIN or fingerprint.)
-5. Go back to **Accessibility** and turn **OpenScreenTime Kid** on.
+1. In OpenScreenTime Kid, tap **Fix** next to **Accessibility service**, read the box explaining what it's
+   for, and tap **I agree - continue**.
+2. Android's **Accessibility** settings open. Tap **Downloaded apps** (some phones say **Installed apps**,
+   **Downloaded services**, or list the app directly).
+3. Tap **OpenScreenTime Kid**.
+4. Try the switch at the top. On Android 13 and newer it will very likely **refuse**, with a box saying
+   **"Restricted setting"** - *"For your security, this setting is currently unavailable."* Tap **OK**.
+   Nothing has gone wrong. Everybody hits this.
+5. Now grant the exception. Two ways in, the first being quicker:
 
-Do the same **Allow restricted settings** step for **Notification access** if you turn that on later (below).
+   - **From this screen:** tap the **(i)** info icon - usually top-right, sometimes beside the app's name.
+     That opens the app's **App info** page.
+   - **Or from scratch:** Android **Settings > Apps > OpenScreenTime Kid**.
+
+6. On the **App info** page, tap the **three dots** in the top-right corner.
+7. Tap **Allow restricted settings**. Your phone may ask for its PIN, pattern or fingerprint first.
+   - *No three dots, or no such item in the menu?* Go back to step 4 and try the Accessibility switch once
+     more - on many phones the option only appears after Android has refused you at least once.
+8. Go **back** to **Accessibility > Downloaded apps > OpenScreenTime Kid** and turn the switch **On**.
+   Confirm the box that appears.
+9. Return to OpenScreenTime Kid. The **Accessibility service** row should now show a tick instead of **Fix**.
+
+**Each app that needs it gets its own trip through this.** If you turn on **Notification access** later (for
+the calm notification list, or muting texts at bedtime), it has its own identical **Allow restricted
+settings** step on its own App info page. The parent app needs the same treatment on the parent's phone if
+you use self-tracking there.
 
 ### The other permissions
 
@@ -131,32 +175,14 @@ If limits stop working after a while, look in the phone's settings for:
 6. To try the website filter, on the parent's phone open the child, add a website (for example `example.com`)
    under **Blocked websites**, then try to open it on the kid's phone.
 
-## Dumb phone (optional): call, text and little else
+## Dumb phone: not in this release
 
-A parent can turn on **Dumb phone** for a child, or for their own phone. Open the person's page in the parent app,
-find **Dumb phone**, and switch it on. The phone then keeps only calling, texting, contacts, sign-in-code
-(authenticator) apps and any apps you add with **Choose apps**; everything else is sent back to a plain home screen.
+A plain home screen keeping only calls, texts, sign-in codes and a few allowed apps is built, but it
+isn't finished well enough to put in front of a family, so it's switched off. Nothing in either app
+offers it, and neither phone will ask to become your home screen.
 
-What has to happen on the phone itself:
-
-1. **Accessibility** must be on (it already is if limits work) - that's what sends other apps back home.
-2. Open **Settings** (kid app) or **Permissions** (parent app) and find **Home screen**. Tap **Fix** and choose
-   **OpenScreenTime** as the phone's home app. Until you do, apps that aren't allowed are still sent back, but the
-   simple home screen won't be the one showing.
-
-**On a child's phone** there's a **Parent unlock** button: a parent types the family passcode and picks how long
-everything opens for (it goes back by itself). Children can't open the other apps without it.
-
-**On your own phone** there's an **All apps** button. It pauses for a few breaths, then opens every app for 10 minutes and
-goes back on its own. **Travel** is a switch on the same screen: it also lets through tickets, maps, mail, the camera,
-calendar, translation and ride apps (and any you add under **Travel apps**), for days when you need them.
-**Turn off dumb phone** is at the bottom of the screen. OpenScreenTime itself is always in the list.
-
-**Calm notifications, in one place:** on your own phone, switch on **Hide other notifications** on the parent home
-screen (it needs notification access). Everything except calls, texts, alarms and sign-in codes is taken out of the
-notification shade and collected; one quiet "Calm notifications" line tells you how many are waiting. Tap it to read them.
-You can also add the **Calm notifications** tile to Quick Settings (swipe down twice, tap the pencil, drag it in),
-or swipe down from the top of the dumb-phone home screen. Nothing is uploaded.
+It would make a good community feature, and it's all still in the source for whoever wants it - see
+https://github.com/jsconu/OpenScreenTime/issues/46.
 
 ## Time that doesn't count (optional)
 
@@ -168,7 +194,7 @@ app, maps, a school app), open the person's page (a kid's, or your own), find **
 - **Always allow** is different: it lets an app keep working after the daily limit or bedtime. To let an excluded app
   keep working once the daily limit is reached, tick **Always allow** for it as well.
 - The screen time you see for the day is the counted figure, the same one the limit uses.
-- You can also set it from **Parent controls** on the kid's phone (after the family passcode), along with Dumb phone.
+- You can also set it from **Parent controls** on the kid's phone, after the family passcode.
 
 ## Website tracking (optional): what has to happen
 
@@ -232,6 +258,25 @@ Also check that the **Website filter** row says **Granted**, and that no other V
 
 ## Your privacy
 
-OpenScreenTime doesn't read what's on the screen, your messages, or your photos. It records which app is in
-front and for how long, and how often the phone is unlocked. See [PRIVACY.md](PRIVACY.md) for exactly what's
-collected and how to have it deleted.
+These are **local** builds. There is no account, no server, and no cloud code in them at all - not disabled,
+absent. You can check that yourself rather than take anyone's word for it:
+
+    unzip -p OpenScreenTime-Kid-0.2.0-local.apk 'classes*.dex' | grep -ac 'com/google/firebase'
+
+It prints `0`.
+
+**What the apps record:** which app is in front and for how long, how often the phone is unlocked, and -
+only if a parent turns them on - how many notifications arrive and which sites are looked up. They never
+read what's on the screen, your messages, or your photos.
+
+**Where it goes:** the phone it was recorded on. The only thing that ever leaves is what a linked kid's
+phone sends directly to its linked parent's phone, over your own Wi-Fi, encrypted, while both are on the
+same network. It passes through no server on the way, and nobody - including this project - can see it.
+
+**One exception, worth knowing about.** If a parent turns on the **website filter** (the optional
+site-blocking feature), the phone's DNS lookups go to Cloudflare's public resolver at `1.1.1.1` instead of
+your network's usual one - that is how the filter decides whether a site is blocked. Those are domain names
+the phone was going to look up anyway, not anything about your family, and nothing identifies you to
+Cloudflare beyond your IP address. Leave the website filter off and even that doesn't happen.
+
+There is no analytics, no advertising, no crash reporting and no telemetry of any kind in a local build.

@@ -22,13 +22,13 @@ jobs:
           distribution: temurin
           java-version: "17"
 
-      # CI has no real Firebase project, so each app gets a minimal stub
-      # google-services.json just so the Google Services Gradle plugin
-      # doesn't fail the build. This is NOT a real config — do not reuse it.
+      # CI has no real Firebase project. The cloud flavor reads its config from this one file
+      # (see FirebaseBootstrap); the local flavor never looks at it and contains no Firebase at
+      # all. This is NOT a real config - do not reuse it.
       - name: Write stub google-services.json
         run: |
-          for app in kid parent; do
-            cat > "$app/google-services.json" <<'EOF'
+          mkdir -p cloud/src/main/assets
+          cat > cloud/src/main/assets/google-services.json <<'EOF'
           {
             "project_info": {
               "project_number": "000000000000",
@@ -39,7 +39,16 @@ jobs:
               {
                 "client_info": {
                   "mobilesdk_app_id": "1:000000000000:android:0000000000000000",
-                  "android_client_info": { "package_name": "org.openscreentime.APP" }
+                  "android_client_info": { "package_name": "org.openscreentime.kid" }
+                },
+                "oauth_client": [],
+                "api_key": [{ "current_key": "stub" }],
+                "services": { "appinvite_service": { "other_platform_oauth_client": [] } }
+              },
+              {
+                "client_info": {
+                  "mobilesdk_app_id": "1:000000000000:android:0000000000000001",
+                  "android_client_info": { "package_name": "org.openscreentime.parent" }
                 },
                 "oauth_client": [],
                 "api_key": [{ "current_key": "stub" }],
@@ -49,8 +58,6 @@ jobs:
             "configuration_version": "1"
           }
           EOF
-            sed -i "s/org.openscreentime.APP/org.openscreentime.$app/" "$app/google-services.json"
-          done
 
       # The repo doesn't check in a gradle-wrapper.jar binary, so CI installs
       # Gradle directly rather than relying on ./gradlew. If you've generated
@@ -61,9 +68,9 @@ jobs:
           gradle-version: "8.9"
 
       - name: Build debug APKs and run unit tests
-        run: gradle assembleDebug testDebugUnitTest --stacktrace
+        run: gradle assembleDebug testLocalDebugUnitTest testCloudDebugUnitTest :shared:testDebugUnitTest --stacktrace
 
       # Runs R8 (minification) and resource shrinking on the release variants, so a bad keep rule
       # shows up here rather than on the first signed build. Unsigned - no keystore in CI.
       - name: Minify release builds (R8)
-        run: gradle :kid:minifyReleaseWithR8 :parent:minifyReleaseWithR8 :kid:shrinkReleaseRes :parent:shrinkReleaseRes --stacktrace
+        run: gradle :kid:minifyLocalReleaseWithR8 :parent:minifyLocalReleaseWithR8 :kid:minifyCloudReleaseWithR8 :parent:minifyCloudReleaseWithR8 --stacktrace

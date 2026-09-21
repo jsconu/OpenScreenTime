@@ -6,6 +6,7 @@ on:
     branches: [main]
     paths:
       - 'shared/**'
+      - 'cloud/**'
       - 'kid/**'
       - 'parent/**'
       - 'e2e/**'
@@ -76,10 +77,12 @@ jobs:
 
       # Same stub as android-ci.yml - the google-services plugin needs *a* file to
       # process at build time, even though these builds point at the emulator.
+      # One file for the whole cloud module, holding a client per app - the same shape a
+      # self-hoster downloads from the Firebase console (see docs/SELF_HOSTING.md).
       - name: Write stub google-services.json
         run: |
-          for app in kid parent; do
-            cat > "$app/google-services.json" <<'EOF'
+          mkdir -p cloud/src/main/assets
+          cat > cloud/src/main/assets/google-services.json <<'EOF'
           {
             "project_info": {
               "project_number": "000000000000",
@@ -90,7 +93,16 @@ jobs:
               {
                 "client_info": {
                   "mobilesdk_app_id": "1:000000000000:android:0000000000000000",
-                  "android_client_info": { "package_name": "org.openscreentime.APP" }
+                  "android_client_info": { "package_name": "org.openscreentime.kid" }
+                },
+                "oauth_client": [],
+                "api_key": [{ "current_key": "stub" }],
+                "services": { "appinvite_service": { "other_platform_oauth_client": [] } }
+              },
+              {
+                "client_info": {
+                  "mobilesdk_app_id": "1:000000000000:android:0000000000000001",
+                  "android_client_info": { "package_name": "org.openscreentime.parent" }
                 },
                 "oauth_client": [],
                 "api_key": [{ "current_key": "stub" }],
@@ -100,13 +112,11 @@ jobs:
             "configuration_version": "1"
           }
           EOF
-            sed -i "s/org.openscreentime.APP/org.openscreentime.$app/" "$app/google-services.json"
-          done
 
       # -PuseFirebaseEmulator=true is the opt-in flag read in each app's build.gradle.kts
       # (see BuildConfig.USE_FIREBASE_EMULATOR) - only this workflow ever sets it.
       - name: Build kid + parent debug APKs (pointed at the Firebase emulator)
-        run: gradle :kid:assembleDebug :parent:assembleDebug -PuseFirebaseEmulator=true --stacktrace
+        run: gradle :kid:assembleCloudDebug :parent:assembleCloudDebug -PuseFirebaseEmulator=true --stacktrace
 
       - name: Run pairing tests on a real Android emulator
         uses: reactivecircus/android-emulator-runner@v2
@@ -116,13 +126,13 @@ jobs:
           arch: x86_64
           disable-animations: true
           script: |
-            adb install -r kid/build/outputs/apk/debug/kid-debug.apk
-            adb install -r parent/build/outputs/apk/debug/parent-debug.apk
+            adb install -r kid/build/outputs/apk/cloud/debug/kid-cloud-debug.apk
+            adb install -r parent/build/outputs/apk/cloud/debug/parent-cloud-debug.apk
             adb logcat -c
             adb logcat > /tmp/logcat.txt &
             LOGCAT_PID=$!
             set +e
-            gradle :shared:connectedDebugAndroidTest :e2e:connectedDebugAndroidTest --stacktrace
+            gradle :cloud:connectedDebugAndroidTest :e2e:connectedDebugAndroidTest --stacktrace
             TEST_EXIT=$?
             set -e
             kill "$LOGCAT_PID" || true
@@ -134,7 +144,7 @@ jobs:
         with:
           name: connected-test-reports
           path: |
-            shared/build/reports/androidTests/connected
+            cloud/build/reports/androidTests/connected
             e2e/build/reports/androidTests/connected
           if-no-files-found: ignore
 

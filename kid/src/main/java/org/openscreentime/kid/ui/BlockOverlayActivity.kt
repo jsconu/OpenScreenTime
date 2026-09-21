@@ -34,6 +34,9 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.openscreentime.kid.KidApp
 import org.openscreentime.kid.data.PairingStore
+import org.openscreentime.kid.Backend
+import org.openscreentime.kid.data.NearbyStore
+import org.openscreentime.kid.nearby.NearbySyncRunner
 import org.openscreentime.kid.monitor.LiveChildState
 import org.openscreentime.shared.model.BlockReason
 import org.openscreentime.shared.model.blockScreenCopy
@@ -59,6 +62,7 @@ class BlockOverlayActivity : ComponentActivity() {
         val parentUid = pairingStore.parentUid
         val childId = pairingStore.childId
 
+        val nearbyLinked = Backend.IS_LOCAL && NearbyStore(this).linkStore.link() != null
         setContent {
             OpenScreenTimeTheme {
                 val scope = rememberCoroutineScope()
@@ -122,13 +126,28 @@ class BlockOverlayActivity : ComponentActivity() {
                         }
                         // A parent lock is a deliberate, direct action - not something a
                         // time-limit exception should be negotiable against (see #23).
-                        if (reason != BlockReason.PARENT_LOCK && parentUid != null && childId != null) {
+                        // Asking for more time is a message to a parent's phone. A cloud build
+                        // always has one; a local build only once the two have been linked, and
+                        // until then the screen says to ask a parent in person instead.
+                        val canAsk = !Backend.IS_LOCAL || nearbyLinked
+                        if (canAsk && reason != BlockReason.PARENT_LOCK && parentUid != null && childId != null) {
                             Spacer(Modifier.height(24.dp))
                             RequestMoreTimeSection(
                                 requestedExtraMinutes = requestedExtraMinutes,
                                 onRequest = { minutes ->
                                     requestedExtraMinutes = minutes
-                                    scope.launch { repository.requestExtraTime(parentUid, childId, minutes) }
+                                    scope.launch {
+                                        if (Backend.IS_LOCAL) {
+                                            // Over the local link, on a background thread: it opens a
+                                            // socket, and it quietly does nothing when the parent's
+                                            // phone is not on this network.
+                                            withContext(Dispatchers.IO) {
+                                                NearbySyncRunner(this@BlockOverlayActivity).requestMoreTime(minutes)
+                                            }
+                                        } else {
+                                            repository.requestExtraTime(parentUid, childId, minutes)
+                                        }
+                                    }
                                 }
                             )
                         }

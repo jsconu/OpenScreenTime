@@ -32,6 +32,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import org.openscreentime.kid.Backend
 import org.openscreentime.sharedui.mergedRow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
@@ -74,7 +75,14 @@ fun StatusScreen(
     onOpenHelp: () -> Unit,
     onProposeChange: () -> Unit,
     onOpenNotificationDigest: () -> Unit,
-    onRequestNotificationListener: () -> Unit
+    onRequestNotificationListener: () -> Unit,
+    /** Local builds only: whether this phone has been linked to a parent's phone yet. */
+    showNearbyLink: Boolean = false,
+    nearbyLinkedTo: String? = null,
+    nearbyLastSyncedAtMs: Long = 0,
+    nearbySyncing: Boolean = false,
+    onLinkParentPhone: () -> Unit = {},
+    onSyncNow: () -> Unit = {}
 ) {
     Column(
         modifier = Modifier
@@ -145,11 +153,64 @@ fun StatusScreen(
         }
 
         Spacer(Modifier.height(24.dp))
-        OutlinedButton(
-            onClick = onProposeChange,
-            modifier = Modifier.fillMaxWidth().testTag("status_propose_change")
-        ) {
-            Text("Suggest a change")
+        // Linking is the first thing a kid's phone needs in a local build, so it belongs here in
+        // plain sight rather than buried in Settings - which is where it was, and nobody found it.
+        if (showNearbyLink && nearbyLinkedTo == null) {
+            Button(
+                onClick = onLinkParentPhone,
+                modifier = Modifier.fillMaxWidth().testTag("status_link_parent")
+            ) {
+                Text("Scan a parent's code")
+            }
+            Spacer(Modifier.height(4.dp))
+            Text(
+                "Ask a parent to open OpenScreenTime on their phone and tap \"Link a kid's phone\". " +
+                    "Until then, limits are set on this phone in Parent controls.",
+                style = MaterialTheme.typography.bodySmall,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.fillMaxWidth()
+            )
+            Spacer(Modifier.height(8.dp))
+        }
+        if (showNearbyLink && nearbyLinkedTo != null) {
+            Text(
+                if (nearbySyncing) "Sending to $nearbyLinkedTo..." else lastSyncedLabel(nearbyLastSyncedAtMs, nearbyLinkedTo),
+                style = MaterialTheme.typography.bodySmall,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.fillMaxWidth().testTag("status_nearby_state")
+            )
+            Spacer(Modifier.height(8.dp))
+            OutlinedButton(
+                enabled = !nearbySyncing,
+                onClick = onSyncNow,
+                modifier = Modifier.fillMaxWidth().testTag("status_sync_now")
+            ) { Text("Send to their phone now") }
+            Spacer(Modifier.height(4.dp))
+            // Said on the button itself, every time: without it, a tap that does nothing looks
+            // like a broken app rather than two phones being in different places.
+            Text(
+                "Only works while both phones are on the same Wi-Fi and awake.",
+                style = MaterialTheme.typography.bodySmall,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.fillMaxWidth()
+            )
+            Spacer(Modifier.height(8.dp))
+        }
+        if (!Backend.IS_LOCAL || nearbyLinkedTo != null) {
+            OutlinedButton(
+                onClick = onProposeChange,
+                modifier = Modifier.fillMaxWidth().testTag("status_propose_change")
+            ) {
+                Text("Suggest a change")
+            }
+        } else if (Backend.IS_LOCAL) {
+            Text(
+                "Want different limits? Ask a parent - they can change them on this phone in " +
+                    "Parent controls.",
+                style = MaterialTheme.typography.bodyMedium,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.fillMaxWidth().testTag("status_local_ask_in_person")
+            )
         }
         Spacer(Modifier.height(8.dp))
         Button(
@@ -383,5 +444,20 @@ internal fun PermissionRow(title: String, description: String, granted: Boolean,
             },
             colors = ListItemDefaults.colors(containerColor = Color.Transparent)
         )
+    }
+}
+
+/**
+ * What a kid sees about the link, in their own terms. Never "connected" - the two phones are only
+ * ever in touch for a moment at a time, and a standing green light would be a lie.
+ */
+private fun lastSyncedLabel(lastSyncedAtMs: Long, peerName: String, nowMs: Long = System.currentTimeMillis()): String {
+    if (lastSyncedAtMs <= 0) return "Linked to $peerName. Nothing sent yet - this works when you're both on the same Wi-Fi."
+    val minutes = ((nowMs - lastSyncedAtMs) / 60_000L).coerceAtLeast(0)
+    return when {
+        minutes < 2 -> "Sent to $peerName just now"
+        minutes < 60 -> "Last sent to $peerName $minutes minutes ago"
+        minutes < 60 * 24 -> "Last sent to $peerName ${minutes / 60} hour${if (minutes / 60 == 1L) "" else "s"} ago"
+        else -> "Last sent to $peerName ${minutes / (60 * 24)} day${if (minutes / (60 * 24) == 1L) "" else "s"} ago"
     }
 }

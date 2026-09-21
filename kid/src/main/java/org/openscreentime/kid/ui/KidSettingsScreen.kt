@@ -16,6 +16,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import org.openscreentime.shared.util.Features
 import org.openscreentime.sharedui.rememberIsDefaultHome
 import androidx.compose.runtime.remember
 import android.os.Build
@@ -51,6 +52,12 @@ fun KidSettingsScreen(
     onOpenColorSettings: () -> Unit,
     onRequestNotificationListener: () -> Unit,
     onRequestHomeScreen: () -> Unit,
+    /** Null when this phone is not linked to a parent's phone (a local build; see NearbyLink). */
+    linkedParentName: String?,
+    /** Offered only in a local build - a cloud build is already connected through the account. */
+    showNearbyLink: Boolean,
+    onLinkParentPhone: () -> Unit,
+    onUnlinkParentPhone: () -> Unit,
     /** Only offered here while no family passcode is set; otherwise it lives in Parent controls. */
     showUnpair: Boolean,
     onUnpair: () -> Unit,
@@ -127,7 +134,7 @@ fun KidSettingsScreen(
             onRequestNotificationListener
         )
         val focus = FocusLauncherActivity.focusMode(LocalContext.current)
-        if (focus.enabled) {
+        if (Features.DUMB_PHONE && focus.enabled) {
             val isHome = rememberIsDefaultHome(focus)
             PermissionRow(
                 "Home screen (simple phone)",
@@ -136,6 +143,36 @@ fun KidSettingsScreen(
                 isHome,
                 onRequestHomeScreen
             )
+        }
+        if (showNearbyLink) {
+            Spacer(Modifier.height(24.dp))
+            Text("A parent's phone", style = MaterialTheme.typography.labelLarge)
+            if (linkedParentName == null) {
+                ListItem(
+                    headlineContent = { Text("Link to a parent's phone") },
+                    supportingContent = {
+                        Text(
+                            "Scan the code on their phone. After that, while you're both on the same " +
+                                "Wi-Fi, they can see how this phone is used and set its limits - and you " +
+                                "can ask them for more time from here."
+                        )
+                    },
+                    trailingContent = {
+                        TextButton(
+                            onClick = onLinkParentPhone,
+                            modifier = Modifier.testTag("settings_link_parent")
+                        ) { Text("Scan") }
+                    }
+                )
+            } else {
+                ListItem(
+                    headlineContent = { Text("Linked to $linkedParentName") },
+                    supportingContent = {
+                        Text("Works while both phones are on the same Wi-Fi. Away from it, this phone keeps its limits and carries on by itself.")
+                    },
+                    trailingContent = { TextButton(onClick = onUnlinkParentPhone) { Text("Unlink") } }
+                )
+            }
         }
         Spacer(Modifier.height(24.dp))
         Text("Display", style = MaterialTheme.typography.labelLarge)

@@ -1,9 +1,11 @@
 package org.openscreentime.shared.model
 
+import kotlinx.serialization.Serializable
 /**
  * A child profile owned by a parent account. Lives at
  * parents/{parentUid}/children/{childId} in Firestore.
  */
+@Serializable
 data class ChildProfile(
     val id: String = "",
     val name: String = "",

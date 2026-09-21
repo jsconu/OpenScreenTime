@@ -64,7 +64,7 @@ key - so if you lose it, Google can reset it. Still back it up.
       - limits, bedtime, the block screen and its OK button, "Lock now"
       - website filter (VPN), notification listener, uninstall protection, bedtime calls
       - the help bot answers, the weekly report, tracking toggles
-      - a test crash reaches Crashlytics
+      - a crash leaves a readable note in the app (there is no crash reporting service)
 - [ ] Bump `versionCode` (in `kid/build.gradle.kts` and `parent/build.gradle.kts`) for **every** upload.
       They are currently `2` / `0.2.0`.
 - [ ] In the Firebase console, add the **SHA-1 and SHA-256** of the upload key *and* of the Play App
@@ -90,7 +90,7 @@ key - so if you lose it, Google can reset it. Still back it up.
 
 ## 5. After the first testers install
 
-- [ ] Confirm a crash shows up in Crashlytics.
+- [ ] Confirm a crash leaves a note the tester can copy (see CrashNote); nothing is uploaded.
 - [ ] Look at Firestore usage and cost after a few days.
 - [ ] Tell testers plainly: it's a beta, the passcode is a deterrent (not a lock), and their data goes
       to your Firebase project. Provide the deletion contact from the privacy policy.

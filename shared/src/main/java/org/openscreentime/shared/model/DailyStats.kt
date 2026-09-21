@@ -1,9 +1,11 @@
 package org.openscreentime.shared.model
 
+import kotlinx.serialization.Serializable
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
+@Serializable
 data class AppUsage(
     val packageName: String = "",
     val appName: String = "",
@@ -14,6 +16,7 @@ data class AppUsage(
  * One day's usage for a child, keyed by date (yyyy-MM-dd). Lives at
  * parents/{parentUid}/children/{childId}/dailyStats/{date} in Firestore.
  */
+@Serializable
 data class DailyStats(
     val date: String = "",
     val totalScreenTimeMs: Long = 0,

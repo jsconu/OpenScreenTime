@@ -27,10 +27,24 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import org.openscreentime.sharedui.CrashReportDialog
 import org.openscreentime.shared.util.CrashNote
+import androidx.compose.runtime.mutableLongStateOf
+import androidx.compose.runtime.rememberCoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import org.openscreentime.shared.util.PasscodeHasher
+import kotlinx.coroutines.delay
+import androidx.lifecycle.compose.LifecycleResumeEffect
+import org.openscreentime.kid.Backend
+import org.openscreentime.kid.nearby.NearbySyncRunner
 import org.openscreentime.kid.KidApp
 import org.openscreentime.kid.data.AppearancePrefs
 import org.openscreentime.kid.data.NotificationDigestStore
+import com.journeyapps.barcodescanner.ScanContract
+import com.journeyapps.barcodescanner.ScanOptions
+import org.openscreentime.kid.data.NearbyStore
 import org.openscreentime.kid.data.PairingStore
+import org.openscreentime.shared.nearby.NearbyLink
 import org.openscreentime.kid.monitor.DnsSinkholeVpnService
 import org.openscreentime.kid.monitor.LiveChildState
 import org.openscreentime.kid.monitor.ScreenMonitorService
@@ -42,7 +56,7 @@ import org.openscreentime.shared.model.HelpAudience
 import org.openscreentime.shared.model.calmParentStatusLabel
 import org.openscreentime.shared.model.computeStreak
 import org.openscreentime.shared.model.todayDateString
-import org.openscreentime.shared.repo.FirestorePaths
+import org.openscreentime.shared.repo.Profiles
 import org.openscreentime.sharedui.ScreenUnavailable
 import org.openscreentime.sharedui.AccessibilityDisclosureDialog
 import org.openscreentime.sharedui.HelpBotScreen
@@ -56,6 +70,31 @@ class MainActivity : ComponentActivity() {
 
     private val notificationPermissionLauncher =
         registerForActivityResult(ActivityResultContracts.RequestPermission()) {}
+
+    /** Set by the Compose layer so a scan result can be handed back to it. */
+    private var onScanned: ((String) -> Unit)? = null
+
+    /**
+     * Opens the scanner and hands back a link if what was scanned is one of ours. A cancelled scan,
+     * or a code that turns out to be something else entirely, simply does nothing.
+     */
+    private fun startNearbyScan(onLink: (NearbyLink) -> Unit) {
+        onScanned = { payload -> NearbyLink.fromPayload(payload)?.let(onLink) }
+        scanLauncher.launch(
+            ScanOptions()
+                .setPrompt("Point at the code on the parent's phone")
+                .setBeepEnabled(false)
+                .setOrientationLocked(false)
+        )
+    }
+
+    /**
+     * Scanning the QR code on a parent's phone. A cancelled scan, or a code that turns out to be
+     * something else entirely, simply does nothing - see NearbyLink.fromPayload.
+     */
+    private val scanLauncher = registerForActivityResult(ScanContract()) { result ->
+        result.contents?.let { onScanned?.invoke(it) }
+    }
 
     // Set as the phone's home screen, for the simple phone (see #42).
     private val homeRoleLauncher =
@@ -100,9 +139,63 @@ class MainActivity : ComponentActivity() {
                         onDismiss = { showAccessibilityDisclosure = false }
                     )
                 }
-                var paired by remember { mutableStateOf(pairingStore.isPaired) }
+                // A local build has no second phone to pair with: this phone's own profile is
+                // already here, so it opens on the status screen (see Backend).
+                var paired by remember { mutableStateOf(Backend.IS_LOCAL || pairingStore.isPaired) }
                 var permissions by remember { mutableStateOf(checkPermissions(this@MainActivity)) }
                 var screen by remember { mutableStateOf(KidScreen.STATUS) }
+                // Null until this phone has scanned a parent's code (local builds only).
+                var linkedParentName by remember {
+                    mutableStateOf(NearbyStore(this@MainActivity).linkStore.link()?.peerName)
+                }
+                var nearbyLastSyncedAtMs by remember {
+                    mutableLongStateOf(NearbyStore(this@MainActivity).linkStore.lastSyncedAtMs)
+                }
+                var nearbySyncing by remember { mutableStateOf(false) }
+                val syncScope = rememberCoroutineScope()
+
+                /**
+                 * Reaching the parent's phone, from the button or on its own.
+                 *
+                 * [attempts] exists for the moment just after scanning: the parent may still be
+                 * putting their phone down, and a single try that lands a second too early would
+                 * leave them watching a code with nothing happening. Each attempt is cheap and
+                 * silent, and the first one that gets through ends it.
+                 */
+                fun syncNearbyNow(attempts: Int = 1) {
+                    if (nearbySyncing) return
+                    nearbySyncing = true
+                    syncScope.launch {
+                        var reached = false
+                        repeat(attempts) { attempt ->
+                            if (reached) return@repeat
+                            if (attempt > 0) delay(3_000)
+                            reached = withContext(Dispatchers.IO) {
+                                NearbySyncRunner(this@MainActivity).syncNow((application as KidApp).repository)
+                            }
+                        }
+                        nearbyLastSyncedAtMs = NearbyStore(this@MainActivity).linkStore.lastSyncedAtMs
+                        nearbySyncing = false
+                    }
+                }
+
+                // Just linked: reach their phone now rather than in fifteen minutes' time, and keep
+                // trying for a few seconds so the parent sees it while still holding the phone.
+                LaunchedEffect(linkedParentName) {
+                    if (linkedParentName != null) {
+                        // Listen under the new key straight away, so the parent's "Sync now" works
+                        // without restarting this app.
+                        (application as KidApp).startNearbyHost()
+                        syncNearbyNow(attempts = 5)
+                    }
+                }
+
+                // Opening this app is the best signal there is that the phone is awake and probably
+                // home, which is exactly when the parent's phone is worth trying.
+                LifecycleResumeEffect(linkedParentName) {
+                    if (linkedParentName != null) syncNearbyNow()
+                    onPauseOrDispose { }
+                }
                 var child by remember { mutableStateOf<ChildProfile?>(null) }
                 var streakDays by remember { mutableIntStateOf(0) }
                 var parentSelfProfile by remember { mutableStateOf<ChildProfile?>(null) }
@@ -118,7 +211,7 @@ class MainActivity : ComponentActivity() {
                 DisposableEffect(parentSelfProfile?.id) {
                     val parentUid = pairingStore.parentUid
                     if (parentUid == null || parentSelfProfile == null) return@DisposableEffect onDispose {}
-                    val reg = repository.listenDailyStats(parentUid, FirestorePaths.SELF_CHILD_ID, todayDateString()) {
+                    val reg = repository.listenDailyStats(parentUid, Profiles.SELF_CHILD_ID, todayDateString()) {
                         parentSelfStats = it
                     }
                     onDispose { reg.remove() }
@@ -153,11 +246,11 @@ class MainActivity : ComponentActivity() {
                 }
 
                 DisposableEffect(paired) {
-                    val parentUid = pairingStore.parentUid
-                    val childId = pairingStore.childId
-                    if (!paired || parentUid == null || childId == null) {
+                    val ids = Backend.profileIds(this@MainActivity)
+                    if (!paired || ids == null) {
                         return@DisposableEffect onDispose {}
                     }
+                    val (parentUid, childId) = ids
                     val reg = repository.listenChild(parentUid, childId) { child = it }
                     onDispose { reg.remove() }
                 }
@@ -221,6 +314,15 @@ class MainActivity : ComponentActivity() {
                             )
                     when (screen) {
                         KidScreen.STATUS -> StatusScreen(
+                            showNearbyLink = Backend.IS_LOCAL,
+                            nearbyLinkedTo = linkedParentName,
+                            nearbyLastSyncedAtMs = nearbyLastSyncedAtMs,
+                            nearbySyncing = nearbySyncing,
+                            onLinkParentPhone = { startNearbyScan { link ->
+                                NearbyStore(this@MainActivity).linkStore.save(link)
+                                linkedParentName = link.peerName
+                            } },
+                            onSyncNow = { syncNearbyNow() },
                             childName = pairingStore.childName ?: "",
                             permissions = permissions,
                             streakDays = streakDays,
@@ -251,6 +353,16 @@ class MainActivity : ComponentActivity() {
                                 startActivity(Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS))
                             },
                             onRequestHomeScreen = { homeRoleLauncher.launch(FocusLauncherActivity.focusMode(this@MainActivity).homeRoleIntent()) },
+                            linkedParentName = linkedParentName,
+                            showNearbyLink = Backend.IS_LOCAL,
+                            onLinkParentPhone = { startNearbyScan { link ->
+                                NearbyStore(this@MainActivity).linkStore.save(link)
+                                linkedParentName = link.peerName
+                            } },
+                            onUnlinkParentPhone = {
+                                NearbyStore(this@MainActivity).linkStore.forget()
+                                linkedParentName = null
+                            },
                             showUnpair = child?.parentPasscodeHash == null,
                             onUnpair = {
                                 pairingStore.clear()
@@ -266,7 +378,26 @@ class MainActivity : ComponentActivity() {
                         KidScreen.PARENT_UNLOCK -> ParentModeUnlockScreen(
                             child = child,
                             onUnlocked = { screen = KidScreen.PARENT_CONTROLS },
-                            onCancel = { screen = KidScreen.STATUS }
+                            onCancel = { screen = KidScreen.STATUS },
+                            // Only a local build sets its own: in a cloud build the parent's account
+                            // owns the passcode and copies it down, and two sources would disagree.
+                            onSetPasscodeHere = if (Backend.IS_LOCAL) {
+                                { entered ->
+                                    val repository = (application as KidApp).repository
+                                    // PBKDF2 is slow on purpose - off the main thread, as its docs say.
+                                    val (hash, salt) = withContext(Dispatchers.Default) {
+                                        val salt = PasscodeHasher.randomSalt()
+                                        PasscodeHasher.hash(entered, salt) to salt
+                                    }
+                                    repository.setParentPasscode(
+                                        repository.currentUid.orEmpty(),
+                                        hash,
+                                        salt
+                                    )
+                                }
+                            } else {
+                                null
+                            }
                         )
                         KidScreen.PARENT_CONTROLS -> {
                             val currentChild = child

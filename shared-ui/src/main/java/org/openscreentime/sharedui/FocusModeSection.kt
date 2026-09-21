@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
+import org.openscreentime.shared.util.Features
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Checkbox
@@ -47,6 +48,10 @@ fun LazyListScope.focusModeSection(
     onSetProfile: (FocusProfile) -> Unit,
     onPickApps: (travelOnly: Boolean) -> Unit
 ) {
+    // Dumb phone is not part of this release - see Features.DUMB_PHONE. Nothing offers it, so a
+    // family cannot half-enable something that does not work properly yet.
+    if (!Features.DUMB_PHONE) return
+
     item {
         Column(Modifier.padding(16.dp)) {
             Text("Dumb phone", style = MaterialTheme.typography.labelLarge)

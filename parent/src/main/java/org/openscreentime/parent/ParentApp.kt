@@ -8,11 +8,10 @@ import android.os.Build
 import androidx.work.ExistingPeriodicWorkPolicy
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
-import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.crashlytics.FirebaseCrashlytics
-import com.google.firebase.firestore.FirebaseFirestore
+import kotlinx.coroutines.runBlocking
+import org.openscreentime.parent.nearby.NearbyHost
+import org.openscreentime.parent.nearby.NearbyRequests
 import org.openscreentime.shared.util.CrashNote
-import org.openscreentime.parent.data.SelfProfileStore
 import org.openscreentime.parent.monitor.SelfDeviceState
 import org.openscreentime.parent.monitor.SyncWorker
 import org.openscreentime.parent.ui.BlockOverlayActivity
@@ -22,24 +21,22 @@ import org.openscreentime.shared.repo.FamilyRepository
 import java.util.concurrent.TimeUnit
 
 class ParentApp : Application() {
-    val repository by lazy { FamilyRepository() }
+    val repository: FamilyRepository by lazy { Backend.createRepository(this) }
+
+    /** Listens for a linked kid's phone on the same Wi-Fi. Null in a cloud build, which pairs through the account. */
+    val nearbyHost: NearbyHost? by lazy { if (Backend.IS_LOCAL) NearbyHost(this) else null }
 
     override fun onCreate() {
         super.onCreate()
         CrashNote.install(this, "OpenScreenTime Parent", BuildConfig.VERSION_NAME)
-        if (BuildConfig.USE_FIREBASE_EMULATOR) {
-            // Must happen before FamilyRepository's lazy init ever touches Firebase.
-            FirebaseFirestore.getInstance().useEmulator("10.0.2.2", 8080)
-            FirebaseAuth.getInstance().useEmulator("10.0.2.2", 9099)
-        }
-        // Never report CI/E2E-emulator crashes to the real Crashlytics dashboard (see #21) -
-        // same flag that already points Firebase itself at the local emulator suite.
-        FirebaseCrashlytics.getInstance().setCrashlyticsCollectionEnabled(!BuildConfig.USE_FIREBASE_EMULATOR)
+        // Whatever this flavor's backend needs before anything touches it - nothing, locally.
+        Backend.onAppCreate(this)
         createNotificationChannels()
         // So this phone's own limits still apply after a restart, before Firestore has answered.
         SelfDeviceState.restore(this)
         scheduleSelfSync()
         startSelfTrackingListener()
+        startNearbyHost()
     }
 
     private fun scheduleSelfSync() {
@@ -72,8 +69,7 @@ class ParentApp : Application() {
      * self-tracking, so the listener starts without needing an app restart).
      */
     fun startSelfTrackingListener() {
-        val childId = SelfProfileStore(this).childId ?: return
-        val parentUid = repository.currentUid ?: return
+        val (parentUid, childId) = Backend.profileIds(this) ?: return
 
         repository.listenChild(parentUid, childId) { child ->
             val wasLocked = SelfDeviceState.lockedCache
@@ -87,6 +83,20 @@ class ParentApp : Application() {
                 )
             }
         }
+    }
+
+    /**
+     * Starts listening for the linked kid's phone, if there is one. The limits it answers with are
+     * read fresh from the repository each time, so whatever a parent changed a moment ago is what
+     * the kid's phone is told - there is no second copy to keep in step.
+     */
+    fun startNearbyHost() {
+        val host = nearbyHost ?: return
+        host.currentProfile = {
+            runBlocking { runCatching { repository.getOrCreateSelfProfile(repository.currentUid.orEmpty(), "Me") }.getOrNull() }
+        }
+        host.onRequest = { NearbyRequests.notify(this, it) }
+        host.start()
     }
 
     companion object {

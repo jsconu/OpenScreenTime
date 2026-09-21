@@ -26,7 +26,7 @@ person using the phone (persistent notification, in-app explanation of what's tr
   whether the app is designed for children, answer per the current definition: the *child* never
   signs up or gives personal details; a *parent* does. Read Play's **Families policy** before
   choosing "children" as a target age group, because that triggers extra requirements (approved SDKs
-  only, no ads, etc. - Firebase Auth/Firestore/Crashlytics matter here). The conservative option is
+  only, no ads, etc. - Firebase Auth/Firestore matter here; there is no crash-reporting SDK). The conservative option is
   to publish the **parent app** first and target it at adults.
 - **Parent app:** target audience is adults (parents/guardians).
 - **Ads:** none.
@@ -107,7 +107,7 @@ Each answer should say *why* the permission is core to the app's purpose, and wh
   turns that on; (2) quieting text-message notifications from unlisted numbers during bedtime; (3) a
   local "calm notification list". Notification content is never uploaded.
 
-### Home screen role and "Dumb phone" (kid app and parent app)
+### Home screen role and "Dumb phone" (not in this release - see https://github.com/jsconu/OpenScreenTime/issues/46)
 - **Purpose:** an optional parent-chosen Focus mode. When on, the app offers a plain home screen (registered as a
   HOME activity, disabled until the mode is turned on, and only used if the user makes it the default home app from
   the system's own prompt) listing calls, texts, contacts, authenticator apps and the apps a parent allowed. The

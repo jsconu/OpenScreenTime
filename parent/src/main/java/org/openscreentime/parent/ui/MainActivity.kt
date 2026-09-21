@@ -33,6 +33,10 @@ import androidx.navigation.navArgument
 import org.openscreentime.sharedui.CrashReportDialog
 import org.openscreentime.shared.util.CrashNote
 import org.openscreentime.parent.AppLockState
+import androidx.compose.runtime.mutableLongStateOf
+import kotlinx.coroutines.delay
+import org.openscreentime.parent.Backend
+import org.openscreentime.parent.data.NearbyStore
 import org.openscreentime.parent.ParentApp
 import org.openscreentime.parent.data.NotificationDigestStore
 import org.openscreentime.parent.data.AppearancePrefs
@@ -132,7 +136,9 @@ class MainActivity : FragmentActivity() {
                     )
                 }
                 val navController = rememberNavController()
-                var signedIn by remember { mutableStateOf(repository.currentUid != null) }
+                // A local build keeps everything on this phone and has no account, so it starts
+                // straight on the dashboard - there is nothing to sign in to (see Backend).
+                var signedIn by remember { mutableStateOf(Backend.IS_LOCAL || repository.currentUid != null) }
 
                 if (!signedIn) {
                     AuthScreen(repository = repository, onSignedIn = { signedIn = true })
@@ -199,6 +205,7 @@ class MainActivity : FragmentActivity() {
                                         val selfId = selfProfileStore.childId
                                         if (isSelfTracking && selfId != null) navController.navigate("child/$selfId") else navController.navigate("self")
                                     },
+                                    onOpenNearbyLink = { navController.navigate("nearby") },
                                     onOpenHelp = { navController.navigate("help") },
                                     onOpenDigest = { navController.navigate("digest") },
                                     onRequestNotificationListener = {
@@ -247,6 +254,38 @@ class MainActivity : FragmentActivity() {
                             composable("help") {
                                 HelpBotScreen(
                                     audience = HelpAudience.PARENT,
+                                    onBack = { navController.popBack() }
+                                )
+                            }
+                            composable("nearby") {
+                                val nearbyStore = remember { NearbyStore(this@MainActivity).linkStore }
+                                var linkedChildName by remember { mutableStateOf(nearbyStore.childName()) }
+                                var lastSyncedAtMs by remember { mutableLongStateOf(nearbyStore.lastSyncedAtMs) }
+                                // A kid's phone arrives on a socket, so there is nothing to observe:
+                                // check often enough that "Waiting for their phone..." turns into
+                                // their name while the parent is still looking at the code.
+                                LaunchedEffect(Unit) {
+                                    while (true) {
+                                        delay(1_000)
+                                        linkedChildName = nearbyStore.childName()
+                                        lastSyncedAtMs = nearbyStore.lastSyncedAtMs
+                                    }
+                                }
+                                NearbyLinkScreen(
+                                    linkedChildName = linkedChildName,
+                                    lastSyncedAtMs = lastSyncedAtMs,
+                                    onOffering = { link ->
+                                        // Stored and listened for straight away, so the kid's phone
+                                        // finds someone home the first time it calls.
+                                        nearbyStore.save(link)
+                                        (application as ParentApp).nearbyHost?.restart()
+                                        (application as ParentApp).startNearbyHost()
+                                    },
+                                    onUnlink = {
+                                        nearbyStore.forget()
+                                        linkedChildName = null
+                                        (application as ParentApp).nearbyHost?.close()
+                                    },
                                     onBack = { navController.popBack() }
                                 )
                             }
