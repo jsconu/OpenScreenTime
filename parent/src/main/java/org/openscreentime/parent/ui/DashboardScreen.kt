@@ -72,7 +72,8 @@ import org.openscreentime.shared.model.currentDayIndex
 import org.openscreentime.shared.model.currentDayParentTip
 import org.openscreentime.shared.model.todayDateString
 import org.openscreentime.shared.repo.FamilyRepository
-import org.openscreentime.shared.repo.FirestorePaths
+import org.openscreentime.parent.Backend
+import org.openscreentime.shared.repo.Profiles
 
 private const val STREAK_LOOKBACK_DAYS = 14
 
@@ -128,7 +129,7 @@ fun DashboardScreen(
         // The self doc's snapshot listener still fires even if self-tracking was never
         // started (an empty, default-valued ChildProfile with isSelf = false) - gate on
         // isSelf, not nullability, to tell "never started" from "actively tracking."
-        val selfReg = repository.listenChild(parentUid, FirestorePaths.SELF_CHILD_ID) { child ->
+        val selfReg = repository.listenChild(parentUid, Profiles.SELF_CHILD_ID) { child ->
             selfProfile = if (child.isSelf) child else null
         }
         onDispose {
@@ -166,10 +167,12 @@ fun DashboardScreen(
                             text = { Text("Feedback") },
                             onClick = { showMenu = false; showFeedbackDialog = true }
                         )
-                        DropdownMenuItem(
-                            text = { Text("Sign out") },
-                            onClick = { showMenu = false; onSignOut() }
-                        )
+                        if (!Backend.IS_LOCAL) {
+                            DropdownMenuItem(
+                                text = { Text("Sign out") },
+                                onClick = { showMenu = false; onSignOut() }
+                            )
+                        }
                     }
                 }
             )
@@ -178,14 +181,19 @@ fun DashboardScreen(
         LazyColumn(modifier = Modifier.fillMaxSize().padding(padding)) {
             // First and fixed: nothing above it can appear later (like the passcode prompt below,
             // which shows once its check finishes) and push it out from under a finger.
-            item {
-                Button(
-                    onClick = { showAddDialog = true },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 8.dp)
-                        .testTag("dashboard_add_child")
-                ) { Text("Add kid") }
+            // Adding a kid means pairing their phone to this account, which a local build has
+            // no way to do - it keeps everything on this one phone. The rest of the dashboard
+            // (your own screen time, limits, dumb phone, the calm list) works exactly the same.
+            if (!Backend.IS_LOCAL) {
+                item {
+                    Button(
+                        onClick = { showAddDialog = true },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 8.dp)
+                            .testTag("dashboard_add_child")
+                    ) { Text("Add kid") }
+                }
             }
             if (!hasPasscode) {
                 item {

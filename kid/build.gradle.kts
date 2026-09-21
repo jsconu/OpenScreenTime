@@ -5,8 +5,6 @@ plugins {
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.kotlin.serialization)
-    alias(libs.plugins.google.services)
-    alias(libs.plugins.firebase.crashlytics)
 }
 
 // Release signing comes from an untracked keystore.properties at the repo root (see
@@ -35,6 +33,27 @@ android {
             "USE_FIREBASE_EMULATOR",
             (project.findProperty("useFirebaseEmulator") == "true").toString()
         )
+    }
+
+
+    // Two ways to run OpenScreenTime, and a build is one or the other - never both (see
+    // docs/LOCAL_AND_CLOUD.md):
+    //
+    //   local  - everything stays on this phone. No account, no pairing, no Firebase SDK compiled
+    //            in at all: the :cloud module is simply not a dependency of this flavor, so there
+    //            is no cloud code in the APK to trust or audit. This is what gets published.
+    //   cloud  - today's behaviour: a parent's phone and a child's phone paired through a Firebase
+    //            project you run yourself, which is what makes remote limits and locking possible.
+    flavorDimensions += "backend"
+    productFlavors {
+        create("local") {
+            dimension = "backend"
+            versionNameSuffix = "-local"
+        }
+        create("cloud") {
+            dimension = "backend"
+            versionNameSuffix = "-cloud"
+        }
     }
 
     signingConfigs {
@@ -91,10 +110,8 @@ dependencies {
     implementation(libs.work.runtime.ktx)
     implementation(libs.kotlinx.serialization.json)
 
-    implementation(platform(libs.firebase.bom))
-    implementation(libs.firebase.auth)
-    implementation(libs.firebase.firestore)
-    implementation(libs.firebase.crashlytics)
+    // The only edge where cloud code enters the build. A local build resolves none of this.
+    "cloudImplementation"(project(":cloud"))
 
     debugImplementation(libs.compose.ui.tooling)
 }

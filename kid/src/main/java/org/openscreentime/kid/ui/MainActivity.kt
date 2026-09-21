@@ -27,6 +27,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import org.openscreentime.sharedui.CrashReportDialog
 import org.openscreentime.shared.util.CrashNote
+import org.openscreentime.kid.Backend
 import org.openscreentime.kid.KidApp
 import org.openscreentime.kid.data.AppearancePrefs
 import org.openscreentime.kid.data.NotificationDigestStore
@@ -42,7 +43,7 @@ import org.openscreentime.shared.model.HelpAudience
 import org.openscreentime.shared.model.calmParentStatusLabel
 import org.openscreentime.shared.model.computeStreak
 import org.openscreentime.shared.model.todayDateString
-import org.openscreentime.shared.repo.FirestorePaths
+import org.openscreentime.shared.repo.Profiles
 import org.openscreentime.sharedui.ScreenUnavailable
 import org.openscreentime.sharedui.AccessibilityDisclosureDialog
 import org.openscreentime.sharedui.HelpBotScreen
@@ -100,7 +101,9 @@ class MainActivity : ComponentActivity() {
                         onDismiss = { showAccessibilityDisclosure = false }
                     )
                 }
-                var paired by remember { mutableStateOf(pairingStore.isPaired) }
+                // A local build has no second phone to pair with: this phone's own profile is
+                // already here, so it opens on the status screen (see Backend).
+                var paired by remember { mutableStateOf(Backend.IS_LOCAL || pairingStore.isPaired) }
                 var permissions by remember { mutableStateOf(checkPermissions(this@MainActivity)) }
                 var screen by remember { mutableStateOf(KidScreen.STATUS) }
                 var child by remember { mutableStateOf<ChildProfile?>(null) }
@@ -118,7 +121,7 @@ class MainActivity : ComponentActivity() {
                 DisposableEffect(parentSelfProfile?.id) {
                     val parentUid = pairingStore.parentUid
                     if (parentUid == null || parentSelfProfile == null) return@DisposableEffect onDispose {}
-                    val reg = repository.listenDailyStats(parentUid, FirestorePaths.SELF_CHILD_ID, todayDateString()) {
+                    val reg = repository.listenDailyStats(parentUid, Profiles.SELF_CHILD_ID, todayDateString()) {
                         parentSelfStats = it
                     }
                     onDispose { reg.remove() }
@@ -153,11 +156,11 @@ class MainActivity : ComponentActivity() {
                 }
 
                 DisposableEffect(paired) {
-                    val parentUid = pairingStore.parentUid
-                    val childId = pairingStore.childId
-                    if (!paired || parentUid == null || childId == null) {
+                    val ids = Backend.profileIds(this@MainActivity)
+                    if (!paired || ids == null) {
                         return@DisposableEffect onDispose {}
                     }
+                    val (parentUid, childId) = ids
                     val reg = repository.listenChild(parentUid, childId) { child = it }
                     onDispose { reg.remove() }
                 }

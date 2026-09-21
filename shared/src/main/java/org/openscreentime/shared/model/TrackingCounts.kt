@@ -1,5 +1,6 @@
 package org.openscreentime.shared.model
 
+import kotlinx.serialization.Serializable
 /** The four parent-controlled tracking toggles on a [ChildProfile]; [field] is the Firestore field name. */
 enum class TrackingToggle(val field: String) {
     TRACK_UNLOCKS("trackUnlocks"),
@@ -10,6 +11,7 @@ enum class TrackingToggle(val field: String) {
 }
 
 /** A per-app count of something - notifications received, or being the first app opened after an unlock. */
+@Serializable
 data class AppCount(
     val packageName: String = "",
     val appName: String = "",

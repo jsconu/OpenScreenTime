@@ -4,18 +4,18 @@ import android.content.Context
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
 import org.openscreentime.parent.ParentApp
-import org.openscreentime.parent.data.SelfProfileStore
+import org.openscreentime.parent.Backend
 import org.openscreentime.parent.data.UsageStore
 import org.openscreentime.shared.util.buildDailyStats
 import org.openscreentime.shared.util.trackingChoices
 
-/** Periodically pushes the parent's own on-device usage snapshot up to Firestore. */
+/** Periodically saves the parent's own on-device usage snapshot: to Firestore in a cloud build, to this
+ *  phone's own day history in a local one (see LocalFamilyRepository). */
 class SyncWorker(context: Context, params: WorkerParameters) : CoroutineWorker(context, params) {
 
     override suspend fun doWork(): Result {
         val repository = (applicationContext as ParentApp).repository
-        val parentUid = repository.currentUid ?: return Result.success()
-        val childId = SelfProfileStore(applicationContext).childId ?: return Result.success()
+        val (parentUid, childId) = Backend.profileIds(applicationContext) ?: return Result.success()
 
         val stats = buildDailyStats(UsageStore(applicationContext), SelfDeviceState.trackingChoices(), System.currentTimeMillis())
 

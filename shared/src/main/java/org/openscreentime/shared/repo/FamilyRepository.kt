@@ -1,8 +1,5 @@
 package org.openscreentime.shared.repo
 
-import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.firestore.FirebaseFirestore
-import com.google.firebase.firestore.ListenerRegistration
 import org.openscreentime.shared.model.AppList
 import org.openscreentime.shared.model.ChildProfile
 import org.openscreentime.shared.model.DailyStats
@@ -12,213 +9,119 @@ import org.openscreentime.shared.model.PasscodeInfo
 import org.openscreentime.shared.model.TrackingToggle
 
 /**
- * Single access point to Firebase Auth + Firestore for both the parent and kid apps.
- * See /firebase/firestore.rules for the security rules this relies on.
+ * Everything the two apps ask of whatever is storing a family's profiles, limits and usage.
  *
- * Internally composed of small per-domain repositories (session, passcodes, children,
- * limits, stats, pairing) rather than one flat implementation, but every call site still
- * injects just this one class: [currentUid] and several screens (e.g. ChildDetailScreen)
- * call across child/limits/stats concerns in the same place often enough that splitting
- * the *public* interface would cost call sites more than one flat implementation costs
- * maintainers here.
+ * There are two implementations, chosen by product flavor and never both in one build:
+ *
+ *  - **local** ([LocalFamilyRepository], in this module) keeps everything in this phone's own
+ *    storage. Nothing leaves the device, there is no account, and a phone is managed in person.
+ *  - **cloud** (`FirebaseFamilyRepository`, in the `:cloud` module) pairs a parent's phone with a
+ *    child's over Firestore, which is what makes remote limits, remote locking and "more time"
+ *    requests from elsewhere possible.
+ *
+ * The local build contains no Firebase code at all, which is why this interface lives here rather
+ * than the class it used to be. Anything a local build can't do must fail softly - see the
+ * [RemoteOnly] marker - rather than crash a screen that shouldn't have offered it.
  */
-class FamilyRepository(
-    auth: FirebaseAuth = FirebaseAuth.getInstance(),
-    db: FirebaseFirestore = FirebaseFirestore.getInstance()
-) {
-    private val session = SessionRepository(auth)
-    private val passcodes = PasscodeRepository(db)
-    private val children = ChildrenRepository(db, passcodes)
-    private val limits = LimitsRepository(db)
-    private val stats = StatsRepository(db)
-    private val pairing = PairingRepository(db, session)
-    private val feedback = FeedbackRepository(db)
+interface FamilyRepository {
 
-    val currentUid: String? get() = session.currentUid
+    /** Whoever this phone is acting as: a signed-in parent, a paired device, or the local owner. */
+    val currentUid: String?
 
-    suspend fun signUpParent(email: String, password: String): String = session.signUpParent(email, password)
+    // --- Account (cloud only: a local build has no account to sign in to) ---
 
-    suspend fun signInParent(email: String, password: String): String = session.signInParent(email, password)
+    @RemoteOnly suspend fun signUpParent(email: String, password: String): String
+    @RemoteOnly suspend fun signInParent(email: String, password: String): String
+    @RemoteOnly suspend fun sendPasswordReset(email: String)
+    @RemoteOnly suspend fun verifyAccountPassword(password: String): Boolean
+    @RemoteOnly suspend fun signInAnonymously(): String
+    fun signOut()
 
-    /** Sends a password-reset email to an existing parent account (see [SessionRepository.sendPasswordReset]). */
-    suspend fun sendPasswordReset(email: String) = session.sendPasswordReset(email)
+    // --- Profiles ---
 
-    /** For recovering a forgotten family passcode: proves the person knows the account password. */
-    suspend fun verifyAccountPassword(password: String): Boolean = session.verifyAccountPassword(password)
+    @RemoteOnly suspend fun createChild(parentUid: String, name: String): ChildProfile
+    @RemoteOnly suspend fun regeneratePairingCode(parentUid: String, childId: String): String
+    @RemoteOnly suspend fun claimPairingCode(code: String): Pair<String, ChildProfile>
+    @RemoteOnly suspend fun deleteChild(parentUid: String, childId: String)
 
-    suspend fun signInAnonymously(): String = session.signInAnonymously()
+    /** The owner's own tracked profile, created on first use. Works in both builds. */
+    suspend fun getOrCreateSelfProfile(parentUid: String, name: String): ChildProfile
 
-    fun signOut() = session.signOut()
+    /** The parent's self profile as seen from a kid device (#18). Null when there's nothing to show. */
+    @RemoteOnly suspend fun getParentSelfProfile(parentUid: String): ChildProfile?
 
-    // --- Parent side ---
+    fun listenChild(parentUid: String, childId: String, onChange: (ChildProfile) -> Unit): Registration
+    @RemoteOnly fun listenChildren(parentUid: String, onChange: (List<ChildProfile>) -> Unit): Registration
 
-    suspend fun createChild(parentUid: String, name: String): ChildProfile = children.createChild(parentUid, name)
+    // --- Passcode ---
 
-    /** A fresh pairing code (good for 30 minutes) for a child that isn't paired yet. */
-    suspend fun regeneratePairingCode(parentUid: String, childId: String): String =
-        children.regeneratePairingCode(parentUid, childId)
+    suspend fun getParentPasscode(parentUid: String): PasscodeInfo?
+    suspend fun setParentPasscode(parentUid: String, hash: String, salt: String)
 
-    suspend fun setLocked(parentUid: String, childId: String, locked: Boolean) =
-        children.setLocked(parentUid, childId, locked)
+    // --- Limits and state ---
 
-    /** Reads the parent's passcode hash/salt, or null if no passcode has been set yet. */
-    suspend fun getParentPasscode(parentUid: String): PasscodeInfo? = passcodes.getParentPasscode(parentUid)
+    suspend fun setLocked(parentUid: String, childId: String, locked: Boolean)
+    suspend fun updateDailyLimit(parentUid: String, childId: String, minutes: Int)
+    suspend fun setAppLimit(parentUid: String, childId: String, packageName: String, minutes: Int)
+    suspend fun updateDailyUnlockGoal(parentUid: String, childId: String, goal: Int?)
+    suspend fun updateBedtimeWindow(parentUid: String, childId: String, startMinutes: Int?, endMinutes: Int?)
+    suspend fun addBlockedDomain(parentUid: String, childId: String, domain: String)
+    suspend fun removeBlockedDomain(parentUid: String, childId: String, domain: String)
+    suspend fun setAppListMember(parentUid: String, childId: String, list: AppList, packageName: String, member: Boolean)
+    suspend fun setTrackingToggle(parentUid: String, childId: String, toggle: TrackingToggle, enabled: Boolean)
+    suspend fun setFocusMode(parentUid: String, childId: String, enabled: Boolean)
+    suspend fun setFocusProfile(parentUid: String, childId: String, profile: FocusProfile)
+    suspend fun addAllowedContact(parentUid: String, childId: String, number: String)
+    suspend fun removeAllowedContact(parentUid: String, childId: String, number: String)
 
-    /**
-     * Sets or changes the family passcode. Writes it to the parent's own account doc, and
-     * fans it out to every existing child doc so already-paired kid devices can verify it
-     * locally (see [ChildProfile.parentPasscodeHash]/[ChildProfile.parentPasscodeSalt]).
-     */
-    suspend fun setParentPasscode(parentUid: String, hash: String, salt: String) =
-        passcodes.setParentPasscode(parentUid, hash, salt)
+    // --- Negotiation between two phones (#14, #23) ---
 
-    fun listenChildren(parentUid: String, onChange: (List<ChildProfile>) -> Unit): ListenerRegistration =
-        children.listenChildren(parentUid, onChange)
-
-    fun listenDailyStats(
-        parentUid: String,
-        childId: String,
-        date: String,
-        onChange: (DailyStats) -> Unit
-    ): ListenerRegistration = stats.listenDailyStats(parentUid, childId, date, onChange)
-
-    /**
-     * The [days] calendar dates before today, oldest first - used to compute a streak
-     * (see #13). Excludes today, since that day isn't over yet. A day with no synced
-     * document simply isn't in the returned list; the caller (computeStreak) treats
-     * that as "can't confirm it was under the limit," not as an automatic pass.
-     */
-    suspend fun getRecentDailyStats(parentUid: String, childId: String, days: Int): List<DailyStats> =
-        stats.getRecentDailyStats(parentUid, childId, days)
-
-    suspend fun updateDailyLimit(parentUid: String, childId: String, minutes: Int) =
-        limits.updateDailyLimit(parentUid, childId, minutes)
-
-    suspend fun setAppLimit(parentUid: String, childId: String, packageName: String, minutes: Int) =
-        limits.setAppLimit(parentUid, childId, packageName, minutes)
-
-    suspend fun updateDailyUnlockGoal(parentUid: String, childId: String, goal: Int?) =
-        limits.updateDailyUnlockGoal(parentUid, childId, goal)
-
-    /** Both null clears the bedtime window (see #15). */
-    suspend fun updateBedtimeWindow(parentUid: String, childId: String, startMinutes: Int?, endMinutes: Int?) =
-        limits.updateBedtimeWindow(parentUid, childId, startMinutes, endMinutes)
-
-    /** Replaces the whole blocked-domains list (see #19, [ChildProfile.blockedDomains]). */
-    suspend fun addBlockedDomain(parentUid: String, childId: String, domain: String) =
-        limits.addBlockedDomain(parentUid, childId, domain)
-
-    suspend fun removeBlockedDomain(parentUid: String, childId: String, domain: String) =
-        limits.removeBlockedDomain(parentUid, childId, domain)
-
-    /** Adds or removes ONE app from one of the per-app lists (see [AppList]). */
-    suspend fun setAppListMember(parentUid: String, childId: String, list: AppList, packageName: String, member: Boolean) =
-        limits.setAppListMember(parentUid, childId, list, packageName, member)
-
-    /** Turns one tracking/display toggle on or off (see #35, [ChildProfile.trackUnlocks] and friends). */
-    suspend fun setTrackingToggle(parentUid: String, childId: String, toggle: TrackingToggle, enabled: Boolean) =
-        limits.setTrackingToggle(parentUid, childId, toggle, enabled)
-
-    /** Replaces the whole always-allowed contacts list (see #34, [ChildProfile.alwaysAllowedContacts]). */
-    suspend fun setFocusMode(parentUid: String, childId: String, enabled: Boolean) =
-        limits.setFocusMode(parentUid, childId, enabled)
-
-    suspend fun setFocusProfile(parentUid: String, childId: String, profile: FocusProfile) =
-        limits.setFocusProfile(parentUid, childId, profile)
-
-    suspend fun addAllowedContact(parentUid: String, childId: String, number: String) =
-        limits.addAllowedContact(parentUid, childId, number)
-
-    suspend fun removeAllowedContact(parentUid: String, childId: String, number: String) =
-        limits.removeAllowedContact(parentUid, childId, number)
-
-    /**
-     * Kid-initiated, passcode-free suggestion (see #14) - writes only the two proposal
-     * fields, never the real limits. Either parameter may be left null to leave that
-     * half of the proposal untouched (e.g. proposing just a new daily limit keeps
-     * whatever app-limit proposal, if any, was already pending).
-     */
-    suspend fun proposeLimits(
+    @RemoteOnly suspend fun proposeLimits(
         parentUid: String,
         childId: String,
         proposedDailyLimitMinutes: Int? = null,
         proposedAppLimits: Map<String, Int>? = null
-    ) = limits.proposeLimits(parentUid, childId, proposedDailyLimitMinutes, proposedAppLimits)
+    )
+    @RemoteOnly suspend fun approveProposal(parentUid: String, childId: String, child: ChildProfile)
+    @RemoteOnly suspend fun declineProposal(parentUid: String, childId: String)
+    @RemoteOnly suspend fun requestExtraTime(parentUid: String, childId: String, minutes: Int)
+    suspend fun grantExtraTime(parentUid: String, childId: String, minutes: Int)
+    @RemoteOnly suspend fun declineExtraTimeRequest(parentUid: String, childId: String)
 
-    /** Copies a pending proposal into the real limits and clears it. See #14. */
-    suspend fun approveProposal(parentUid: String, childId: String, child: ChildProfile) =
-        limits.approveProposal(parentUid, childId, child)
+    // --- Usage ---
 
-    /** Clears a pending proposal without applying it. See #14. */
-    suspend fun declineProposal(parentUid: String, childId: String) = limits.declineProposal(parentUid, childId)
+    fun listenDailyStats(parentUid: String, childId: String, date: String, onChange: (DailyStats) -> Unit): Registration
+    suspend fun getRecentDailyStats(parentUid: String, childId: String, days: Int): List<DailyStats>
+    suspend fun pushDailyStats(parentUid: String, childId: String, stats: DailyStats)
+    suspend fun pushInstalledApps(parentUid: String, childId: String, apps: List<InstalledApp>)
+    fun listenInstalledApps(parentUid: String, childId: String, onChange: (List<InstalledApp>) -> Unit): Registration
 
-    /**
-     * Kid-initiated, passcode-free "more time" request (see #23) - requested from the block
-     * screen while the kid is actually blocked. Overwrites any previous pending request.
-     */
-    suspend fun requestExtraTime(parentUid: String, childId: String, minutes: Int) =
-        limits.requestExtraTime(parentUid, childId, minutes)
+    // --- Feedback (#22) ---
 
-    /** Grants [minutes] of temporary unlock starting now, and clears the pending request. See #23. */
-    suspend fun grantExtraTime(parentUid: String, childId: String, minutes: Int) =
-        limits.grantExtraTime(parentUid, childId, minutes)
-
-    /** Clears a pending "more time" request without granting it. See #23. */
-    suspend fun declineExtraTimeRequest(parentUid: String, childId: String) =
-        limits.declineExtraTimeRequest(parentUid, childId)
-
-    /**
-     * Returns the parent's own tracked profile (see [ChildProfile.isSelf]), creating it on
-     * first use. Unlike [createChild], this is claimed immediately - the parent app is
-     * already signed in as parentUid, which already has full read/write on its own
-     * children collection, so there's no pairing-code handshake to do.
-     */
-    suspend fun getOrCreateSelfProfile(parentUid: String, name: String): ChildProfile =
-        children.getOrCreateSelfProfile(parentUid, name)
-
-    /** Deletes a child and its usage history. Firestore doesn't cascade-delete
-     * subcollections, so dailyStats docs are removed explicitly first. */
-    suspend fun deleteChild(parentUid: String, childId: String) = children.deleteChild(parentUid, childId)
-
-    // --- Kid side ---
-
-    /** Resolves a pairing code and atomically links this device's anonymous uid to the child profile. */
-    suspend fun claimPairingCode(code: String): Pair<String, ChildProfile> = pairing.claimPairingCode(code)
-
-    /**
-     * The parent's self-tracked profile (see #8), if they've opted into self-tracking
-     * and this device is linked to their family (see #18 - claimPairingCode appends
-     * this device's uid to linkedDeviceUids). Reads the fixed "self" doc id directly,
-     * since a linked device has no permission to list/query the children collection.
-     * Returns null both when the parent hasn't started self-tracking (the doc simply
-     * doesn't exist) and when the security rule denies it (an unlinked device) -
-     * Firestore surfaces both as a failure here, and either way there's nothing to
-     * show, matching this feature's calm/non-intrusive framing.
-     */
-    suspend fun getParentSelfProfile(parentUid: String): ChildProfile? = children.getParentSelfProfile(parentUid)
-
-    fun listenChild(parentUid: String, childId: String, onChange: (ChildProfile) -> Unit): ListenerRegistration =
-        children.listenChild(parentUid, childId, onChange)
-
-    suspend fun pushDailyStats(parentUid: String, childId: String, stats: DailyStats) =
-        this.stats.pushDailyStats(parentUid, childId, stats)
-
-    /** Kid device: publish the apps installed here, so a parent can set limits on any of them. */
-    suspend fun pushInstalledApps(parentUid: String, childId: String, apps: List<InstalledApp>) =
-        stats.pushInstalledApps(parentUid, childId, apps)
-
-    fun listenInstalledApps(
-        parentUid: String,
-        childId: String,
-        onChange: (List<InstalledApp>) -> Unit
-    ): ListenerRegistration = stats.listenInstalledApps(parentUid, childId, onChange)
-
-    /** See #22 - write-only; nobody can read feedback back through the app. */
-    suspend fun submitFeedback(parentUid: String, text: String, appVersion: String, device: String) =
-        feedback.submit(parentUid, text, appVersion, device)
+    @RemoteOnly suspend fun submitFeedback(parentUid: String, text: String, appVersion: String, device: String)
 
     companion object {
-        /** Must match the `duration.value(30, 'm')` window enforced in firestore.rules. */
+        /** Must match the `duration.value(30, 'm')` window enforced in firebase/firestore.rules. */
         const val PAIRING_CODE_TTL_SECONDS = 30 * 60
     }
+}
+
+/**
+ * Marks a call that only means something when two phones are paired. A local build has no second
+ * phone, so these no-op or return nothing rather than failing: the screens that offer them are
+ * already hidden in that flavor, and a stray call must not take a screen down.
+ */
+@Retention(AnnotationRetention.SOURCE)
+@Target(AnnotationTarget.FUNCTION, AnnotationTarget.PROPERTY)
+annotation class RemoteOnly
+
+/** A live subscription. Cancelling it is [remove], to match what Firestore's own listeners call it. */
+fun interface Registration {
+    fun remove()
+}
+
+/** Ids that both implementations agree on. */
+object Profiles {
+    /** The owner's own tracked profile always lives at this fixed child id (#8). */
+    const val SELF_CHILD_ID = "self"
 }

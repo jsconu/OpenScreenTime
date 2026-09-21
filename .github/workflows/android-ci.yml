@@ -61,9 +61,9 @@ jobs:
           gradle-version: "8.9"
 
       - name: Build debug APKs and run unit tests
-        run: gradle assembleDebug testDebugUnitTest --stacktrace
+        run: gradle assembleDebug testLocalDebugUnitTest testCloudDebugUnitTest :shared:testDebugUnitTest --stacktrace
 
       # Runs R8 (minification) and resource shrinking on the release variants, so a bad keep rule
       # shows up here rather than on the first signed build. Unsigned - no keystore in CI.
       - name: Minify release builds (R8)
-        run: gradle :kid:minifyReleaseWithR8 :parent:minifyReleaseWithR8 :kid:shrinkReleaseRes :parent:shrinkReleaseRes --stacktrace
+        run: gradle :kid:minifyLocalReleaseWithR8 :parent:minifyLocalReleaseWithR8 :kid:minifyCloudReleaseWithR8 :parent:minifyCloudReleaseWithR8 --stacktrace

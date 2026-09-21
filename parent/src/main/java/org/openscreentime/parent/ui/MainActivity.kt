@@ -33,6 +33,7 @@ import androidx.navigation.navArgument
 import org.openscreentime.sharedui.CrashReportDialog
 import org.openscreentime.shared.util.CrashNote
 import org.openscreentime.parent.AppLockState
+import org.openscreentime.parent.Backend
 import org.openscreentime.parent.ParentApp
 import org.openscreentime.parent.data.NotificationDigestStore
 import org.openscreentime.parent.data.AppearancePrefs
@@ -132,7 +133,9 @@ class MainActivity : FragmentActivity() {
                     )
                 }
                 val navController = rememberNavController()
-                var signedIn by remember { mutableStateOf(repository.currentUid != null) }
+                // A local build keeps everything on this phone and has no account, so it starts
+                // straight on the dashboard - there is nothing to sign in to (see Backend).
+                var signedIn by remember { mutableStateOf(Backend.IS_LOCAL || repository.currentUid != null) }
 
                 if (!signedIn) {
                     AuthScreen(repository = repository, onSignedIn = { signedIn = true })

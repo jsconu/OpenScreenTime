@@ -22,12 +22,11 @@ android {
     }
 }
 
+// No Firebase here on purpose: this module has to compile into a local-only build, which
+// contains no cloud code at all. The Firestore implementation of FamilyRepository lives in
+// the :cloud module, which only the "cloud" flavor of each app depends on.
 dependencies {
-    implementation(platform(libs.firebase.bom))
-    implementation(libs.firebase.firestore)
-    implementation(libs.firebase.auth)
     implementation(libs.kotlinx.serialization.json)
-    implementation(libs.coroutines.play.services)
 
     androidTestImplementation(libs.androidx.test.junit)
     androidTestImplementation(libs.androidx.test.runner)

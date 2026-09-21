@@ -8,11 +8,7 @@ import android.os.Build
 import androidx.work.ExistingPeriodicWorkPolicy
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
-import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.crashlytics.FirebaseCrashlytics
-import com.google.firebase.firestore.FirebaseFirestore
 import org.openscreentime.shared.util.CrashNote
-import org.openscreentime.parent.data.SelfProfileStore
 import org.openscreentime.parent.monitor.SelfDeviceState
 import org.openscreentime.parent.monitor.SyncWorker
 import org.openscreentime.parent.ui.BlockOverlayActivity
@@ -22,19 +18,13 @@ import org.openscreentime.shared.repo.FamilyRepository
 import java.util.concurrent.TimeUnit
 
 class ParentApp : Application() {
-    val repository by lazy { FamilyRepository() }
+    val repository: FamilyRepository by lazy { Backend.createRepository(this) }
 
     override fun onCreate() {
         super.onCreate()
         CrashNote.install(this, "OpenScreenTime Parent", BuildConfig.VERSION_NAME)
-        if (BuildConfig.USE_FIREBASE_EMULATOR) {
-            // Must happen before FamilyRepository's lazy init ever touches Firebase.
-            FirebaseFirestore.getInstance().useEmulator("10.0.2.2", 8080)
-            FirebaseAuth.getInstance().useEmulator("10.0.2.2", 9099)
-        }
-        // Never report CI/E2E-emulator crashes to the real Crashlytics dashboard (see #21) -
-        // same flag that already points Firebase itself at the local emulator suite.
-        FirebaseCrashlytics.getInstance().setCrashlyticsCollectionEnabled(!BuildConfig.USE_FIREBASE_EMULATOR)
+        // Whatever this flavor's backend needs before anything touches it - nothing, locally.
+        Backend.onAppCreate(this)
         createNotificationChannels()
         // So this phone's own limits still apply after a restart, before Firestore has answered.
         SelfDeviceState.restore(this)
@@ -72,8 +62,7 @@ class ParentApp : Application() {
      * self-tracking, so the listener starts without needing an app restart).
      */
     fun startSelfTrackingListener() {
-        val childId = SelfProfileStore(this).childId ?: return
-        val parentUid = repository.currentUid ?: return
+        val (parentUid, childId) = Backend.profileIds(this) ?: return
 
         repository.listenChild(parentUid, childId) { child ->
             val wasLocked = SelfDeviceState.lockedCache

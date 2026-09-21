@@ -15,4 +15,4 @@ dependencyResolutionManagement {
 }
 
 rootProject.name = "OpenScreenTime"
-include(":shared", ":shared-ui", ":kid", ":parent", ":e2e")
+include(":shared", ":cloud", ":shared-ui", ":kid", ":parent", ":e2e")
