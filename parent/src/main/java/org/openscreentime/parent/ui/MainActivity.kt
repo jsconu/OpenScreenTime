@@ -33,6 +33,8 @@ import androidx.navigation.navArgument
 import org.openscreentime.sharedui.CrashReportDialog
 import org.openscreentime.shared.util.CrashNote
 import org.openscreentime.parent.AppLockState
+import androidx.compose.runtime.mutableLongStateOf
+import kotlinx.coroutines.delay
 import org.openscreentime.parent.Backend
 import org.openscreentime.parent.data.NearbyStore
 import org.openscreentime.parent.ParentApp
@@ -257,19 +259,32 @@ class MainActivity : FragmentActivity() {
                             }
                             composable("nearby") {
                                 val nearbyStore = remember { NearbyStore(this@MainActivity).linkStore }
-                                var linkedName by remember { mutableStateOf(nearbyStore.link()?.peerName) }
+                                var linkedChildName by remember { mutableStateOf(nearbyStore.childName()) }
+                                var lastSyncedAtMs by remember { mutableLongStateOf(nearbyStore.lastSyncedAtMs) }
+                                // A kid's phone arrives on a socket, so there is nothing to observe:
+                                // check often enough that "Waiting for their phone..." turns into
+                                // their name while the parent is still looking at the code.
+                                LaunchedEffect(Unit) {
+                                    while (true) {
+                                        delay(1_000)
+                                        linkedChildName = nearbyStore.childName()
+                                        lastSyncedAtMs = nearbyStore.lastSyncedAtMs
+                                    }
+                                }
                                 NearbyLinkScreen(
-                                    linkedName = linkedName,
-                                    lastSyncedAtMs = nearbyStore.lastSyncedAtMs,
-                                    onLinked = { link ->
+                                    linkedChildName = linkedChildName,
+                                    lastSyncedAtMs = lastSyncedAtMs,
+                                    onOffering = { link ->
+                                        // Stored and listened for straight away, so the kid's phone
+                                        // finds someone home the first time it calls.
                                         nearbyStore.save(link)
-                                        linkedName = link.peerName
-                                        // Start listening straight away, rather than at the next app start.
+                                        (application as ParentApp).nearbyHost?.restart()
                                         (application as ParentApp).startNearbyHost()
                                     },
                                     onUnlink = {
                                         nearbyStore.forget()
-                                        linkedName = null
+                                        linkedChildName = null
+                                        (application as ParentApp).nearbyHost?.close()
                                     },
                                     onBack = { navController.popBack() }
                                 )

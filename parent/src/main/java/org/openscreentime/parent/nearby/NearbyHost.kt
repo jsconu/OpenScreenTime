@@ -37,6 +37,12 @@ class NearbyHost(private val context: Context) : Closeable {
     /** Called on a background thread when a request needs a person; the app raises a notification. */
     var onRequest: (NearbyMessage) -> Unit = {}
 
+    /** Listens again under whatever key is stored now - used when a new code is put on screen. */
+    fun restart() {
+        close()
+        start()
+    }
+
     fun start() {
         val link = store.linkStore.link() ?: return
         if (listening != null) return

@@ -33,6 +33,8 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.openscreentime.shared.util.PasscodeHasher
+import kotlinx.coroutines.delay
+import androidx.lifecycle.compose.LifecycleResumeEffect
 import org.openscreentime.kid.Backend
 import org.openscreentime.kid.nearby.NearbySyncRunner
 import org.openscreentime.kid.KidApp
@@ -152,23 +154,42 @@ class MainActivity : ComponentActivity() {
                 var nearbySyncing by remember { mutableStateOf(false) }
                 val syncScope = rememberCoroutineScope()
 
-                /** One attempt at reaching the parent's phone, from a button or straight after a scan. */
-                fun syncNearbyNow() {
+                /**
+                 * Reaching the parent's phone, from the button or on its own.
+                 *
+                 * [attempts] exists for the moment just after scanning: the parent may still be
+                 * putting their phone down, and a single try that lands a second too early would
+                 * leave them watching a code with nothing happening. Each attempt is cheap and
+                 * silent, and the first one that gets through ends it.
+                 */
+                fun syncNearbyNow(attempts: Int = 1) {
                     if (nearbySyncing) return
                     nearbySyncing = true
                     syncScope.launch {
-                        withContext(Dispatchers.IO) {
-                            NearbySyncRunner(this@MainActivity).syncNow((application as KidApp).repository)
+                        var reached = false
+                        repeat(attempts) { attempt ->
+                            if (reached) return@repeat
+                            if (attempt > 0) delay(3_000)
+                            reached = withContext(Dispatchers.IO) {
+                                NearbySyncRunner(this@MainActivity).syncNow((application as KidApp).repository)
+                            }
                         }
                         nearbyLastSyncedAtMs = NearbyStore(this@MainActivity).linkStore.lastSyncedAtMs
                         nearbySyncing = false
                     }
                 }
 
-                // A phone that has just been linked should not sit there for fifteen minutes waiting
-                // for a background worker before the parent sees anything.
+                // Just linked: reach their phone now rather than in fifteen minutes' time, and keep
+                // trying for a few seconds so the parent sees it while still holding the phone.
                 LaunchedEffect(linkedParentName) {
+                    if (linkedParentName != null) syncNearbyNow(attempts = 5)
+                }
+
+                // Opening this app is the best signal there is that the phone is awake and probably
+                // home, which is exactly when the parent's phone is worth trying.
+                LifecycleResumeEffect(linkedParentName) {
                     if (linkedParentName != null) syncNearbyNow()
+                    onPauseOrDispose { }
                 }
                 var child by remember { mutableStateOf<ChildProfile?>(null) }
                 var streakDays by remember { mutableIntStateOf(0) }

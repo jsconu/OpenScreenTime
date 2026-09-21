@@ -22,6 +22,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -47,15 +48,22 @@ import org.openscreentime.shared.nearby.NearbyLink
  */
 @Composable
 fun NearbyLinkScreen(
-    linkedName: String?,
+    /** The kid's phone, once one has actually reported in under this code. */
+    linkedChildName: String?,
     lastSyncedAtMs: Long,
-    onLinked: (NearbyLink) -> Unit,
+    /** Called with each code put on screen, so this phone starts listening under it straight away. */
+    onOffering: (NearbyLink) -> Unit,
     onUnlink: () -> Unit,
     onBack: () -> Unit
 ) {
     // Generated once per visit to this screen: a code that has been on display for a while, or
     // photographed, should not stay valid forever.
     var offered by remember { mutableStateOf(NearbyLink(NearbyEnvelope.newKey(), android.os.Build.MODEL ?: "A parent's phone")) }
+
+    // This phone listens under the code the moment it is shown, not when a person says it has been
+    // scanned. Waiting for a button meant the kid's phone always called before anyone was
+    // listening, and the first sync after pairing was silently lost.
+    LaunchedEffect(offered) { onOffering(offered) }
 
     Scaffold(
         topBar = {
@@ -73,9 +81,9 @@ fun NearbyLinkScreen(
                 .padding(24.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            if (linkedName != null) {
+            if (linkedChildName != null) {
                 LinkedCard(
-                    peerName = linkedName,
+                    peerName = linkedChildName,
                     lastSyncedAtMs = lastSyncedAtMs,
                     onUnlink = onUnlink,
                     modifier = Modifier.fillMaxWidth()
@@ -89,8 +97,8 @@ fun NearbyLinkScreen(
             }
 
             Text(
-                "On your kid's phone, open OpenScreenTime Kid, go to Settings and tap " +
-                    "\"Link to a parent's phone\". Then point it at this code.",
+                "On your kid's phone, open OpenScreenTime Kid and tap \"Scan a parent's code\" " +
+                    "on its main screen. Then point it at this code.",
                 style = MaterialTheme.typography.bodyMedium,
                 textAlign = TextAlign.Center
             )
@@ -137,10 +145,17 @@ fun NearbyLinkScreen(
             }
 
             Spacer(Modifier.height(24.dp))
-            Button(
-                onClick = { onLinked(offered) },
-                modifier = Modifier.fillMaxWidth().testTag("nearby_confirm_linked")
-            ) { Text("Their phone has scanned it") }
+            // No "I've scanned it" button: this phone knows, because their phone tells it.
+            Text(
+                if (linkedChildName == null) {
+                    "Waiting for their phone... this page will say so as soon as it arrives."
+                } else {
+                    "$linkedChildName is linked. You can leave this page."
+                },
+                style = MaterialTheme.typography.bodyMedium,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.fillMaxWidth().testTag("nearby_waiting")
+            )
             Spacer(Modifier.height(8.dp))
             OutlinedButton(
                 onClick = { offered = NearbyLink(NearbyEnvelope.newKey(), android.os.Build.MODEL ?: "A parent's phone") },
