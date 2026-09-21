@@ -50,6 +50,12 @@ Everything that needs a second phone in the picture:
 - A child proposing a limit change for a parent to approve
 - Pairing at all — there is no code to type and no account to pair to
 
+**Feedback goes to GitHub, not to us.** A local build has no server to post anything to, and an email
+address compiled into an APK is readable by anyone who downloads the file - so rather than a box that
+quietly goes nowhere, the menu opens
+[the project's issues](https://github.com/jsconu/OpenScreenTime/issues), where feedback is public and gets
+answered.
+
 **There is no Wi-Fi or Bluetooth link either.** It would be reasonable to assume two phones in the
 same house could talk directly, and nothing in a local build does that: no local network sync, no
 Bluetooth pairing, no discovery. A local build never opens a connection to anything. Where a screen
@@ -96,6 +102,22 @@ unzip -p kid-local-release.apk 'classes*.dex' | grep -ac 'com/google/firebase'
 ```
 
 It prints `0` for a local build.
+
+## What leaves the phone, exactly
+
+Nothing about a family reaches any server. Two things do cross the network, and both are worth stating
+plainly rather than hiding behind "local only":
+
+1. **A linked kid's phone talking to its linked parent's phone**, directly, over your own Wi-Fi, sealed
+   under the key the two agreed in person. No server is involved, and the two only ever exchange a usage
+   report, a limits update, or a request - never anything else on the phone.
+2. **DNS lookups, if the website filter is turned on.** That filter works by answering the phone's own DNS
+   queries, and anything it does not block it forwards to Cloudflare's public resolver at `1.1.1.1`
+   (`BaseDnsSinkholeVpnService`). Those are domain names the phone was about to look up anyway, and nothing
+   identifies the family to Cloudflare beyond an IP address - but it is a third party seeing traffic, so it
+   is named here and in the install guide. With the filter off it does not happen.
+
+There is no analytics, no advertising, no crash reporting and no telemetry in a local build.
 
 ---
 

@@ -4,6 +4,7 @@ import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
+import android.net.Uri
 import android.os.Build
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -143,6 +144,7 @@ fun DashboardScreen(
     }
     var newChildCode by remember { mutableStateOf<String?>(null) }
     var showFeedbackDialog by remember { mutableStateOf(false) }
+    val menuContext = LocalContext.current
     // Assume a passcode exists until the check says otherwise, so the prompt never flashes up for
     // someone who already has one. Rechecked whenever this screen comes back into view, so it
     // disappears as soon as the passcode has been set.
@@ -204,8 +206,23 @@ fun DashboardScreen(
                             onClick = { showMenu = false; onOpenSettings() }
                         )
                         DropdownMenuItem(
-                            text = { Text("Feedback") },
-                            onClick = { showMenu = false; showFeedbackDialog = true }
+                            text = { Text(if (Backend.IS_LOCAL) "Feedback on GitHub" else "Feedback") },
+                            onClick = {
+                                showMenu = false
+                                // A local build has no server to post to, and an address compiled
+                                // into an APK is readable by anyone who downloads it - so rather
+                                // than a box that quietly goes nowhere, this opens the project's
+                                // issue tracker, where feedback is public and gets answered.
+                                if (Backend.IS_LOCAL) {
+                                    runCatching {
+                                        menuContext.startActivity(
+                                            Intent(Intent.ACTION_VIEW, Uri.parse(FEEDBACK_URL))
+                                        )
+                                    }
+                                } else {
+                                    showFeedbackDialog = true
+                                }
+                            }
                         )
                         if (!Backend.IS_LOCAL) {
                             DropdownMenuItem(
@@ -433,52 +450,22 @@ fun DashboardScreen(
         )
     }
 
-    if (showFeedbackDialog) {
-        val feedbackContext = LocalContext.current
+    if (showFeedbackDialog && !Backend.IS_LOCAL) {
         FeedbackDialog(
-            // A local build has nowhere to send anything, so it says so and hands the text to
-            // whatever the person already uses. Silently swallowing it - which is what a no-op
-            // submit did - is worse than not offering feedback at all.
-            sendsItself = !Backend.IS_LOCAL,
+            sendsItself = true,
             onDismiss = { showFeedbackDialog = false },
             onSubmit = { text, onError ->
-                val device = "${Build.MANUFACTURER} ${Build.MODEL}, Android ${Build.VERSION.RELEASE}"
-                if (Backend.IS_LOCAL) {
-                    val sent = runCatching {
-                        feedbackContext.startActivity(
-                            Intent.createChooser(
-                                Intent(Intent.ACTION_SEND).apply {
-                                    type = "text/plain"
-                                    putExtra(Intent.EXTRA_SUBJECT, "OpenScreenTime feedback")
-                                    putExtra(
-                                        Intent.EXTRA_TEXT,
-                                        buildString {
-                                            appendLine(text)
-                                            appendLine()
-                                            appendLine("---")
-                                            appendLine("OpenScreenTime Parent " + BuildConfig.VERSION_NAME)
-                                            append(device)
-                                        }
-                                    )
-                                },
-                                "Send feedback with"
-                            )
+                scope.launch {
+                    try {
+                        repository.submitFeedback(
+                            parentUid = parentUid,
+                            text = text,
+                            appVersion = BuildConfig.VERSION_NAME,
+                            device = "${Build.MANUFACTURER} ${Build.MODEL}, Android ${Build.VERSION.RELEASE}"
                         )
-                    }.isSuccess
-                    if (sent) showFeedbackDialog = false else onError()
-                } else {
-                    scope.launch {
-                        try {
-                            repository.submitFeedback(
-                                parentUid = parentUid,
-                                text = text,
-                                appVersion = BuildConfig.VERSION_NAME,
-                                device = device
-                            )
-                            showFeedbackDialog = false
-                        } catch (e: Exception) {
-                            onError()
-                        }
+                        showFeedbackDialog = false
+                    } catch (e: Exception) {
+                        onError()
                     }
                 }
             }
@@ -742,15 +729,6 @@ private fun FeedbackDialog(
         text = {
             DialogTestTagRoot {
                 Column {
-                    if (!sendsItself) {
-                        Text(
-                            "This build doesn't send anything anywhere. Writing here opens your own " +
-                                "email or messaging app with the text ready, and you choose where it " +
-                                "goes - the project's issue tracker is a good place.",
-                            style = MaterialTheme.typography.bodySmall
-                        )
-                        Spacer(Modifier.height(12.dp))
-                    }
                     OutlinedTextField(
                         value = text,
                         onValueChange = { text = it },
@@ -1088,6 +1066,9 @@ private fun RenameDialog(
         dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } }
     )
 }
+
+/** Where feedback goes in a local build: public, answerable, and no address to leak. */
+private const val FEEDBACK_URL = "https://github.com/jsconu/OpenScreenTime/issues"
 
 /** Puts a pairing code on the clipboard (Android 13+ shows its own "Copied" confirmation). */
 private fun copyPairingCode(context: Context, code: String) {

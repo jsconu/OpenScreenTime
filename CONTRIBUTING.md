@@ -106,6 +106,10 @@ review of `firebase/firestore.rules` beyond the initial pass in #2.
 
 ## Reporting bugs
 
+Feedback from a released (local) build comes here, to the issue tracker: those builds have no server to
+send anything to, and the in-app Feedback menu simply opens this repository's issues.
+
+
 Please include: your Android version, which app (kid or parent), and steps
 to reproduce. If it's a tracking/limit-enforcement bug, note the device
 manufacturer — background execution and accessibility service behavior

@@ -429,8 +429,10 @@ use, it matters who you trust to run it, so here is how to tell the official pro
   is why cloud builds are never handed out: you build one yourself, against a Firebase project of
   your own ([docs/SELF_HOSTING.md](docs/SELF_HOSTING.md)), and nobody but you holds the data. See
   [docs/LOCAL_AND_CLOUD.md](docs/LOCAL_AND_CLOUD.md) for what each build can do.
-- **This project has no ads, no in-app purchases, no analytics beyond crash reports, and no paid
-  tier.** If an app using this code asks you to pay or shows ads, it's someone else's fork.
+- **This project has no ads, no in-app purchases and no paid tier.** A local build has no analytics or
+  crash reporting either - it sends nothing anywhere, and its Feedback menu opens
+  [the issue tracker](https://github.com/jsconu/OpenScreenTime/issues) rather than a box that goes
+  nowhere. If an app using this code asks you to pay or shows ads, it's someone else's fork.
 - **Check where the data goes.** Every build talks to a Firebase project run by whoever published it.
   In the official project that's described in [docs/PRIVACY.md](docs/PRIVACY.md). A fork may send data
   somewhere else, so read its privacy policy before pairing a child's phone.
