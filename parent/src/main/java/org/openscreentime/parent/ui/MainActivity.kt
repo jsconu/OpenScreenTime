@@ -34,6 +34,7 @@ import org.openscreentime.sharedui.CrashReportDialog
 import org.openscreentime.shared.util.CrashNote
 import org.openscreentime.parent.AppLockState
 import org.openscreentime.parent.Backend
+import org.openscreentime.parent.data.NearbyStore
 import org.openscreentime.parent.ParentApp
 import org.openscreentime.parent.data.NotificationDigestStore
 import org.openscreentime.parent.data.AppearancePrefs
@@ -202,6 +203,7 @@ class MainActivity : FragmentActivity() {
                                         val selfId = selfProfileStore.childId
                                         if (isSelfTracking && selfId != null) navController.navigate("child/$selfId") else navController.navigate("self")
                                     },
+                                    onOpenNearbyLink = { navController.navigate("nearby") },
                                     onOpenHelp = { navController.navigate("help") },
                                     onOpenDigest = { navController.navigate("digest") },
                                     onRequestNotificationListener = {
@@ -250,6 +252,25 @@ class MainActivity : FragmentActivity() {
                             composable("help") {
                                 HelpBotScreen(
                                     audience = HelpAudience.PARENT,
+                                    onBack = { navController.popBack() }
+                                )
+                            }
+                            composable("nearby") {
+                                val nearbyStore = remember { NearbyStore(this@MainActivity).linkStore }
+                                var linkedName by remember { mutableStateOf(nearbyStore.link()?.peerName) }
+                                NearbyLinkScreen(
+                                    linkedName = linkedName,
+                                    lastSyncedAtMs = nearbyStore.lastSyncedAtMs,
+                                    onLinked = { link ->
+                                        nearbyStore.save(link)
+                                        linkedName = link.peerName
+                                        // Start listening straight away, rather than at the next app start.
+                                        (application as ParentApp).startNearbyHost()
+                                    },
+                                    onUnlink = {
+                                        nearbyStore.forget()
+                                        linkedName = null
+                                    },
                                     onBack = { navController.popBack() }
                                 )
                             }

@@ -72,7 +72,10 @@ import org.openscreentime.shared.model.currentDayIndex
 import org.openscreentime.shared.model.currentDayParentTip
 import org.openscreentime.shared.model.todayDateString
 import org.openscreentime.shared.repo.FamilyRepository
+import androidx.compose.runtime.mutableLongStateOf
+import androidx.lifecycle.compose.LifecycleResumeEffect
 import org.openscreentime.parent.Backend
+import org.openscreentime.parent.data.NearbyStore
 import org.openscreentime.shared.repo.Profiles
 
 private const val STREAK_LOOKBACK_DAYS = 14
@@ -87,6 +90,7 @@ fun DashboardScreen(
     onOpenHelp: () -> Unit,
     onOpenDigest: () -> Unit,
     onRequestNotificationListener: () -> Unit,
+    onOpenNearbyLink: () -> Unit,
     onSignOut: () -> Unit
 ) {
     val parentUid = repository.currentUid ?: run {
@@ -101,6 +105,19 @@ fun DashboardScreen(
     var children by remember { mutableStateOf<List<ChildProfile>>(emptyList()) }
     var selfProfile by remember { mutableStateOf<ChildProfile?>(null) }
     var showAddDialog by remember { mutableStateOf(false) }
+    // What the linked kid's phone last managed to report (local builds; see NearbyLinkStore).
+    val nearbyContext = LocalContext.current
+    val nearbyStore = remember { NearbyStore(nearbyContext).linkStore }
+    var nearbyChildName by remember { mutableStateOf(nearbyStore.childName()) }
+    var nearbyLastSyncedAtMs by remember { mutableLongStateOf(nearbyStore.lastSyncedAtMs) }
+    var nearbyStats by remember { mutableStateOf(nearbyStore.lastStats()) }
+    // A report arrives on a socket, not through a listener, so re-read it when this screen resumes.
+    LifecycleResumeEffect(Unit) {
+        nearbyChildName = nearbyStore.childName()
+        nearbyLastSyncedAtMs = nearbyStore.lastSyncedAtMs
+        nearbyStats = nearbyStore.lastStats()
+        onPauseOrDispose { }
+    }
     var newChildCode by remember { mutableStateOf<String?>(null) }
     var showFeedbackDialog by remember { mutableStateOf(false) }
     // Assume a passcode exists until the check says otherwise, so the prompt never flashes up for
@@ -187,6 +204,10 @@ fun DashboardScreen(
             item {
                 if (Backend.IS_LOCAL) {
                     LocalOnlyKidCard(
+                        linkedChildName = nearbyChildName,
+                        lastSyncedAtMs = nearbyLastSyncedAtMs,
+                        lastStats = nearbyStats,
+                        onLink = onOpenNearbyLink,
                         modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp)
                     )
                 } else {
@@ -788,39 +809,65 @@ private fun PasscodePromptCard(onSetPasscode: () -> Unit, modifier: Modifier = M
  * the other build is for, without making either sound like a mistake.
  */
 @Composable
-private fun LocalOnlyKidCard(modifier: Modifier = Modifier) {
+private fun LocalOnlyKidCard(
+    linkedChildName: String?,
+    lastSyncedAtMs: Long,
+    lastStats: DailyStats?,
+    onLink: () -> Unit,
+    modifier: Modifier = Modifier
+) {
     Card(
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer),
         modifier = modifier.testTag("dashboard_local_only_kid")
     ) {
         Column(Modifier.padding(16.dp)) {
-            Text(
-                "Setting up a kid's phone",
-                style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.onSecondaryContainer
-            )
-            Spacer(Modifier.height(4.dp))
-            Text(
-                "This is the local build: everything each phone records stays on that phone, and " +
-                    "nothing is sent anywhere. That also means this app can't reach your kid's phone.",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSecondaryContainer
-            )
-            Spacer(Modifier.height(8.dp))
-            Text(
-                "Install OpenScreenTime Kid on their phone and set the limits there, in Parent " +
-                    "controls, with your family passcode. Their phone keeps its own usage and " +
-                    "enforces its own limits - it doesn't need this app at all.",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSecondaryContainer
-            )
-            Spacer(Modifier.height(8.dp))
-            Text(
-                "To see their usage and change limits from here instead, you'd need the cloud " +
-                    "build - see docs/SELF_HOSTING.md in the project.",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSecondaryContainer
-            )
+            if (linkedChildName == null) {
+                Text(
+                    "Setting up a kid's phone",
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.onSecondaryContainer
+                )
+                Spacer(Modifier.height(4.dp))
+                Text(
+                    "This build keeps everything on each phone - nothing is sent to us or anyone " +
+                        "else. Install OpenScreenTime Kid on their phone, then link the two by " +
+                        "scanning a code. While you're both on the same Wi-Fi you'll see how their " +
+                        "phone is used, and the limits you set here reach it.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSecondaryContainer
+                )
+                Spacer(Modifier.height(12.dp))
+                Button(
+                    onClick = onLink,
+                    modifier = Modifier.fillMaxWidth().testTag("dashboard_link_kid_phone")
+                ) { Text("Link a kid's phone") }
+            } else {
+                Text(
+                    linkedChildName,
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.onSecondaryContainer
+                )
+                Spacer(Modifier.height(4.dp))
+                // Always beside the numbers, never implied to be live: these two phones are apart
+                // most of the day, and yesterday evening's usage must not read as "right now".
+                Text(
+                    lastSyncedDescription(lastSyncedAtMs),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSecondaryContainer
+                )
+                if (lastStats != null) {
+                    Spacer(Modifier.height(12.dp))
+                    Row(horizontalArrangement = Arrangement.spacedBy(24.dp)) {
+                        StatColumn("Screen time", formatDuration(lastStats.totalScreenTimeMs))
+                        StatColumn("Unlocks", lastStats.unlockCount.toString())
+                    }
+                }
+                Spacer(Modifier.height(12.dp))
+                OutlinedButton(
+                    onClick = onLink,
+                    modifier = Modifier.fillMaxWidth()
+                ) { Text("Link settings") }
+            }
         }
     }
 }

@@ -109,6 +109,8 @@ dependencies {
     implementation(libs.compose.material3)
     implementation(libs.work.runtime.ktx)
     implementation(libs.kotlinx.serialization.json)
+    implementation(libs.zxing.core)
+    implementation(libs.zxing.embedded)
 
     // The only edge where cloud code enters the build. A local build resolves none of this.
     "cloudImplementation"(project(":cloud"))

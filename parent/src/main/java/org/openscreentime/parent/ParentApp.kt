@@ -8,6 +8,9 @@ import android.os.Build
 import androidx.work.ExistingPeriodicWorkPolicy
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
+import kotlinx.coroutines.runBlocking
+import org.openscreentime.parent.nearby.NearbyHost
+import org.openscreentime.parent.nearby.NearbyRequests
 import org.openscreentime.shared.util.CrashNote
 import org.openscreentime.parent.monitor.SelfDeviceState
 import org.openscreentime.parent.monitor.SyncWorker
@@ -20,6 +23,9 @@ import java.util.concurrent.TimeUnit
 class ParentApp : Application() {
     val repository: FamilyRepository by lazy { Backend.createRepository(this) }
 
+    /** Listens for a linked kid's phone on the same Wi-Fi. Null in a cloud build, which pairs through the account. */
+    val nearbyHost: NearbyHost? by lazy { if (Backend.IS_LOCAL) NearbyHost(this) else null }
+
     override fun onCreate() {
         super.onCreate()
         CrashNote.install(this, "OpenScreenTime Parent", BuildConfig.VERSION_NAME)
@@ -30,6 +36,7 @@ class ParentApp : Application() {
         SelfDeviceState.restore(this)
         scheduleSelfSync()
         startSelfTrackingListener()
+        startNearbyHost()
     }
 
     private fun scheduleSelfSync() {
@@ -76,6 +83,20 @@ class ParentApp : Application() {
                 )
             }
         }
+    }
+
+    /**
+     * Starts listening for the linked kid's phone, if there is one. The limits it answers with are
+     * read fresh from the repository each time, so whatever a parent changed a moment ago is what
+     * the kid's phone is told - there is no second copy to keep in step.
+     */
+    fun startNearbyHost() {
+        val host = nearbyHost ?: return
+        host.currentProfile = {
+            runBlocking { runCatching { repository.getOrCreateSelfProfile(repository.currentUid.orEmpty(), "Me") }.getOrNull() }
+        }
+        host.onRequest = { NearbyRequests.notify(this, it) }
+        host.start()
     }
 
     companion object {

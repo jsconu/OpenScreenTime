@@ -31,7 +31,11 @@ import org.openscreentime.kid.Backend
 import org.openscreentime.kid.KidApp
 import org.openscreentime.kid.data.AppearancePrefs
 import org.openscreentime.kid.data.NotificationDigestStore
+import com.journeyapps.barcodescanner.ScanContract
+import com.journeyapps.barcodescanner.ScanOptions
+import org.openscreentime.kid.data.NearbyStore
 import org.openscreentime.kid.data.PairingStore
+import org.openscreentime.shared.nearby.NearbyLink
 import org.openscreentime.kid.monitor.DnsSinkholeVpnService
 import org.openscreentime.kid.monitor.LiveChildState
 import org.openscreentime.kid.monitor.ScreenMonitorService
@@ -57,6 +61,17 @@ class MainActivity : ComponentActivity() {
 
     private val notificationPermissionLauncher =
         registerForActivityResult(ActivityResultContracts.RequestPermission()) {}
+
+    /** Set by the Compose layer so a scan result can be handed back to it. */
+    private var onScanned: ((String) -> Unit)? = null
+
+    /**
+     * Scanning the QR code on a parent's phone. A cancelled scan, or a code that turns out to be
+     * something else entirely, simply does nothing - see NearbyLink.fromPayload.
+     */
+    private val scanLauncher = registerForActivityResult(ScanContract()) { result ->
+        result.contents?.let { onScanned?.invoke(it) }
+    }
 
     // Set as the phone's home screen, for the simple phone (see #42).
     private val homeRoleLauncher =
@@ -106,6 +121,10 @@ class MainActivity : ComponentActivity() {
                 var paired by remember { mutableStateOf(Backend.IS_LOCAL || pairingStore.isPaired) }
                 var permissions by remember { mutableStateOf(checkPermissions(this@MainActivity)) }
                 var screen by remember { mutableStateOf(KidScreen.STATUS) }
+                // Null until this phone has scanned a parent's code (local builds only).
+                var linkedParentName by remember {
+                    mutableStateOf(NearbyStore(this@MainActivity).linkStore.link()?.peerName)
+                }
                 var child by remember { mutableStateOf<ChildProfile?>(null) }
                 var streakDays by remember { mutableIntStateOf(0) }
                 var parentSelfProfile by remember { mutableStateOf<ChildProfile?>(null) }
@@ -254,6 +273,26 @@ class MainActivity : ComponentActivity() {
                                 startActivity(Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS))
                             },
                             onRequestHomeScreen = { homeRoleLauncher.launch(FocusLauncherActivity.focusMode(this@MainActivity).homeRoleIntent()) },
+                            linkedParentName = linkedParentName,
+                            showNearbyLink = Backend.IS_LOCAL,
+                            onLinkParentPhone = {
+                                onScanned = { payload ->
+                                    NearbyLink.fromPayload(payload)?.let { link ->
+                                        NearbyStore(this@MainActivity).linkStore.save(link)
+                                        linkedParentName = link.peerName
+                                    }
+                                }
+                                scanLauncher.launch(
+                                    ScanOptions()
+                                        .setPrompt("Point at the code on the parent's phone")
+                                        .setBeepEnabled(false)
+                                        .setOrientationLocked(false)
+                                )
+                            },
+                            onUnlinkParentPhone = {
+                                NearbyStore(this@MainActivity).linkStore.forget()
+                                linkedParentName = null
+                            },
                             showUnpair = child?.parentPasscodeHash == null,
                             onUnpair = {
                                 pairingStore.clear()
