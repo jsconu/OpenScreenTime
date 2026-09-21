@@ -32,6 +32,16 @@ Domain terms are in [`CONTEXT.md`](CONTEXT.md). The pieces you will meet most:
 - **`firebase/firestore.rules`** - what each device may read and write. If you add a field a paired kid device
   must write, it also has to be added to the allowlist there (and the rules republished).
 
+## Local and cloud builds
+
+Both apps build two ways, and a change usually has to work in both. A **local** build keeps
+everything on one phone and contains no Firebase code at all; a **cloud** build pairs two phones
+through Firestore. `FamilyRepository` in `:shared` is the interface both sides implement, and each
+app's per-flavor `Backend` object is the only place that knows which one it is in. If a screen only
+makes sense with a second phone, check `Backend.IS_LOCAL` and leave it out rather than letting it
+fail. See [docs/LOCAL_AND_CLOUD.md](docs/LOCAL_AND_CLOUD.md) - which also sets out the most
+valuable thing anyone could build here: a cloud that nobody has to trust.
+
 ## Making a change
 
 1. Open an issue first for anything non-trivial (new features, permission

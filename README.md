@@ -19,6 +19,13 @@ your own backend, send patches back.
 | **Parent** | iOS | 🛠 **Built, not yet in the App Store** | Manages Android kids, limits, bedtime and tracking toggles. Build it yourself with Xcode. No weekly report yet. |
 | **Kid** | iOS | 🌱 **Future project - community welcome** | Needs Apple's Family Controls entitlement, which this project doesn't have. See [issue #7](https://github.com/jsconu/OpenScreenTime/issues/7). |
 
+**Local or cloud.** Both apps build two ways, and it is the first thing to decide. A **local** build
+keeps everything on the phone it is installed on: no account, no pairing, no setup, and no Firebase
+code in the APK at all. A **cloud** build adds what needs a second phone - a parent seeing and
+changing a child's limits from their own phone, locking it, granting more time - and needs a
+Firebase project you run yourself. What each one can and cannot do is set out in
+[docs/LOCAL_AND_CLOUD.md](docs/LOCAL_AND_CLOUD.md).
+
 "Ready" means feature-complete and used day to day on real Android devices - it is still a beta: no
 independent security audit and limited phone-maker coverage (see [Project status](#project-status)).
 A child's phone must be Android for now. Smartwatch tracking is another open community item (see
@@ -343,6 +350,13 @@ an initial pass, not a full audit).
 
 You'll need [Android Studio](https://developer.android.com/studio)
 (Ladybug or newer) with a JDK 17 and Android SDK 35.
+
+> **For one phone, with nothing to set up,** build the **local** flavor:
+> `gradle :parent:assembleLocalRelease :kid:assembleLocalRelease`, or choose `localRelease` in
+> Android Studio's Build Variants panel. No Firebase project, no account, no configuration, and
+> no cloud code in the APK. Skip the Firebase steps below entirely - they are only for the
+> **cloud** flavor, which is what the rest of this section covers. See
+> [docs/LOCAL_AND_CLOUD.md](docs/LOCAL_AND_CLOUD.md) for the difference.
 
 1. **Create a Firebase project** at [console.firebase.google.com](https://console.firebase.google.com)
    (the free Spark plan is enough — no credit card required).
