@@ -20,7 +20,7 @@ import org.junit.runner.RunWith
 import org.openscreentime.shared.model.ChildProfile
 import org.openscreentime.shared.model.DailyStats
 import org.openscreentime.shared.model.InstalledApp
-import org.openscreentime.shared.repo.FamilyRepository
+import org.openscreentime.shared.repo.FirebaseFamilyRepository
 import org.openscreentime.shared.repo.FirestorePaths
 
 /**
@@ -58,7 +58,7 @@ class PairingFlowEmulatorTest {
 
     @Test(timeout = TEST_TIMEOUT_MS)
     fun parentCreatesChild_kidClaimsCode_pairingSucceeds() = runBlocking {
-        val parentRepo = FamilyRepository()
+        val parentRepo = FirebaseFamilyRepository()
         val parentUid = parentRepo.signUpParent(uniqueEmail(), "testpass123")
 
         val child = parentRepo.createChild(parentUid, "TestChild")
@@ -66,7 +66,7 @@ class PairingFlowEmulatorTest {
         assertTrue("A freshly created child should not be paired yet", !child.paired)
         parentRepo.signOut()
 
-        val kidRepo = FamilyRepository()
+        val kidRepo = FirebaseFamilyRepository()
         val (claimedParentUid, claimedChild) = kidRepo.claimPairingCode(child.pairingCode)
 
         assertEquals(parentUid, claimedParentUid)
@@ -77,7 +77,7 @@ class PairingFlowEmulatorTest {
 
     @Test(timeout = TEST_TIMEOUT_MS)
     fun deletingAChildRemovesItsProfileAndDailyStats() = runBlocking {
-        val parentRepo = FamilyRepository()
+        val parentRepo = FirebaseFamilyRepository()
         val parentUid = parentRepo.signUpParent(uniqueEmail(), "testpass123")
         val child = parentRepo.createChild(parentUid, "DoomedChild")
 
@@ -96,14 +96,14 @@ class PairingFlowEmulatorTest {
 
     @Test(timeout = TEST_TIMEOUT_MS)
     fun parentCanGetANewCodeForAnUnpairedChild_andTheKidClaimsIt() = runBlocking {
-        val parentRepo = FamilyRepository()
+        val parentRepo = FirebaseFamilyRepository()
         val parentUid = parentRepo.signUpParent(uniqueEmail(), "testpass123")
         val child = parentRepo.createChild(parentUid, "NewCodeChild")
         val newCode = parentRepo.regeneratePairingCode(parentUid, child.id)
         assertTrue("A new code should be six digits", newCode.length == 6)
         parentRepo.signOut()
 
-        val kidRepo = FamilyRepository()
+        val kidRepo = FirebaseFamilyRepository()
         val (claimedParentUid, claimedChild) = kidRepo.claimPairingCode(newCode)
         assertEquals(parentUid, claimedParentUid)
         assertEquals(child.id, claimedChild.id)
@@ -112,16 +112,16 @@ class PairingFlowEmulatorTest {
 
     @Test(timeout = TEST_TIMEOUT_MS)
     fun pairingCodeCannotBeClaimedTwice() = runBlocking {
-        val parentRepo = FamilyRepository()
+        val parentRepo = FirebaseFamilyRepository()
         val parentUid = parentRepo.signUpParent(uniqueEmail(), "testpass123")
         val child = parentRepo.createChild(parentUid, "OtherChild")
         parentRepo.signOut()
 
-        val firstKid = FamilyRepository()
+        val firstKid = FirebaseFamilyRepository()
         firstKid.claimPairingCode(child.pairingCode)
         firstKid.signOut()
 
-        val secondKid = FamilyRepository()
+        val secondKid = FirebaseFamilyRepository()
         var threw = false
         try {
             secondKid.claimPairingCode(child.pairingCode)
@@ -134,20 +134,20 @@ class PairingFlowEmulatorTest {
     @Test(timeout = TEST_TIMEOUT_MS)
     fun claimingDeviceCanEditItsOwnLimitsButNotAnotherFamilys() = runBlocking {
         // Set up an unrelated family first, while it's convenient to be signed in
-        // as its own parent, then sign out - all FamilyRepository() instances in
+        // as its own parent, then sign out - all FirebaseFamilyRepository() instances in
         // this test share one process-wide FirebaseAuth session, so whichever
         // identity is signed in *last* is the one active for the write below.
-        val otherParentRepo = FamilyRepository()
+        val otherParentRepo = FirebaseFamilyRepository()
         val otherParentUid = otherParentRepo.signUpParent(uniqueEmail(), "testpass123")
         val otherChild = otherParentRepo.createChild(otherParentUid, "UnrelatedChild")
         otherParentRepo.signOut()
 
-        val parentRepo = FamilyRepository()
+        val parentRepo = FirebaseFamilyRepository()
         val parentUid = parentRepo.signUpParent(uniqueEmail(), "testpass123")
         val child = parentRepo.createChild(parentUid, "ThirdChild")
         parentRepo.signOut()
 
-        val kidRepo = FamilyRepository()
+        val kidRepo = FirebaseFamilyRepository()
         kidRepo.claimPairingCode(child.pairingCode)
 
         // The rules explicitly allow the linked device to change its own limits/lock -
@@ -173,7 +173,7 @@ class PairingFlowEmulatorTest {
 
     @Test(timeout = TEST_TIMEOUT_MS)
     fun concurrentClaimsOnlyOneWins() = runBlocking {
-        val parentRepo = FamilyRepository()
+        val parentRepo = FirebaseFamilyRepository()
         val parentUid = parentRepo.signUpParent(uniqueEmail(), "testpass123")
         val child = parentRepo.createChild(parentUid, "RaceChild")
         parentRepo.signOut()
@@ -182,8 +182,8 @@ class PairingFlowEmulatorTest {
         // not just separate FamilyRepository objects sharing one auth session), so this
         // is a real "two different devices" race, not a same-uid retry.
         val secondaryApp = secondaryFirebaseApp()
-        val deviceA = FamilyRepository()
-        val deviceB = FamilyRepository(
+        val deviceA = FirebaseFamilyRepository()
+        val deviceB = FirebaseFamilyRepository(
             auth = FirebaseAuth.getInstance(secondaryApp),
             db = FirebaseFirestore.getInstance(secondaryApp)
         )
@@ -197,12 +197,12 @@ class PairingFlowEmulatorTest {
 
     @Test(timeout = TEST_TIMEOUT_MS)
     fun claimedDeviceCannotSmugglePasscodeFieldIntoAnAllowedUpdate() = runBlocking {
-        val parentRepo = FamilyRepository()
+        val parentRepo = FirebaseFamilyRepository()
         val parentUid = parentRepo.signUpParent(uniqueEmail(), "testpass123")
         val child = parentRepo.createChild(parentUid, "SmuggleChild")
         parentRepo.signOut()
 
-        val kidRepo = FamilyRepository()
+        val kidRepo = FirebaseFamilyRepository()
         kidRepo.claimPairingCode(child.pairingCode)
 
         // appLimits alone is allowed for a claimed device; parentPasscodeHash never is.
@@ -223,13 +223,13 @@ class PairingFlowEmulatorTest {
 
     @Test(timeout = TEST_TIMEOUT_MS)
     fun claimedDeviceCanProposeAndParentCanApprove() = runBlocking {
-        val parentRepo = FamilyRepository()
+        val parentRepo = FirebaseFamilyRepository()
         val parentEmail = uniqueEmail()
         val parentUid = parentRepo.signUpParent(parentEmail, "testpass123")
         val child = parentRepo.createChild(parentUid, "ProposeChild")
         parentRepo.signOut()
 
-        val kidRepo = FamilyRepository()
+        val kidRepo = FirebaseFamilyRepository()
         kidRepo.claimPairingCode(child.pairingCode)
 
         // No passcode/parent-mode needed for this - it's a suggestion, never applied on its own.
@@ -255,13 +255,13 @@ class PairingFlowEmulatorTest {
 
     @Test(timeout = TEST_TIMEOUT_MS)
     fun parentCanDeclineAProposalWithoutApplyingIt() = runBlocking {
-        val parentRepo = FamilyRepository()
+        val parentRepo = FirebaseFamilyRepository()
         val parentEmail = uniqueEmail()
         val parentUid = parentRepo.signUpParent(parentEmail, "testpass123")
         val child = parentRepo.createChild(parentUid, "DeclineChild")
         parentRepo.signOut()
 
-        val kidRepo = FamilyRepository()
+        val kidRepo = FirebaseFamilyRepository()
         kidRepo.claimPairingCode(child.pairingCode)
         kidRepo.proposeLimits(parentUid, child.id, proposedDailyLimitMinutes = 500)
         kidRepo.signOut()
@@ -278,12 +278,12 @@ class PairingFlowEmulatorTest {
 
     @Test(timeout = TEST_TIMEOUT_MS)
     fun claimedDeviceCannotSmuggleARealLimitChangeIntoAProposalWrite() = runBlocking {
-        val parentRepo = FamilyRepository()
+        val parentRepo = FirebaseFamilyRepository()
         val parentUid = parentRepo.signUpParent(uniqueEmail(), "testpass123")
         val child = parentRepo.createChild(parentUid, "ProposeSmuggleChild")
         parentRepo.signOut()
 
-        val kidRepo = FamilyRepository()
+        val kidRepo = FirebaseFamilyRepository()
         kidRepo.claimPairingCode(child.pairingCode)
 
         // proposedDailyLimitMinutes alone is allowed for a claimed device via the
@@ -305,7 +305,7 @@ class PairingFlowEmulatorTest {
 
     @Test(timeout = TEST_TIMEOUT_MS)
     fun linkedDeviceCanReadParentsSelfProfileButUnlinkedDeviceCannot() = runBlocking {
-        val parentRepo = FamilyRepository()
+        val parentRepo = FirebaseFamilyRepository()
         val parentUid = parentRepo.signUpParent(uniqueEmail(), "testpass123")
         val child = parentRepo.createChild(parentUid, "SelfViewChild")
 
@@ -315,7 +315,7 @@ class PairingFlowEmulatorTest {
         parentRepo.signOut()
 
         // claimPairingCode creates this device's linkedDevices doc (see #18, #39).
-        val kidRepo = FamilyRepository()
+        val kidRepo = FirebaseFamilyRepository()
         kidRepo.claimPairingCode(child.pairingCode)
 
         val fetched = kidRepo.getParentSelfProfile(parentUid)
@@ -327,7 +327,7 @@ class PairingFlowEmulatorTest {
         // Must sign the linked kid out first - Firebase Auth's signInAnonymously() reuses
         // the currently-signed-in anonymous user instead of minting a new one if one is
         // already active, so without this the "stranger" would actually just be the kid.
-        val strangerRepo = FamilyRepository()
+        val strangerRepo = FirebaseFamilyRepository()
         strangerRepo.signInAnonymously()
         assertNull(
             "An unrelated device must not be able to read another family's self-tracked profile",
@@ -337,12 +337,12 @@ class PairingFlowEmulatorTest {
 
     @Test(timeout = TEST_TIMEOUT_MS)
     fun claimingDeviceCannotSmuggleOtherFieldsIntoTheLinkedDeviceUidsWrite() = runBlocking {
-        val parentRepo = FamilyRepository()
+        val parentRepo = FirebaseFamilyRepository()
         val parentUid = parentRepo.signUpParent(uniqueEmail(), "testpass123")
         val child = parentRepo.createChild(parentUid, "LinkSmuggleChild")
         parentRepo.signOut()
 
-        val kidRepo = FamilyRepository()
+        val kidRepo = FirebaseFamilyRepository()
         kidRepo.claimPairingCode(child.pairingCode) // legitimately appends its own uid
 
         // A follow-up write bundling linkedDeviceUids with an unrelated field must be rejected.
@@ -360,14 +360,14 @@ class PairingFlowEmulatorTest {
 
     @Test(timeout = TEST_TIMEOUT_MS)
     fun unrelatedAnonymousDeviceCannotReadParentAccountDoc() = runBlocking {
-        val parentRepo = FamilyRepository()
+        val parentRepo = FirebaseFamilyRepository()
         val parentUid = parentRepo.signUpParent(uniqueEmail(), "testpass123")
         parentRepo.setParentPasscode(parentUid, "some-hash", "some-salt")
         parentRepo.signOut()
 
         // A stranger who has never seen a pairing code - just anonymous auth, same as
         // any kid app install would get before pairing.
-        val strangerRepo = FamilyRepository()
+        val strangerRepo = FirebaseFamilyRepository()
         strangerRepo.signInAnonymously()
 
         var threw = false
@@ -388,13 +388,13 @@ class PairingFlowEmulatorTest {
 
     @Test(timeout = TEST_TIMEOUT_MS)
     fun pairedKidPublishesInstalledApps_parentReadsThemBack() = runBlocking {
-        val parentRepo = FamilyRepository()
+        val parentRepo = FirebaseFamilyRepository()
         val parentEmail = uniqueEmail()
         val parentUid = parentRepo.signUpParent(parentEmail, "testpass123")
         val child = parentRepo.createChild(parentUid, "AppsChild")
         parentRepo.signOut()
 
-        val kidRepo = FamilyRepository()
+        val kidRepo = FirebaseFamilyRepository()
         kidRepo.claimPairingCode(child.pairingCode)
         kidRepo.pushInstalledApps(
             parentUid, child.id,
@@ -411,13 +411,13 @@ class PairingFlowEmulatorTest {
 
     @Test(timeout = TEST_TIMEOUT_MS)
     fun installedAppsWriteIsRejectedWhenOversizedOrFromAStranger() = runBlocking {
-        val parentRepo = FamilyRepository()
+        val parentRepo = FirebaseFamilyRepository()
         val parentUid = parentRepo.signUpParent(uniqueEmail(), "testpass123")
         val child = parentRepo.createChild(parentUid, "AppsCapChild")
         parentRepo.signOut()
 
         // A stranger with just anonymous auth can't write another family's installed-apps doc.
-        val strangerRepo = FamilyRepository()
+        val strangerRepo = FirebaseFamilyRepository()
         strangerRepo.signInAnonymously()
         var strangerThrew = false
         try {
@@ -429,7 +429,7 @@ class PairingFlowEmulatorTest {
         strangerRepo.signOut()
 
         // The real paired device can, but not more than the cap allows.
-        val kidRepo = FamilyRepository()
+        val kidRepo = FirebaseFamilyRepository()
         kidRepo.claimPairingCode(child.pairingCode)
         var oversizedThrew = false
         try {
@@ -442,12 +442,12 @@ class PairingFlowEmulatorTest {
 
     @Test(timeout = TEST_TIMEOUT_MS)
     fun pairedKidDeviceCanFlipTrackingToggles_butNotOtherFields() = runBlocking {
-        val parentRepo = FamilyRepository()
+        val parentRepo = FirebaseFamilyRepository()
         val parentUid = parentRepo.signUpParent(uniqueEmail(), "testpass123")
         val child = parentRepo.createChild(parentUid, "TrackingChild")
         parentRepo.signOut()
 
-        val kidRepo = FamilyRepository()
+        val kidRepo = FirebaseFamilyRepository()
         kidRepo.claimPairingCode(child.pairingCode)
         // The passcode-gated Parent controls screen on the kid device does this.
         kidRepo.setTrackingToggle(parentUid, child.id, org.openscreentime.shared.model.TrackingToggle.TRACK_UNLOCKS, true)
@@ -466,12 +466,12 @@ class PairingFlowEmulatorTest {
 
     @Test(timeout = TEST_TIMEOUT_MS)
     fun pairedKidDeviceCanSetDumbPhoneAndExcludedApps_butStillNotTheOtherProfileFields() = runBlocking {
-        val parentRepo = FamilyRepository()
+        val parentRepo = FirebaseFamilyRepository()
         val parentUid = parentRepo.signUpParent(uniqueEmail(), "testpass123")
         val child = parentRepo.createChild(parentUid, "FocusChild")
         parentRepo.signOut()
 
-        val kidRepo = FamilyRepository()
+        val kidRepo = FirebaseFamilyRepository()
         kidRepo.claimPairingCode(child.pairingCode)
         // The passcode-gated Parent controls screen on the kid device does this.
         kidRepo.setFocusMode(parentUid, child.id, true)
@@ -499,7 +499,7 @@ class PairingFlowEmulatorTest {
 
     @Test(timeout = TEST_TIMEOUT_MS)
     fun passwordResetSendsForExistingAccount_andLooksTheSameForUnknownOnes() = runBlocking {
-        val repo = FamilyRepository()
+        val repo = FirebaseFamilyRepository()
         val email = uniqueEmail()
         repo.signUpParent(email, "testpass123")
         repo.signOut()
@@ -512,7 +512,7 @@ class PairingFlowEmulatorTest {
 
     @Test(timeout = TEST_TIMEOUT_MS)
     fun verifyAccountPassword_acceptsTheRightOneAndRejectsAWrongOne() = runBlocking {
-        val repo = FamilyRepository()
+        val repo = FirebaseFamilyRepository()
         repo.signUpParent(uniqueEmail(), "testpass123")
         assertTrue(repo.verifyAccountPassword("testpass123"))
         assertTrue(!repo.verifyAccountPassword("not-the-password"))
@@ -520,11 +520,11 @@ class PairingFlowEmulatorTest {
 
     @Test(timeout = TEST_TIMEOUT_MS)
     fun aStrangerCannotLinkItselfToAnotherFamily() = runBlocking {
-        val parentRepo = FamilyRepository()
+        val parentRepo = FirebaseFamilyRepository()
         val parentUid = parentRepo.signUpParent(uniqueEmail(), "testpass123")
         parentRepo.signOut()
 
-        val stranger = FamilyRepository()
+        val stranger = FirebaseFamilyRepository()
         val strangerUid = stranger.signInAnonymously()
         val db = FirebaseFirestore.getInstance()
 
@@ -553,13 +553,13 @@ class PairingFlowEmulatorTest {
 
     @Test(timeout = TEST_TIMEOUT_MS)
     fun aPairedDeviceIsRecordedAsLinked_andTheParentCanSeeIt() = runBlocking {
-        val parentRepo = FamilyRepository()
+        val parentRepo = FirebaseFamilyRepository()
         val parentEmail = uniqueEmail()
         val parentUid = parentRepo.signUpParent(parentEmail, "testpass123")
         val child = parentRepo.createChild(parentUid, "LinkedChild")
         parentRepo.signOut()
 
-        val kidRepo = FamilyRepository()
+        val kidRepo = FirebaseFamilyRepository()
         kidRepo.claimPairingCode(child.pairingCode)
         val kidUid = kidRepo.currentUid!!
         kidRepo.signOut()
@@ -572,12 +572,12 @@ class PairingFlowEmulatorTest {
 
     @Test(timeout = TEST_TIMEOUT_MS)
     fun pairedKidCanTurnOnWebsiteTracking_andReportSiteCounts_butNotOversized() = runBlocking {
-        val parentRepo = FamilyRepository()
+        val parentRepo = FirebaseFamilyRepository()
         val parentUid = parentRepo.signUpParent(uniqueEmail(), "testpass123")
         val child = parentRepo.createChild(parentUid, "WebsiteChild")
         parentRepo.signOut()
 
-        val kidRepo = FamilyRepository()
+        val kidRepo = FirebaseFamilyRepository()
         kidRepo.claimPairingCode(child.pairingCode)
         kidRepo.setTrackingToggle(parentUid, child.id, org.openscreentime.shared.model.TrackingToggle.TRACK_WEBSITES, true)
 
@@ -597,13 +597,13 @@ class PairingFlowEmulatorTest {
 
     @Test(timeout = TEST_TIMEOUT_MS)
     fun claimedDeviceCannotListSiblingChildren() = runBlocking {
-        val parentRepo = FamilyRepository()
+        val parentRepo = FirebaseFamilyRepository()
         val parentUid = parentRepo.signUpParent(uniqueEmail(), "testpass123")
         val child = parentRepo.createChild(parentUid, "ListChildA")
         parentRepo.createChild(parentUid, "ListChildB")
         parentRepo.signOut()
 
-        val kidRepo = FamilyRepository()
+        val kidRepo = FirebaseFamilyRepository()
         kidRepo.claimPairingCode(child.pairingCode)
 
         var threw = false
