@@ -181,11 +181,15 @@ fun DashboardScreen(
         LazyColumn(modifier = Modifier.fillMaxSize().padding(padding)) {
             // First and fixed: nothing above it can appear later (like the passcode prompt below,
             // which shows once its check finishes) and push it out from under a finger.
-            // Adding a kid means pairing their phone to this account, which a local build has
-            // no way to do - it keeps everything on this one phone. The rest of the dashboard
-            // (your own screen time, limits, dumb phone, the calm list) works exactly the same.
-            if (!Backend.IS_LOCAL) {
-                item {
+            // Adding a kid means pairing their phone to this account, which a local build has no
+            // way to do. Leaving the button out silently would strand a parent who came here to do
+            // exactly that, so say where a kid's limits are set instead - see LocalOnlyKidCard.
+            item {
+                if (Backend.IS_LOCAL) {
+                    LocalOnlyKidCard(
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp)
+                    )
+                } else {
                     Button(
                         onClick = { showAddDialog = true },
                         modifier = Modifier
@@ -771,6 +775,52 @@ private fun PasscodePromptCard(onSetPasscode: () -> Unit, modifier: Modifier = M
             )
             Spacer(Modifier.height(12.dp))
             Button(onClick = onSetPasscode, modifier = Modifier.fillMaxWidth()) { Text("Set passcode") }
+        }
+    }
+}
+
+/**
+ * What a parent sees where "Add kid" would be, in a build that keeps everything on one phone.
+ *
+ * A parent who installs this app has usually come to set up their child, so leaving the button out
+ * with no explanation would strand them at the first screen. This says where a child's limits
+ * actually live in a local build - on the child's own phone, behind the family passcode - and what
+ * the other build is for, without making either sound like a mistake.
+ */
+@Composable
+private fun LocalOnlyKidCard(modifier: Modifier = Modifier) {
+    Card(
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer),
+        modifier = modifier.testTag("dashboard_local_only_kid")
+    ) {
+        Column(Modifier.padding(16.dp)) {
+            Text(
+                "Setting up a kid's phone",
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.onSecondaryContainer
+            )
+            Spacer(Modifier.height(4.dp))
+            Text(
+                "This is the local build: everything each phone records stays on that phone, and " +
+                    "nothing is sent anywhere. That also means this app can't reach your kid's phone.",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSecondaryContainer
+            )
+            Spacer(Modifier.height(8.dp))
+            Text(
+                "Install OpenScreenTime Kid on their phone and set the limits there, in Parent " +
+                    "controls, with your family passcode. Their phone keeps its own usage and " +
+                    "enforces its own limits - it doesn't need this app at all.",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSecondaryContainer
+            )
+            Spacer(Modifier.height(8.dp))
+            Text(
+                "To see their usage and change limits from here instead, you'd need the cloud " +
+                    "build - see docs/SELF_HOSTING.md in the project.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSecondaryContainer
+            )
         }
     }
 }
