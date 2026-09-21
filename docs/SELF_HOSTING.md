@@ -43,9 +43,10 @@ anything.
 3. After the second app, download **`google-services.json`**. One file covers both apps, and it
    goes in one place in the source you downloaded:
 
-   - `cloud/google-services.json`
+   - `cloud/src/main/assets/google-services.json`
 
-   That's the `cloud` module - the only part of the project that talks to Firebase at all. It's
+   Create the `assets` folder if it isn't there. That's inside the `cloud` module - the only part
+   of the project that talks to Firebase at all, and the only place this file is read from. It's
    already in `.gitignore`, so it won't be committed if you fork.
 
 4. In the left sidebar, open **Build → Authentication → Get started**, and enable two sign-in
@@ -132,7 +133,7 @@ instead of a download link.
 | "That code isn't active" on a brand-new code | The rules in your Firebase project are older than the apps. Re-publish `firebase/firestore.rules` (Part 1, step 6). |
 | Sign-up fails in the parent app | Email/Password isn't enabled under Authentication (Part 1, step 4). |
 | The kid app can't pair at all, no error about the code | Anonymous sign-in isn't enabled (Part 1, step 4). |
-| The build fails complaining about `google-services.json` | The file isn't at `cloud/google-services.json`, or the package names in Firebase don't match exactly (Part 1, steps 2-3). |
+| The app closes the instant you open it, or says "No usable google-services.json" | The file isn't at `cloud/src/main/assets/google-services.json`, or the package names inside it don't match exactly (Part 1, steps 2-3). |
 | A cloud build acts like a local one - no sign-in, no pairing | The Build Variants panel is still set to a `local` variant (Part 2, step 3). |
 | Tracking stops after the screen is off a while | A phone-maker battery setting is killing the accessibility service. See the battery section of [INSTALL_ANDROID.md](INSTALL_ANDROID.md), and tell us which phone in an issue — that list is built from reports. |
 

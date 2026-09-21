@@ -1,7 +1,7 @@
 plugins {
     alias(libs.plugins.android.library)
     alias(libs.plugins.kotlin.android)
-    alias(libs.plugins.google.services)
+    alias(libs.plugins.kotlin.serialization)
 }
 
 // The Firebase half of OpenScreenTime: the FamilyRepository implementation that pairs two phones
@@ -9,8 +9,11 @@ plugins {
 // depends on this module, so a "local" build contains none of it - no Firebase SDK, no
 // google-services.json, no network code at all (see each app's build.gradle.kts).
 //
-// The google-services plugin lives here rather than in the apps on purpose: it fails the build for
-// any variant that has no google-services.json, which is exactly what a local build is.
+// Firebase is started by hand from cloud/src/main/assets/google-services.json (see
+// FirebaseBootstrap). The google-services Gradle plugin is deliberately not used: it only generates
+// its config resources for application modules, so applied here it silently produced nothing and a
+// cloud build crashed on launch - and applied to the apps it fails any variant without a json,
+// which is exactly what a local build is.
 android {
     namespace = "org.openscreentime.cloud"
     compileSdk = 35
@@ -38,6 +41,7 @@ dependencies {
     api(libs.firebase.firestore)
     api(libs.firebase.auth)
     implementation(libs.coroutines.play.services)
+    implementation(libs.kotlinx.serialization.json)
 
     androidTestImplementation(libs.androidx.test.junit)
     androidTestImplementation(libs.androidx.test.runner)

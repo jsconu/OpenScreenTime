@@ -12,7 +12,7 @@ captures/
 
 # Firebase config is per-developer/per-fork; never commit real credentials. It lives in the
 # :cloud module now, which is the only thing that reads it - a local build has no use for one.
-cloud/google-services.json
+cloud/src/main/assets/google-services.json
 kid/google-services.json
 parent/google-services.json
 ios/**/GoogleService-Info.plist

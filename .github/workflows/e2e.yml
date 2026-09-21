@@ -77,10 +77,12 @@ jobs:
 
       # Same stub as android-ci.yml - the google-services plugin needs *a* file to
       # process at build time, even though these builds point at the emulator.
+      # One file for the whole cloud module, holding a client per app - the same shape a
+      # self-hoster downloads from the Firebase console (see docs/SELF_HOSTING.md).
       - name: Write stub google-services.json
         run: |
-          for app in kid parent; do
-            cat > "$app/google-services.json" <<'EOF'
+          mkdir -p cloud/src/main/assets
+          cat > cloud/src/main/assets/google-services.json <<'EOF'
           {
             "project_info": {
               "project_number": "000000000000",
@@ -91,7 +93,16 @@ jobs:
               {
                 "client_info": {
                   "mobilesdk_app_id": "1:000000000000:android:0000000000000000",
-                  "android_client_info": { "package_name": "org.openscreentime.APP" }
+                  "android_client_info": { "package_name": "org.openscreentime.kid" }
+                },
+                "oauth_client": [],
+                "api_key": [{ "current_key": "stub" }],
+                "services": { "appinvite_service": { "other_platform_oauth_client": [] } }
+              },
+              {
+                "client_info": {
+                  "mobilesdk_app_id": "1:000000000000:android:0000000000000001",
+                  "android_client_info": { "package_name": "org.openscreentime.parent" }
                 },
                 "oauth_client": [],
                 "api_key": [{ "current_key": "stub" }],
@@ -101,8 +112,6 @@ jobs:
             "configuration_version": "1"
           }
           EOF
-            sed -i "s/org.openscreentime.APP/org.openscreentime.$app/" "$app/google-services.json"
-          done
 
       # -PuseFirebaseEmulator=true is the opt-in flag read in each app's build.gradle.kts
       # (see BuildConfig.USE_FIREBASE_EMULATOR) - only this workflow ever sets it.

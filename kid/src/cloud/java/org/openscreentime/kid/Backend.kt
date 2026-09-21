@@ -3,6 +3,7 @@ package org.openscreentime.kid
 import android.app.Application
 import android.content.Context
 import com.google.firebase.auth.FirebaseAuth
+import org.openscreentime.cloud.FirebaseBootstrap
 import com.google.firebase.firestore.FirebaseFirestore
 import org.openscreentime.kid.data.PairingStore
 import org.openscreentime.shared.repo.FamilyRepository
@@ -22,6 +23,9 @@ object Backend {
     fun createRepository(app: Application): FamilyRepository = FirebaseFamilyRepository()
 
     fun onAppCreate(app: Application) {
+        // First, before anything reaches for Firebase: this module supplies its own config rather
+        // than relying on the google-services plugin (see FirebaseBootstrap).
+        FirebaseBootstrap.ensureInitialized(app)
         if (BuildConfig.USE_FIREBASE_EMULATOR) {
             // Must happen before the repository's lazy init ever touches Firebase.
             FirebaseFirestore.getInstance().useEmulator("10.0.2.2", 8080)
