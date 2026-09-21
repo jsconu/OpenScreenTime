@@ -46,10 +46,17 @@ internal class PairingRepository(
             // Expired, used, or nonexistent codes aren't readable at all (see firestore.rules),
             // so they surface as a permission error rather than one of the messages above.
             if (e.code == FirebaseFirestoreException.Code.PERMISSION_DENIED) {
-                // The project id is shown so a mismatch between the two apps (or with the console) is easy to spot.
+                // Say which step Firebase refused, so a tester (and we) can tell "no such live code" from "the pairing
+                // write itself was refused" - both otherwise look like the same permission error.
                 val project = runCatching { FirebaseApp.getInstance().options.projectId }.getOrNull() ?: "unknown"
+                val codeVisible = runCatching { codeRef.get().await().exists() }.getOrNull()
+                val step = if (codeVisible == true) {
+                    "the code was found, but linking this phone was refused"
+                } else {
+                    "this phone could not read that code (it isn't there, is used, or ran out)"
+                }
                 throw IllegalStateException(
-                    "That code isn't active. Ask the parent for a new one. (Firebase refused it: project $project, PERMISSION_DENIED.)"
+                    "That code isn't active. Ask the parent for a new one. (Project $project: $step.)"
                 )
             }
             throw e
