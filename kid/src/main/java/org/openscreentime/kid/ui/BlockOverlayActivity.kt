@@ -34,6 +34,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.openscreentime.kid.KidApp
 import org.openscreentime.kid.data.PairingStore
+import org.openscreentime.kid.Backend
 import org.openscreentime.kid.monitor.LiveChildState
 import org.openscreentime.shared.model.BlockReason
 import org.openscreentime.shared.model.blockScreenCopy
@@ -122,7 +123,10 @@ class BlockOverlayActivity : ComponentActivity() {
                         }
                         // A parent lock is a deliberate, direct action - not something a
                         // time-limit exception should be negotiable against (see #23).
-                        if (reason != BlockReason.PARENT_LOCK && parentUid != null && childId != null) {
+                        // Asking for more time is a message to a parent's phone; a local build has
+                        // no second phone to reach, and the screen already says to ask a parent,
+                        // who can add time right here with the family passcode.
+                        if (!Backend.IS_LOCAL && reason != BlockReason.PARENT_LOCK && parentUid != null && childId != null) {
                             Spacer(Modifier.height(24.dp))
                             RequestMoreTimeSection(
                                 requestedExtraMinutes = requestedExtraMinutes,

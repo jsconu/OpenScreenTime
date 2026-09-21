@@ -15,6 +15,14 @@ is not a setting you can toggle at runtime — it is what code is in the APK at 
 The local flavor is what gets published, because it is the only one that can be handed to a
 stranger honestly: there is no server in it, so there is nobody to trust.
 
+**That is why local APKs are safe to download and install.** A cloud build is permanently tied to
+one Firebase project - the project id and API key are compiled into it - so whoever owns that
+project can read the data of every family using that build. A published cloud APK would quietly
+make this project's maintainer the operator of your child's usage data. A local build has nowhere
+to send anything, so that whole problem does not exist: the download is just an app, and what it
+records stays on the phone it records it on. Releases therefore ship local APKs, and anyone who
+wants the remote features builds the cloud flavor against a Firebase project of their own.
+
 ## What a local build does
 
 Everything one phone can do by itself, which is most of what this project is:
@@ -41,6 +49,13 @@ Everything that needs a second phone in the picture:
 - A child asking for 15 more minutes from school and a parent granting it from work
 - A child proposing a limit change for a parent to approve
 - Pairing at all — there is no code to type and no account to pair to
+
+**There is no Wi-Fi or Bluetooth link either.** It would be reasonable to assume two phones in the
+same house could talk directly, and nothing in a local build does that: no local network sync, no
+Bluetooth pairing, no discovery. A local build never opens a connection to anything. Where a screen
+would otherwise offer to send something to a parent - the kid app's "Suggest a change", and asking
+for more time on the block screen - it says to ask a parent in person instead, because a parent
+standing next to the phone can change any of it in Parent controls with the family passcode.
 
 None of these are missing because they were hard. They are missing because two phones that are not
 in the same room cannot reach each other without something in the middle, and the local build

@@ -32,6 +32,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import org.openscreentime.kid.Backend
 import org.openscreentime.sharedui.mergedRow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
@@ -145,11 +146,24 @@ fun StatusScreen(
         }
 
         Spacer(Modifier.height(24.dp))
-        OutlinedButton(
-            onClick = onProposeChange,
-            modifier = Modifier.fillMaxWidth().testTag("status_propose_change")
-        ) {
-            Text("Suggest a change")
+        // Suggesting a change sends it to a parent's phone to approve, which a local build has
+        // nowhere to send. Rather than a button that quietly does nothing, say how it works here:
+        // a parent changes limits on this phone, with the family passcode.
+        if (Backend.IS_LOCAL) {
+            Text(
+                "Want different limits? Ask a parent - they can change them on this phone in " +
+                    "Parent controls.",
+                style = MaterialTheme.typography.bodyMedium,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.fillMaxWidth().testTag("status_local_ask_in_person")
+            )
+        } else {
+            OutlinedButton(
+                onClick = onProposeChange,
+                modifier = Modifier.fillMaxWidth().testTag("status_propose_change")
+            ) {
+                Text("Suggest a change")
+            }
         }
         Spacer(Modifier.height(8.dp))
         Button(
