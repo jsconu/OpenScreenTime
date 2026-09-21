@@ -25,6 +25,8 @@ import androidx.compose.ui.semantics.testTagsAsResourceId
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
+import org.openscreentime.sharedui.CrashReportDialog
+import org.openscreentime.shared.util.CrashNote
 import org.openscreentime.kid.KidApp
 import org.openscreentime.kid.data.AppearancePrefs
 import org.openscreentime.kid.data.NotificationDigestStore
@@ -79,6 +81,11 @@ class MainActivity : ComponentActivity() {
             var textSize by remember { mutableStateOf(appearancePrefs.textSize) }
 
             OpenScreenTimeTheme(themeMode = themeMode, textSize = textSize) {
+              // After a crash, offer the details to copy (see CrashNote).
+              var crashNote by remember { mutableStateOf(CrashNote.pending(this@MainActivity)) }
+              crashNote?.let { note ->
+                  CrashReportDialog(details = note, onDismiss = { CrashNote.clear(this@MainActivity); crashNote = null })
+              }
               // Lets UiAutomator (used by the :e2e module) match Modifier.testTag(...) as a
               // resource-id, since it can't drive Compose's own semantics tree directly.
               Box(modifier = Modifier.fillMaxSize().semantics { testTagsAsResourceId = true }) {

@@ -11,6 +11,7 @@ import androidx.work.WorkManager
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.crashlytics.FirebaseCrashlytics
 import com.google.firebase.firestore.FirebaseFirestore
+import org.openscreentime.shared.util.CrashNote
 import org.openscreentime.parent.data.SelfProfileStore
 import org.openscreentime.parent.monitor.SelfDeviceState
 import org.openscreentime.parent.monitor.SyncWorker
@@ -25,6 +26,7 @@ class ParentApp : Application() {
 
     override fun onCreate() {
         super.onCreate()
+        CrashNote.install(this, "OpenScreenTime Parent", BuildConfig.VERSION_NAME)
         if (BuildConfig.USE_FIREBASE_EMULATOR) {
             // Must happen before FamilyRepository's lazy init ever touches Firebase.
             FirebaseFirestore.getInstance().useEmulator("10.0.2.2", 8080)

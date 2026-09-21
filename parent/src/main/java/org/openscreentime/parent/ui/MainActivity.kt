@@ -30,6 +30,8 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import org.openscreentime.sharedui.CrashReportDialog
+import org.openscreentime.shared.util.CrashNote
 import org.openscreentime.parent.AppLockState
 import org.openscreentime.parent.ParentApp
 import org.openscreentime.parent.data.NotificationDigestStore
@@ -110,6 +112,11 @@ class MainActivity : FragmentActivity() {
             }
 
             OpenScreenTimeTheme(themeMode = themeMode, textSize = textSize) {
+              // After a crash, offer the details to copy (see CrashNote).
+              var crashNote by remember { mutableStateOf(CrashNote.pending(this@MainActivity)) }
+              crashNote?.let { note ->
+                  CrashReportDialog(details = note, onDismiss = { CrashNote.clear(this@MainActivity); crashNote = null })
+              }
               // Lets UiAutomator (used by the :e2e module) match Modifier.testTag(...) as a
               // resource-id, since it can't drive Compose's own semantics tree directly.
               Box(modifier = Modifier.fillMaxSize().semantics { testTagsAsResourceId = true }) {
