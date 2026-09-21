@@ -7,7 +7,7 @@ SourceCode: https://github.com/jsconu/OpenScreenTime
 IssueTracker: https://github.com/jsconu/OpenScreenTime/issues
 Changelog: https://github.com/jsconu/OpenScreenTime/releases
 
-AutoName: OpenScreenTime Parent
+Name: OpenScreenTime Parent
 
 RepoType: git
 Repo: https://github.com/jsconu/OpenScreenTime.git
@@ -28,11 +28,9 @@ Builds:
     scanignore:
       - cloud/build.gradle.kts
       - gradle/libs.versions.toml
-    prebuild:
-      # The repository does not check in a gradle-wrapper.jar binary (see its README), so there is
-      # nothing to delete here; F-Droid's own gradle is used.
-      - echo "no bundled binaries"
 
+# No gradle-wrapper.jar is checked into this repository, so there is nothing to strip before
+# building; F-Droid's own gradle is used.
 MaintainerNotes: |-
   Two apps are built from this one repository: org.openscreentime.parent (this one) and
   org.openscreentime.kid. They are separate installs on separate phones and share the :shared and
