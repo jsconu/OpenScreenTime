@@ -17,6 +17,21 @@ Follow the [Building](README.md#building) section of the README — you'll
 need your own free Firebase project to run and test against, since there's
 no shared backend.
 
+## A short code map
+
+Domain terms are in [`CONTEXT.md`](CONTEXT.md). The pieces you will meet most:
+
+- **`shared/model`** - plain Kotlin data and rules with unit tests (`decideEnforcement`, `FocusConfig`,
+  `shouldHideNotification`, `AppList`). Prefer putting a new rule here so it can be tested without a phone.
+- **`shared/util`** - the parts that touch Android but are shared: `BaseAppLimitAccessibilityService` (the foreground
+  guard both apps run), `BaseScreenMonitorService`, `DayLedger` (today's usage, over a key-value seam so it is
+  testable), `DeviceProfileState` (a phone's saved copy of its person's profile), `FocusMode` (dumb phone) and
+  `buildDailyStats` (the one place that decides what a phone may upload).
+- **`shared-ui`** - Compose screens and pieces both apps use, including the dumb-phone home screen and the app picker.
+- **`kid`, `parent`** - thin adapters: each names its own storage, notifications and overlays and leaves the rest to `shared`.
+- **`firebase/firestore.rules`** - what each device may read and write. If you add a field a paired kid device
+  must write, it also has to be added to the allowlist there (and the rules republished).
+
 ## Making a change
 
 1. Open an issue first for anything non-trivial (new features, permission
@@ -52,6 +67,17 @@ issue first so the approach can be agreed on before you sink real time in.
   APIs) is a genuinely different mechanism than the Android kid app's
   AccessibilityService approach, so this is closer to a fresh design than a
   port of existing Kotlin code.
+- **More sophisticated dumb-phone features** - unlike the two above this is a normal, approachable Android and
+  Kotlin area, and a good first big contribution. Ideas: grey out and explain blocked apps in the "All apps" list,
+  schedules (dumb phone on for school hours), per-trip and other situation profiles, per-contact call and text rules,
+  smarter notification handling, a nicer or e-ink friendly home screen, and an approach for iPhone. See the list in the
+  README's [What's missing](README.md#whats-missing-and-could-use-a-contributor). Please open an issue first, and keep to
+  the calm, opt-in, explained-to-the-person design principle.
+- **A more sophisticated calm-notifications interface** - the calm list is a plain read-only list today. A proper inbox
+  (group by app or conversation, snooze, search), digests at set times, fine-grained rules for who or what gets
+  through, and a richer central entry point (Quick Settings tile, pull-down, lock-screen view) are all open. It has to
+  stay local (content is never uploaded), opt-in and plainly explained. See the README's
+  [What's missing](README.md#whats-missing-and-could-use-a-contributor).
 - **Smartwatch tracking and limits.** Only Wear OS has any viable path at
   all - Tizen, Fitbit, Garmin, and Apple Watch expose no third-party API for
   this. Even Wear OS means a genuinely separate app: its own Wear Compose

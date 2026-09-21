@@ -24,7 +24,10 @@ this build connects to. Contact: trumpetmadnesshq@gmail.com.
 - Only if a parent turns the matching option on: which app was opened first after each unlock, and
   how many notifications each app sent (counts only).
 - Settings a parent chooses: the child's display name, daily and per-app limits, bedtime window,
-  blocked website domains, always-allowed apps, and phone numbers allowed to call during bedtime.
+  blocked website domains, always-allowed apps, apps left out of the daily limit, the "Dumb phone" choice and its
+  allowed apps, and phone numbers allowed to call during bedtime.
+- The day's screen time is the counted figure: time in apps a parent left out of the daily limit is not added to it
+  (that time still appears in the per-app usage).
 - An anonymous device identifier created by Firebase Authentication, used to pair the phone with a
   parent.
 

@@ -57,7 +57,8 @@ Settings > Apps > (your browser) > Install unknown apps.
    **Create account**. Already have an account (from another phone)? Tap **Sign in** instead.
 3. On the home screen tap **Add kid**, type your child's name, and tap **Create**.
 4. A **pairing code** (6 digits) appears. It's copied for you automatically. You'll type it on your
-   child's phone, and it works for 30 minutes. If it runs out, make a new one.
+   child's phone, and it works for 30 minutes. If it runs out, tap **New code** on that kid's card on the
+   home screen: it makes a fresh code and copies it for you.
 5. **Set your family passcode.** A card on the home screen says **Set your family passcode**. Tap **Set
    passcode** and choose a 4-6 digit number you'll remember. This passcode locks the parent app, and it's
    what lets *you* (and not your child) open the Parent controls on the child's phone.
@@ -157,6 +158,18 @@ notification shade and collected; one quiet "Calm notifications" line tells you 
 You can also add the **Calm notifications** tile to Quick Settings (swipe down twice, tap the pencil, drag it in),
 or swipe down from the top of the dumb-phone home screen. Nothing is uploaded.
 
+## Time that doesn't count (optional)
+
+By default every minute the screen is on counts toward the daily limit. To leave some apps out (an audiobook or reading
+app, maps, a school app), open the person's page (a kid's, or your own), find **Time that doesn't count**, and tap
+**Choose apps**. Time in those apps is taken off the day's total, so they don't use up the day.
+
+- They still show in the app list, and a limit set on one of them still applies.
+- **Always allow** is different: it lets an app keep working after the daily limit or bedtime. To let an excluded app
+  keep working once the daily limit is reached, tick **Always allow** for it as well.
+- The screen time you see for the day is the counted figure, the same one the limit uses.
+- You can also set it from **Parent controls** on the kid's phone (after the family passcode), along with Dumb phone.
+
 ## Website tracking (optional): what has to happen
 
 Besides blocking, a parent can choose to see **which websites** a phone looked up. It's off by default, it's
@@ -202,7 +215,7 @@ Also check that the **Website filter** row says **Granted**, and that no other V
 | Can't tap **Install**, or nothing happens | Redo Part 2, step 3: **Allow from this source**. |
 | The accessibility switch is grey | See **Allow restricted settings** above. |
 | No status icon at the top of the kid's screen | Make sure **Notifications** says Granted. On Android 13+ the icon is hidden without it. On Samsung, also check Settings > Notifications > Status bar. |
-| "That code isn't active" | The code is only good for 30 minutes and only once. Tap **Copy code**/make a new one on the parent's phone. |
+| "That code isn't active" | The code is only good for 30 minutes and only once. Tap **New code** on that kid's card on the parent's phone (it copies the new code). If a brand-new code is refused too, the Firebase rules on your project are probably out of date: publish the current `firebase/firestore.rules` (see the README's Building section). |
 | The parent app shows no apps for the child | It fills in about 15 minutes after the kid phone first connects. |
 | **Websites looked up today** is empty | Check all four points under **Website tracking** above - most often the website filter isn't on for that phone, or the browser's Secure DNS is on. |
 | Forgot the family passcode | Parent app lock screen > **Forgot passcode?** > enter your account password. |

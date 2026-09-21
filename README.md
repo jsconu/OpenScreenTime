@@ -14,8 +14,8 @@ your own backend, send patches back.
 
 | App | Platform | Status | Notes |
 | --- | --- | --- | --- |
-| **Parent** | Android | ✅ **Ready** | Pairing, limits, bedtime, locking, weekly report, optional tracking, help bot. Build it from source; not on Google Play yet. |
-| **Kid** | Android | ✅ **Ready** | Calm status icon, block screen, friction pause, enforcement, parent controls. Build it from source; not on Google Play yet. |
+| **Parent** | Android | ✅ **Ready** | Pairing, limits, bedtime, locking, weekly report, optional tracking, dumb phone mode, time that doesn't count, help bot. Build it from source; not on Google Play yet. |
+| **Kid** | Android | ✅ **Ready** | Calm status icon, block screen, friction pause, enforcement, parent controls, optional dumb phone home screen. Build it from source; not on Google Play yet. |
 | **Parent** | iOS | 🛠 **Built, not yet in the App Store** | Manages Android kids, limits, bedtime and tracking toggles. Build it yourself with Xcode. No weekly report yet. |
 | **Kid** | iOS | 🌱 **Future project - community welcome** | Needs Apple's Family Controls entitlement, which this project doesn't have. See [issue #7](https://github.com/jsconu/OpenScreenTime/issues/7). |
 
@@ -61,7 +61,8 @@ own phone, real screenshots to replace it are a very welcome contribution.
 | <img src="design/screenshots/kid-03-settings-kid.png" width="220" alt="Kid settings page"> | <img src="design/screenshots/parent-08-bedtime-starts.png" width="220" alt="Two-step bedtime editor with AM/PM"> | <img src="design/screenshots/parent-03-forgot-passcode.png" width="220" alt="Forgot passcode recovery"> |
 
 All 30 screens are in [`design/screenshots/`](design/screenshots/), rendered from
-the gallery above.
+the gallery above. The gallery was last updated before dumb phone mode, "Time that doesn't count" and the
+hide-notifications controls; screens for those (or real screenshots of any screen) are a welcome contribution.
 
 ## How it works
 
@@ -72,7 +73,12 @@ the gallery above.
   paired child, edits limits, and can opt into tracking the parent's *own*
   screen time the same way.
 - **`shared`** — the data models, Firestore access code, and enforcement
-  logic both apps use.
+  logic both apps use: the foreground guard, the day's usage ledger, dumb phone
+  mode, and the rule for what a phone may upload.
+- **`shared-ui`** — the Compose screens and pieces both apps share (dialogs,
+  the dumb-phone home screen, the app picker).
+- New to the code? [`CONTEXT.md`](CONTEXT.md) explains the domain terms and
+  [`CONTRIBUTING.md`](CONTRIBUTING.md) has a short code map.
 - **`ios`** — an iOS build of the parent app (Swift/SwiftUI), for a parent on
   an iPhone pairing with an Android kid device. Built, but not yet in the App Store. See
   [`ios/README.md`](ios/README.md) for setup and current scope; there is no iOS kid app yet (see
@@ -100,6 +106,19 @@ parent app  <---sync--->  Firebase (Firestore + Auth)  <---sync--->  kid app
   alternative-activity suggestion.
 - Mark specific apps **"always allowed"** so they stay usable (a phone/calling
   app, maps) even once the daily limit or bedtime hits.
+- Leave chosen apps out of the overall daily limit (**"Time that doesn't
+  count"**): an audiobook, reading, maps or school app then doesn't use up the
+  day. Their time still shows in the app list and their own limit still
+  applies; pair it with "always allowed" to keep one usable after the daily
+  limit is reached.
+- Turn on **Dumb phone** for a child, or for your own phone: calls, texts,
+  contacts, two-step sign-in apps and a few apps you choose stay on a plain
+  home screen and everything else is sent back to it. A child needs the family
+  passcode to open more ("Parent unlock"); an adult gets an **All apps** button
+  (after a short pause, for 10 minutes) and a **Travel** profile that also lets
+  through tickets, maps, mail, the camera and similar. On your own phone,
+  **Hide other notifications** collects everything but calls, texts, alarms and
+  sign-in codes into the calm list.
 - Mark specific **phone numbers as always-allowed during bedtime** — every
   other call is screened and blocked (Android's call-screening/redirection
   roles, Android 10+), and texts from anyone else are muted rather than
@@ -159,6 +178,9 @@ parent app  <---sync--->  Firebase (Firestore + Auth)  <---sync--->  kid app
   approve.
 - **Suggest a change** to their own limit, no passcode needed — sent to a
   parent for approval, not applied directly.
+- If a parent turned on **Dumb phone**, a plain home screen (calls, texts and
+  chosen apps) when the phone's home app is set to OpenScreenTime, with a
+  "Parent unlock" button that asks for the family passcode.
 - An optional, **local-only notification digest** (plain text, grouped by
   app) — nothing here is ever synced to a parent.
 - The same **help bot** behind a "?" on their home screen, for how the app
@@ -171,8 +193,10 @@ parent app  <---sync--->  Firebase (Firestore + Auth)  <---sync--->  kid app
 
 ### Pairing
 
-1. In the parent app, tap "+" and name the child. This shows a 6-digit
-   pairing code and creates a child profile in Firestore.
+1. In the parent app, tap "Add kid" and name the child. This shows a 6-digit
+   pairing code (copied for you; it works for 30 minutes) and creates a child
+   profile in Firestore. If a code runs out, tap **New code** on that child's
+   card for a fresh one.
 2. In the kid app, enter that code. The kid app signs in anonymously to
    Firebase and atomically claims the code, linking that device to the child
    profile. No child email or personal info is ever collected.
@@ -202,6 +226,9 @@ hard block - Android doesn't let a plain (non-Device-Owner) device admin
 actually veto uninstalling, only warn - so a kid who taps through the
 warning can still remove it.
 
+The same screen also offers "Time that doesn't count" and "Dumb phone" for
+that child, the same as on the parent's own phone.
+
 The same screen also has "Bedtime calls": during the bedtime window, only
 phone numbers a parent has explicitly allowed (Android's call-screening and
 call-redirection roles, Android 10+) can call or text through - everyone
@@ -217,6 +244,9 @@ scope for now.
   `ACTION_USER_PRESENT` (unlock) to the next `ACTION_SCREEN_OFF`. Time spent
   sitting on the lock screen doesn't count.
 - **Unlocks** = number of `ACTION_USER_PRESENT` broadcasts per day.
+- The daily total the limit uses is screen time **less** any time in apps a
+  parent chose to leave out ("Time that doesn't count"); that counted figure is
+  what syncs to the parent, so the number a parent sees matches the limit.
 - **Per-app time** = attributed via an `AccessibilityService` watching
   foreground window changes — this is also how app and daily limits are
   enforced (a full-screen block is shown once a limit is hit).
@@ -258,6 +288,47 @@ additional platform target — real community-contributor territory:
   on, since watch battery/Doze constraints are stricter than a phone's.
   Worth doing if someone's motivated and has the hardware; not something to
   start without knowing that scope going in.
+
+Two more areas are ordinary, approachable feature work rather than a new platform, and are a good way to get
+involved:
+
+- **More sophisticated dumb-phone features.** Dumb phone mode (a parent-chosen Focus mode that keeps calls, texts,
+  sign-in-code apps and a short list of allowed apps on a plain home screen) works today, and there is a lot of room
+  to make it smarter. This is a good place to get involved: it is Android and Kotlin, it builds on well-tested
+  pieces (`FocusMode`, the shared launcher screen, the foreground guard), and the design goal is clear: calm, plain,
+  and never a hook. Ideas, roughly from small to large:
+  - **Show what's blocked.** In the "All apps" list, grey out and label apps that are blocked right now (limit
+    reached, bedtime, lock, or not allowed by dumb phone) and say why when tapped, instead of opening them. (Android
+    doesn't let one app grey out icons on someone else's launcher, so this only applies to our own home screen.)
+  - **Schedules.** Turn dumb phone on by itself for school hours, evenings or weekends, for a child or an adult.
+  - **Richer travel and situation profiles.** More than Everyday and Travel: a per-trip profile with an end date,
+    "work", "school", "weekend", each with its own allowed apps.
+  - **Per-contact rules.** Allow calls and texts only from chosen contacts during dumb phone, or hold back the rest.
+  - **Smarter notifications.** Allow chosen apps through "Hide other notifications", a digest at set times, and
+    quiet-hours rules.
+  - **A nicer home screen.** Widgets, an e-ink friendly high-contrast layout, gesture shortcuts, and larger text.
+  - **A dumb phone on iPhone and Wear OS.** iOS has no equivalent of a replacement home screen for apps, so this would
+    lean on Focus filters and Shortcuts; the parent iOS app can't set any of this yet either.
+  - **Measuring it.** Anonymous, local-only feedback for a person on whether it helped, without turning it into a
+    score or a streak to chase.
+
+  Please open an issue first to agree the approach. Keep to the project's design principle (calm, opt-in, explained
+  to the person it affects), and see `CONTEXT.md` for the domain terms and the code map in `CONTRIBUTING.md`.
+- **A more sophisticated calm-notifications interface.** The calm list today is a plain, read-only list of the day's
+  notifications, and "Hide other notifications" (parent app) takes everything but calls, texts, alarms and sign-in
+  codes out of the shade and into it. It works, and there is a lot of room to make it more considered and easier to
+  live with. Ideas:
+  - **A proper inbox.** Group by app and by conversation, mark things read, dismiss or snooze, search, and open the
+    original app from an item.
+  - **Digests at set times.** Deliver the calm list as a summary a few times a day instead of one always-on line.
+  - **Fine-grained rules.** Let chosen apps or people through, set quiet hours, and treat urgent things (a school
+    message, a family group) differently from the rest.
+  - **A central, gesture-friendly entry.** A richer Quick Settings tile, a shade-style pull-down on the dumb-phone home
+    screen, and a lock-screen view, in the spirit of minimal launchers.
+  - **The kid side.** Today the kid app's calm list is separate and opt-in; a considered, child-friendly version is open.
+  - **Accessibility and readability.** Large text, screen-reader order, and a low-stimulation theme.
+
+  It must stay local (notification content is never uploaded), opt-in, and explained plainly. Open an issue first.
 
 Smaller, more approachable gaps: weekly-report iOS parity (see
 [`ios/README.md`](ios/README.md)), broader OEM background-survival testing

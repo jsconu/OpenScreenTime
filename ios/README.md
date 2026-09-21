@@ -44,6 +44,11 @@ tracked as a follow-up rather than bundled into #26's parity pass. Bedtime call/
 blocking (#34) and uninstall protection (#31) are Android-kid-device-only features with no
 iOS equivalent to port, since there's no iOS kid app for them to run on.
 
+**Not yet in the iOS parent app** (added to the Android apps after the parity pass above): **Dumb phone** mode for a
+child, **Time that doesn't count** (apps left out of the daily limit), and the **New code** button for an unpaired
+child whose pairing code ran out. A parent on iPhone can't set these yet; they can be set from an Android parent phone
+or the kid phone's Parent controls. Porting them is an approachable contribution.
+
 This was written and CI-verified (see `.github/workflows/ios-ci.yml`, which actually
 builds and tests it on a macOS runner) without a local Mac/Xcode available - there is no
 substitute for opening it in Xcode and trying it against a real Firebase project before
