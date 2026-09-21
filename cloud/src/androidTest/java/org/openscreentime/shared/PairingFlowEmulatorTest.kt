@@ -113,7 +113,7 @@ class PairingFlowEmulatorTest {
 
     @Test(timeout = TEST_TIMEOUT_MS)
     fun childDocWithNoDeviceUidFieldCanStillBeClaimed() = runBlocking {
-        val parentRepo = FamilyRepository()
+        val parentRepo = FirebaseFamilyRepository()
         val parentUid = parentRepo.signUpParent(uniqueEmail(), "testpass123")
         val child = parentRepo.createChild(parentUid, "LegacyChild")
 
@@ -126,7 +126,7 @@ class PairingFlowEmulatorTest {
             .update("deviceUid", FieldValue.delete()).await()
         parentRepo.signOut()
 
-        val kidRepo = FamilyRepository()
+        val kidRepo = FirebaseFamilyRepository()
         val (_, claimed) = kidRepo.claimPairingCode(child.pairingCode)
         assertTrue("A child written without a deviceUid field must still be pairable", claimed.paired)
     }
