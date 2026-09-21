@@ -1,5 +1,6 @@
 *.iml
 .gradle/
+.kotlin/
 .idea/
 local.properties
 .DS_Store
@@ -25,3 +26,8 @@ ios/.swiftpm/
 keystore.properties
 *.jks
 *.keystore
+
+# Firebase Local Emulator Suite logs, written into the working directory by `firebase emulators:start`.
+firebase-debug.log
+firestore-debug.log
+ui-debug.log
