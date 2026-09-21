@@ -16,6 +16,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import org.openscreentime.shared.util.Features
 import org.openscreentime.sharedui.rememberIsDefaultHome
 import androidx.compose.runtime.remember
 import android.os.Build
@@ -133,7 +134,7 @@ fun KidSettingsScreen(
             onRequestNotificationListener
         )
         val focus = FocusLauncherActivity.focusMode(LocalContext.current)
-        if (focus.enabled) {
+        if (Features.DUMB_PHONE && focus.enabled) {
             val isHome = rememberIsDefaultHome(focus)
             PermissionRow(
                 "Home screen (simple phone)",

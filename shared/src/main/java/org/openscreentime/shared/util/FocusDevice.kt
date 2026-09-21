@@ -45,8 +45,12 @@ class FocusMode(private val context: Context, private val launcher: ComponentNam
 
     /** Copies a freshly-received profile onto the phone, and offers the home screen only while Focus is on. */
     fun sync(child: ChildProfile) {
-        prefs.update(child)
-        setLauncherEnabled(child.focusMode)
+        // Dumb phone is not in this release (see Features.DUMB_PHONE). A profile can still arrive
+        // with it switched on - from an older build, or a parent's phone that has it - and it must
+        // not quietly take over the home screen of a phone whose app offers no way to turn it off.
+        val effective = if (Features.DUMB_PHONE) child else child.copy(focusMode = false)
+        prefs.update(effective)
+        setLauncherEnabled(effective.focusMode)
     }
 
     /** Switches the profile (Everyday or Travel) on this phone straight away; the saved profile follows. */

@@ -29,6 +29,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
+import org.openscreentime.shared.util.Features
 import org.openscreentime.parent.util.PermissionState
 import org.openscreentime.sharedui.rememberIsDefaultHome
 import org.openscreentime.parent.util.isNotificationListenerEnabled
@@ -101,7 +102,8 @@ fun SelfPermissionsScreen(
     onBack: () -> Unit
 ) {
     val focus = FocusLauncherActivity.focusMode(LocalContext.current)
-    val focusOn = focus.enabled
+    // Dumb phone is not in this release (see Features.DUMB_PHONE), so its permission row goes too.
+    val focusOn = Features.DUMB_PHONE && focus.enabled
     val isHome = rememberIsDefaultHome(focus)
     Scaffold(
         topBar = {

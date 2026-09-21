@@ -137,7 +137,7 @@ across three different screens. It only has to be done once per phone.
 **Each app that needs it gets its own trip through this.** If you turn on **Notification access** later (for
 the calm notification list, or muting texts at bedtime), it has its own identical **Allow restricted
 settings** step on its own App info page. The parent app needs the same treatment on the parent's phone if
-you use self-tracking or dumb phone mode there.
+you use self-tracking there.
 
 ### The other permissions
 
@@ -175,32 +175,14 @@ If limits stop working after a while, look in the phone's settings for:
 6. To try the website filter, on the parent's phone open the child, add a website (for example `example.com`)
    under **Blocked websites**, then try to open it on the kid's phone.
 
-## Dumb phone (optional): call, text and little else
+## Dumb phone: not in this release
 
-A parent can turn on **Dumb phone** for a child, or for their own phone. Open the person's page in the parent app,
-find **Dumb phone**, and switch it on. The phone then keeps only calling, texting, contacts, sign-in-code
-(authenticator) apps and any apps you add with **Choose apps**; everything else is sent back to a plain home screen.
+A plain home screen keeping only calls, texts, sign-in codes and a few allowed apps is built, but it
+isn't finished well enough to put in front of a family, so it's switched off. Nothing in either app
+offers it, and neither phone will ask to become your home screen.
 
-What has to happen on the phone itself:
-
-1. **Accessibility** must be on (it already is if limits work) - that's what sends other apps back home.
-2. Open **Settings** (kid app) or **Permissions** (parent app) and find **Home screen**. Tap **Fix** and choose
-   **OpenScreenTime** as the phone's home app. Until you do, apps that aren't allowed are still sent back, but the
-   simple home screen won't be the one showing.
-
-**On a child's phone** there's a **Parent unlock** button: a parent types the family passcode and picks how long
-everything opens for (it goes back by itself). Children can't open the other apps without it.
-
-**On your own phone** there's an **All apps** button. It pauses for a few breaths, then opens every app for 10 minutes and
-goes back on its own. **Travel** is a switch on the same screen: it also lets through tickets, maps, mail, the camera,
-calendar, translation and ride apps (and any you add under **Travel apps**), for days when you need them.
-**Turn off dumb phone** is at the bottom of the screen. OpenScreenTime itself is always in the list.
-
-**Calm notifications, in one place:** on your own phone, switch on **Hide other notifications** on the parent home
-screen (it needs notification access). Everything except calls, texts, alarms and sign-in codes is taken out of the
-notification shade and collected; one quiet "Calm notifications" line tells you how many are waiting. Tap it to read them.
-You can also add the **Calm notifications** tile to Quick Settings (swipe down twice, tap the pencil, drag it in),
-or swipe down from the top of the dumb-phone home screen. Nothing is uploaded.
+It would make a good community feature, and it's all still in the source for whoever wants it - see
+https://github.com/jsconu/OpenScreenTime/issues/46.
 
 ## Time that doesn't count (optional)
 
@@ -212,7 +194,7 @@ app, maps, a school app), open the person's page (a kid's, or your own), find **
 - **Always allow** is different: it lets an app keep working after the daily limit or bedtime. To let an excluded app
   keep working once the daily limit is reached, tick **Always allow** for it as well.
 - The screen time you see for the day is the counted figure, the same one the limit uses.
-- You can also set it from **Parent controls** on the kid's phone (after the family passcode), along with Dumb phone.
+- You can also set it from **Parent controls** on the kid's phone, after the family passcode.
 
 ## Website tracking (optional): what has to happen
 

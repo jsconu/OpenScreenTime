@@ -29,7 +29,6 @@ Everything one phone can do by itself, which is most of what this project is:
 
 - Counts screen time, unlocks, per-app time and, if turned on, notifications and sites
 - Enforces the daily limit, per-app limits, bedtime and a lock
-- Dumb phone mode, including the Travel profile and the plain home screen
 - The calm notification list, and hiding everything else from the shade
 - Time that doesn't count, always-allowed apps, blocked sites, allowed contacts at bedtime
 - The weekly report and the under-goal streak, from a history kept on the phone

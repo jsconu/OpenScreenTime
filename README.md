@@ -14,8 +14,8 @@ your own backend, send patches back.
 
 | App | Platform | Status | Notes |
 | --- | --- | --- | --- |
-| **Parent** | Android | ✅ **Ready** | Pairing, limits, bedtime, locking, weekly report, optional tracking, dumb phone mode, time that doesn't count, help bot. Build it from source; not on Google Play yet. |
-| **Kid** | Android | ✅ **Ready** | Calm status icon, block screen, friction pause, enforcement, parent controls, optional dumb phone home screen. Build it from source; not on Google Play yet. |
+| **Parent** | Android | ✅ **Ready** | Pairing, limits, bedtime, locking, weekly report, optional tracking, time that doesn't count, help bot. Build it from source; not on Google Play yet. |
+| **Kid** | Android | ✅ **Ready** | Calm status icon, block screen, friction pause, enforcement, parent controls. Build it from source; not on Google Play yet. |
 | **Parent** | iOS | 🛠 **Built, not yet in the App Store** | Manages Android kids, limits, bedtime and tracking toggles. Build it yourself with Xcode. No weekly report yet. |
 | **Kid** | iOS | 🌱 **Future project - community welcome** | Needs Apple's Family Controls entitlement, which this project doesn't have. See [issue #7](https://github.com/jsconu/OpenScreenTime/issues/7). |
 
@@ -403,12 +403,17 @@ access** (also powers muting non-allowed texts during bedtime), and, from
 the passcode-gated Parent controls screen, **uninstall protection** and
 **bedtime call blocking** (Android 10+ only for the latter).
 
-**Dumb phone** (a parent-chosen Focus mode, for a child or for a parent's own phone) turns the phone into calls,
-texts, authenticator apps and a short list of allowed apps on a plain home screen. A parent gets a **Travel**
-profile (tickets, maps, mail...) and an **All apps** button that opens everything for 10 minutes after a short pause;
-a child needs a parent's passcode. On a parent's phone, **Hide other notifications** collects everything but calls,
-texts, alarms and sign-in codes into the calm list, reachable from one summary notification, a Quick Settings tile,
-or a swipe down on the dumb-phone home screen. See [`docs/INSTALL_ANDROID.md`](docs/INSTALL_ANDROID.md).
+**Hide other notifications** (on a parent's own phone) collects everything but calls, texts, alarms and sign-in
+codes into the calm list, reachable from one summary notification or a Quick Settings tile. See
+[`docs/INSTALL_ANDROID.md`](docs/INSTALL_ANDROID.md).
+
+> **Dumb phone is not in this release.** A plain home screen keeping only calls, texts, sign-in codes and a few
+> allowed apps is built - `FocusMode`, `FocusHome`, `FocusDevice` and the rest are all in the tree - but it isn't
+> good enough to put in front of a family yet, so it's switched off in one place (`Features.DUMB_PHONE`) rather
+> than deleted. Replacing a phone's home screen touches the launcher role, the foreground guard and the app list
+> at once, and getting it wrong leaves someone holding a phone that won't open anything. **It would make an
+> excellent community feature**, and whoever takes it on starts from working code rather than a blank page - see
+> [issue #46](https://github.com/jsconu/OpenScreenTime/issues/46).
 
 A parent can also leave chosen apps out of the overall daily limit (**Time that doesn't count**, on a person's page): an
 audiobook, reading, maps or school app then doesn't use up the day. Their time still shows in the app list and their own
