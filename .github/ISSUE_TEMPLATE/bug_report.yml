@@ -1,0 +1,98 @@
+name: Bug report
+description: Something in the parent or kid app doesn't work
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting. Please don't include a real child's name, photo, or usage
+        data in this issue — redact screenshots before you paste them.
+
+  - type: dropdown
+    id: app
+    attributes:
+      label: Which app?
+      options:
+        - Parent (Android)
+        - Kid (Android)
+        - Parent (iOS)
+        - Both / not sure
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: App version
+      description: >
+        The app doesn't display this yet, so read it from Android Settings → Apps →
+        OpenScreenTime Parent/Kid, at the bottom of the App info page.
+      placeholder: "e.g. 0.1.0 (12)"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: build_source
+    attributes:
+      label: Where did this build come from?
+      options:
+        - I built it from source
+        - A release from this repository
+        - Someone else's build or fork
+    validations:
+      required: true
+
+  - type: textarea
+    id: what_happened
+    attributes:
+      label: What happened?
+      description: What you did, what you expected, and what you got instead.
+      placeholder: |
+        1. On the parent phone I tapped ...
+        2. On the kid phone I ...
+        3. I expected ... but saw ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: error_text
+    attributes:
+      label: Exact error text
+      description: >
+        Copy the whole message, including anything in parentheses. The text in brackets is
+        usually the part that identifies the cause.
+      render: text
+
+  - type: input
+    id: device
+    attributes:
+      label: Phone and Android version
+      description: >
+        The manufacturer matters. Background execution and accessibility services behave very
+        differently across OEMs — Samsung, Xiaomi, Oppo and OnePlus are known to be aggressive
+        about killing background services.
+      placeholder: "e.g. Samsung Galaxy A54, Android 14"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: rules_current
+    attributes:
+      label: If you run your own Firebase project — are its Firestore rules current?
+      description: >
+        An app newer than its deployed `firebase/firestore.rules` causes failures that look
+        like unrelated bugs. Re-publish the rules and try again before filing, if you can.
+      options:
+        - "Yes — I re-published firestore.rules after my last update"
+        - "No / not sure"
+        - "I don't run my own Firebase project"
+    validations:
+      required: true
+
+  - type: textarea
+    id: extra
+    attributes:
+      label: Anything else
+      description: >
+        Logs (`adb logcat`), screenshots with private details removed, or anything else that
+        might help.

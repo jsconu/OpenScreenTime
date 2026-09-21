@@ -5,6 +5,7 @@ import androidx.test.platform.app.InstrumentationRegistry
 import com.google.firebase.FirebaseApp
 import com.google.firebase.FirebaseOptions
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
@@ -108,6 +109,26 @@ class PairingFlowEmulatorTest {
         assertEquals(parentUid, claimedParentUid)
         assertEquals(child.id, claimedChild.id)
         assertEquals("The child should now point at the new code", newCode, claimedChild.pairingCode)
+    }
+
+    @Test(timeout = TEST_TIMEOUT_MS)
+    fun childDocWithNoDeviceUidFieldCanStillBeClaimed() = runBlocking {
+        val parentRepo = FamilyRepository()
+        val parentUid = parentRepo.signUpParent(uniqueEmail(), "testpass123")
+        val child = parentRepo.createChild(parentUid, "LegacyChild")
+
+        // The iOS parent app used to drop nil fields instead of writing nulls, so a child could
+        // exist with no deviceUid key at all. A field that ISN'T THERE is an evaluation error in
+        // the security rules, not null, so every claim on such a child was refused - and from the
+        // kid's side that looks exactly like a dead code. Reproduce that shape of document here.
+        FirebaseFirestore.getInstance()
+            .document(FirestorePaths.childDoc(parentUid, child.id))
+            .update("deviceUid", FieldValue.delete()).await()
+        parentRepo.signOut()
+
+        val kidRepo = FamilyRepository()
+        val (_, claimed) = kidRepo.claimPairingCode(child.pairingCode)
+        assertTrue("A child written without a deviceUid field must still be pairable", claimed.paired)
     }
 
     @Test(timeout = TEST_TIMEOUT_MS)

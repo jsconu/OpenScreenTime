@@ -1,0 +1,47 @@
+name: Feature request
+description: Suggest something OpenScreenTime should do
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Before writing, it's worth reading
+        [what's missing and could use a contributor](https://github.com/jsconu/OpenScreenTime#whats-missing-and-could-use-a-contributor)
+        — your idea may already be there, or already have been turned down for a reason.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem does this solve?
+      description: >
+        Describe the situation in a family's day where the software falls short. Please lead
+        with the problem rather than the solution — it's often solvable in a way you hadn't
+        considered.
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: What would you like it to do?
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: principles
+    attributes:
+      label: Design check
+      description: >
+        OpenScreenTime is deliberately built as the opposite of an engagement-maximizing app:
+        calm signals for kids, detailed reports for parents only, tracking that's opt-in and
+        explained, and no feature whose purpose is to bring someone back into the app. A
+        proposal that works against that is likely to be declined however well built.
+      options:
+        - label: This doesn't add notifications, streaks, badges, or anything else designed to pull a person back into the app
+        - label: This doesn't collect anything about a child beyond what the feature genuinely needs
+  - type: checkboxes
+    id: contributing
+    attributes:
+      label: Would you like to build it?
+      options:
+        - label: I'd be willing to work on this myself

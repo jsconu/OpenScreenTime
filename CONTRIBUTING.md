@@ -119,4 +119,13 @@ about killing background services; see if it happens on stock Android too).
 ## Code of conduct
 
 Be respectful. This is a project built by parents, for parents — assume good
-faith, and keep discussion focused on the software.
+faith, and keep discussion focused on the software. The full text is in
+[CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md); the short version is that you should
+disagree about the software rather than about how someone raises their child,
+and never post a real child's details in an issue.
+
+## Security
+
+Please report anything exploitable privately rather than in a public issue —
+see [SECURITY.md](SECURITY.md), which also lists the trade-offs that are already
+known and documented, so you don't spend an evening on one of them.

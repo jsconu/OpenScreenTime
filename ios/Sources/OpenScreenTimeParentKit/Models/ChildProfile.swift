@@ -81,17 +81,26 @@ struct ChildProfile: Identifiable, Equatable {
             "showNotificationsOnKid": showNotificationsOnKid,
             "trackWebsites": trackWebsites
         ]
-        map["deviceUid"] = deviceUid
-        map["parentPasscodeHash"] = parentPasscodeHash
-        map["parentPasscodeSalt"] = parentPasscodeSalt
-        map["dailyUnlockGoal"] = dailyUnlockGoal
-        map["proposedDailyLimitMinutes"] = proposedDailyLimitMinutes
-        map["proposedAppLimits"] = proposedAppLimits
-        map["bedtimeStartMinutes"] = bedtimeStartMinutes
-        map["bedtimeEndMinutes"] = bedtimeEndMinutes
-        map["requestedExtraMinutes"] = requestedExtraMinutes
-        map["temporaryUnlockUntilMs"] = temporaryUnlockUntilMs
+        // Optional fields, written as real nulls rather than left out entirely - see orNull.
+        map["deviceUid"] = Self.orNull(deviceUid)
+        map["parentPasscodeHash"] = Self.orNull(parentPasscodeHash)
+        map["parentPasscodeSalt"] = Self.orNull(parentPasscodeSalt)
+        map["dailyUnlockGoal"] = Self.orNull(dailyUnlockGoal)
+        map["proposedDailyLimitMinutes"] = Self.orNull(proposedDailyLimitMinutes)
+        map["proposedAppLimits"] = Self.orNull(proposedAppLimits)
+        map["bedtimeStartMinutes"] = Self.orNull(bedtimeStartMinutes)
+        map["bedtimeEndMinutes"] = Self.orNull(bedtimeEndMinutes)
+        map["requestedExtraMinutes"] = Self.orNull(requestedExtraMinutes)
+        map["temporaryUnlockUntilMs"] = Self.orNull(temporaryUnlockUntilMs)
         return map
+    }
+
+    /// A real Firestore null for an unset field, rather than no field at all. Assigning nil to a
+    /// dictionary subscript REMOVES the key, and a missing field is an evaluation error in the
+    /// security rules, not null - a child written without "deviceUid" could never be paired (see
+    /// the one-time claim rule in firebase/firestore.rules). The Android app writes nulls here too.
+    private static func orNull(_ value: Any?) -> Any {
+        value ?? NSNull()
     }
 
     static func from(id: String, map: [String: Any]) -> ChildProfile {
