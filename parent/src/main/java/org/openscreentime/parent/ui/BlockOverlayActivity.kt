@@ -100,8 +100,8 @@ class BlockOverlayActivity : ComponentActivity() {
                                 color = MaterialTheme.colorScheme.primary
                             )
                         }
-                        // The parent's own "Lock now": the family passcode lifts it right here.
-                        if (reason == BlockReason.PARENT_LOCK && parentUid != null && selfChildId != null) {
+                        // The parent's own "Lock now", bedtime or a limit: the family passcode opens it right here.
+                        if (parentUid != null && selfChildId != null) {
                             Spacer(Modifier.height(24.dp))
                             OutlinedButton(
                                 onClick = { unlockError = null; showParentUnlock = true },
@@ -147,11 +147,18 @@ class BlockOverlayActivity : ComponentActivity() {
                                         info == null -> unlockError = "Couldn't check the passcode. Check your connection and try again."
                                         ok -> {
                                             attempts.recordSuccess()
-                                            SelfDeviceState.clearLock(
-                                                this@BlockOverlayActivity,
-                                                relockAtFor(relockAfterMinutes, System.currentTimeMillis())
-                                            )
-                                            launch { runCatching { repository.setLocked(parentUid, selfChildId, false) } }
+                                            val now = System.currentTimeMillis()
+                                            if (reason == BlockReason.PARENT_LOCK) {
+                                                SelfDeviceState.clearLock(this@BlockOverlayActivity, relockAtFor(relockAfterMinutes, now))
+                                                launch { runCatching { repository.setLocked(parentUid, selfChildId, false) } }
+                                            } else {
+                                                // Bedtime or a limit: open it for a while ("until I lock it again" has
+                                                // no meaning here, so that choice is a long window instead).
+                                                SelfDeviceState.grantParentUnlock(
+                                                    this@BlockOverlayActivity,
+                                                    relockAtFor(relockAfterMinutes ?: (12 * 60), now) ?: (now + 12 * 60 * 60_000L)
+                                                )
+                                            }
                                             finish()
                                         }
                                         else -> unlockError = if (attempts.recordFailure()) {

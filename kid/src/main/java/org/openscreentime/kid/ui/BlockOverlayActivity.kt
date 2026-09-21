@@ -132,12 +132,10 @@ class BlockOverlayActivity : ComponentActivity() {
                                 }
                             )
                         }
-                        // A parent standing next to the phone can lift a "Lock now" with the family
-                        // passcode, without reaching for their own phone. Only offered once a
-                        // passcode exists on this device to check against.
-                        if (reason == BlockReason.PARENT_LOCK && parentUid != null && childId != null &&
-                            LiveChildState.parentPasscodeHash != null
-                        ) {
+                        // A parent standing next to the phone can lift a "Lock now", or open bedtime and the
+                        // limits for a while, with the family passcode, without reaching for their own phone.
+                        // Only offered once a passcode exists on this device to check against.
+                        if (parentUid != null && childId != null && LiveChildState.parentPasscodeHash != null) {
                             Spacer(Modifier.height(24.dp))
                             OutlinedButton(
                                 onClick = { unlockError = null; showParentUnlock = true },
@@ -179,14 +177,21 @@ class BlockOverlayActivity : ComponentActivity() {
                                     verifying = false
                                     if (ok) {
                                         attempts.recordSuccess()
-                                        LiveChildState.clearLock(
-                                            this@BlockOverlayActivity,
-                                            relockAtFor(relockAfterMinutes, System.currentTimeMillis())
-                                        )
-                                        // Best effort: if this can't reach Firestore right now the
-                                        // lock is already lifted on this phone, and the write is
-                                        // queued and applied when it reconnects.
-                                        launch { runCatching { repository.setLocked(parentUid, childId, false) } }
+                                        val now = System.currentTimeMillis()
+                                        if (reason == BlockReason.PARENT_LOCK) {
+                                            LiveChildState.clearLock(this@BlockOverlayActivity, relockAtFor(relockAfterMinutes, now))
+                                            // Best effort: if this can't reach Firestore right now the
+                                            // lock is already lifted on this phone, and the write is
+                                            // queued and applied when it reconnects.
+                                            launch { runCatching { repository.setLocked(parentUid, childId, false) } }
+                                        } else {
+                                            // Bedtime or a limit: open it for a while ("until I lock it again"
+                                            // has no meaning here, so that choice is a long window instead).
+                                            LiveChildState.grantParentUnlock(
+                                                this@BlockOverlayActivity,
+                                                relockAtFor(relockAfterMinutes ?: (12 * 60), now) ?: (now + 12 * 60 * 60_000L)
+                                            )
+                                        }
                                         finish()
                                     } else {
                                         unlockError = if (attempts.recordFailure()) {

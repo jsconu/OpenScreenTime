@@ -219,6 +219,10 @@ useful for dinner, bedtime, or just needing quiet right now. "Resume" undoes
 it. The kid app also posts a one-time notification when screen time or an
 app is within 5 minutes of its limit, so a limit is rarely a total surprise.
 
+The block screen (bedtime, a limit reached, or a lock) also has a **Parent unlock** button on the kid's phone, and
+**Unlock with passcode** on your own phone: enter the family passcode and choose how long, and the phone opens through
+bedtime and the limits for that long, then goes back on its own. A lock is lifted the same way.
+
 From the same passcode-gated "Parent controls" screen, a parent can also turn
 on "Uninstall protection" (Android's device-admin API) so that removing the
 kid app first shows a warning to ask a parent. This is a deterrent, not a

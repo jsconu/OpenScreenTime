@@ -54,6 +54,11 @@ open class DeviceProfileState(
     @Volatile var parentPasscodeSalt: String? = null
     /** When a timed unlock ends and the phone locks itself again; null = no re-lock pending. */
     @Volatile var relockAtMs: Long? = null
+    /**
+     * Until when a parent's passcode has opened this phone through bedtime and the time limits (not a parent lock).
+     * Kept on the phone only, apart from the profile, so an incoming profile update doesn't erase it.
+     */
+    @Volatile var parentUnlockUntilMs: Long? = null
 
     /** Copies a freshly-received profile into memory and to disk, and brings Focus mode in step with it. */
     fun update(context: Context, child: ChildProfile) {
@@ -66,6 +71,12 @@ open class DeviceProfileState(
     fun clearLock(context: Context, relockAtMs: Long? = null) {
         lockedCache = false
         this.relockAtMs = relockAtMs
+        persist(context)
+    }
+
+    /** A parent's passcode opened this phone through bedtime and the limits until [untilMs]. */
+    fun grantParentUnlock(context: Context, untilMs: Long) {
+        parentUnlockUntilMs = untilMs
         persist(context)
     }
 
@@ -131,7 +142,8 @@ open class DeviceProfileState(
         "relockAt" to (relockAtMs ?: -1L),
         "pcHash" to parentPasscodeHash,
         "pcSalt" to parentPasscodeSalt,
-        "excluded" to excludedFromTotalPackages.joinToString("\n")
+        "excluded" to excludedFromTotalPackages.joinToString("\n"),
+        "parentUnlock" to (parentUnlockUntilMs ?: -1L)
     )
 
     /** The reverse of [encode]. Anything missing keeps its default; nothing saved yet leaves everything alone. */
@@ -159,6 +171,7 @@ open class DeviceProfileState(
         parentPasscodeHash = saved["pcHash"] as? String
         parentPasscodeSalt = saved["pcSalt"] as? String
         excludedFromTotalPackages = lines("excluded").toSet()
+        parentUnlockUntilMs = (saved["parentUnlock"] as? Long)?.takeIf { it >= 0 }
     }
 
     internal fun reset() {
@@ -180,6 +193,7 @@ open class DeviceProfileState(
         parentPasscodeHash = null
         parentPasscodeSalt = null
         relockAtMs = null
+        parentUnlockUntilMs = null
     }
 
     private fun persist(context: Context) {
@@ -204,7 +218,9 @@ class DeviceProfileSettings(private val state: DeviceProfileState) : Enforcement
     override val bedtimeEndMinutes get() = state.bedtimeEndMinutes
     override val dailyLimitMinutes get() = state.dailyLimitMinutes
     override fun appLimitMinutes(packageName: String) = state.limitsCache[packageName]
-    override val temporaryUnlockUntilMs get() = state.temporaryUnlockUntilMs
+    // A parent's "more time" grant and a parent's passcode unlock both open bedtime and the limits; the later one counts.
+    override val temporaryUnlockUntilMs get() =
+        listOfNotNull(state.temporaryUnlockUntilMs, state.parentUnlockUntilMs).maxOrNull()
     override val alwaysAllowedPackages get() = state.alwaysAllowedPackages
     override val excludedFromTotalPackages get() = state.excludedFromTotalPackages
     override val relockAtMs get() = state.relockAtMs

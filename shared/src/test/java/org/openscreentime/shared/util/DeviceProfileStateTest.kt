@@ -131,10 +131,38 @@ class DeviceProfileStateTest {
         assertEquals(
             listOf(
                 "has", "limits", "daily", "goal", "bedStart", "bedEnd", "domains", "tempUnlock", "packages",
-                "contacts", "trackUnlocks", "trackNotifications", "trackWebsites", "locked", "relockAt", "pcHash", "pcSalt", "excluded"
+                "contacts", "trackUnlocks", "trackNotifications", "trackWebsites", "locked", "relockAt", "pcHash", "pcSalt", "excluded", "parentUnlock"
             ),
             fresh().encode().keys.toList()
         )
+    }
+
+    @Test
+    fun `a parent's passcode unlock survives a profile update and a save and restore`() {
+        val state = fresh()
+        state.parentUnlockUntilMs = 555L
+        state.copyFrom(profile)
+        assertEquals(555L, state.parentUnlockUntilMs)
+        val restored = fresh()
+        restored.decode(state.encode())
+        assertEquals(555L, restored.parentUnlockUntilMs)
+        restored.reset()
+        assertNull(restored.parentUnlockUntilMs)
+    }
+
+    @Test
+    fun `the guard uses the later of a more-time grant and a passcode unlock`() {
+        val state = fresh()
+        state.copyFrom(profile.copy(temporaryUnlockUntilMs = 1_000L))
+        val settings = DeviceProfileSettings(state)
+        assertEquals(1_000L, settings.temporaryUnlockUntilMs)
+        state.parentUnlockUntilMs = 5_000L
+        assertEquals(5_000L, settings.temporaryUnlockUntilMs)
+        state.parentUnlockUntilMs = 500L
+        assertEquals(1_000L, settings.temporaryUnlockUntilMs)
+        state.parentUnlockUntilMs = null
+        state.copyFrom(profile.copy(temporaryUnlockUntilMs = null))
+        assertNull(settings.temporaryUnlockUntilMs)
     }
 
     @Test
