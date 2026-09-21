@@ -185,6 +185,15 @@ fun StatusScreen(
                 onClick = onSyncNow,
                 modifier = Modifier.fillMaxWidth().testTag("status_sync_now")
             ) { Text("Send to their phone now") }
+            Spacer(Modifier.height(4.dp))
+            // Said on the button itself, every time: without it, a tap that does nothing looks
+            // like a broken app rather than two phones being in different places.
+            Text(
+                "Only works while both phones are on the same Wi-Fi and awake.",
+                style = MaterialTheme.typography.bodySmall,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.fillMaxWidth()
+            )
             Spacer(Modifier.height(8.dp))
         }
         if (!Backend.IS_LOCAL || nearbyLinkedTo != null) {

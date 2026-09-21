@@ -126,12 +126,20 @@ class NearbySyncTest {
 
         store.save(link)
         store.saveReport(
-            NearbyMessage.UsageReport("r7", "Sam", DailyStats(date = "2026-09-21", totalScreenTimeMs = 1000)),
+            NearbyMessage.UsageReport(
+                id = "r7",
+                childName = "Sam",
+                deviceModel = "Pixel 7a",
+                stats = DailyStats(date = "2026-09-21", totalScreenTimeMs = 1000)
+            ),
             atMs = 1_700_000_000_000
         )
 
         assertEquals(link, store.link())
         assertEquals("Sam", store.childName())
+        assertEquals("A parent can tell which phone it is", "Pixel 7a", store.deviceModel())
+        store.rename("Sam's old phone")
+        assertEquals("A parent's own label wins on their own screen", "Sam's old phone", store.displayName())
         assertEquals(1_700_000_000_000, store.lastSyncedAtMs)
 
         store.forget()

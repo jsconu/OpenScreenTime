@@ -57,6 +57,8 @@ sealed class NearbyMessage {
     data class UsageReport(
         override val id: String,
         val childName: String,
+        /** e.g. "Pixel 7a" - so a parent can tell which phone this is, whatever it has been named. */
+        val deviceModel: String = "",
         val stats: org.openscreentime.shared.model.DailyStats,
         /** Earlier days the parent's phone may not have seen yet, oldest first. */
         val recentDays: List<org.openscreentime.shared.model.DailyStats> = emptyList()

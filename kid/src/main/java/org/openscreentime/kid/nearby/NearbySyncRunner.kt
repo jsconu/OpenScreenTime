@@ -34,13 +34,8 @@ class NearbySyncRunner(private val context: Context) {
     /** True when the parent's phone answered, so a screen can say when this last worked. */
     fun syncNow(repository: FamilyRepository): Boolean {
         val link = store.linkStore.link() ?: return false
-        val childName = PairingStore(context).childName ?: "This phone"
-        val today = buildDailyStats(UsageStore(context), LiveChildState.trackingChoices(), System.currentTimeMillis())
-
         val answer = runCatching {
-            LanNearbyTransport(context, link).ask(
-                NearbySync.report(UUID.randomUUID().toString(), childName, today, emptyList())
-            )
+            LanNearbyTransport(context, link, LanNearbyTransport.Role.KID).ask(currentReport())
         }.onFailure { Log.d(TAG, "No parent phone reachable right now", it) }.getOrNull() ?: return false
 
         if (answer !is NearbyMessage.LimitsUpdate) return false
@@ -51,6 +46,35 @@ class NearbySyncRunner(private val context: Context) {
         apply(repository, answer)
         store.linkStore.recordSync(System.currentTimeMillis())
         return true
+    }
+
+    /** The report this phone would send, also used to answer an exchange a parent started. */
+    fun currentReport(): NearbyMessage.UsageReport = NearbyMessage.UsageReport(
+        id = UUID.randomUUID().toString(),
+        childName = PairingStore(context).childName ?: android.os.Build.MODEL ?: "This phone",
+        deviceModel = android.os.Build.MODEL ?: "",
+        stats = buildDailyStats(UsageStore(context), LiveChildState.trackingChoices(), System.currentTimeMillis())
+    )
+
+    /**
+     * Listens so a parent can start an exchange from their end - "sync now" has to work on
+     * whichever phone a person is holding. Closed with the returned handle.
+     */
+    fun host(repository: FamilyRepository): java.io.Closeable? {
+        val link = store.linkStore.link() ?: return null
+        return runCatching {
+            LanNearbyTransport(context, link, LanNearbyTransport.Role.KID).host { message ->
+                if (!seen.claim(message.id)) return@host null
+                NearbySync.answerOnKid(
+                    message = message,
+                    report = { currentReport() },
+                    onLimits = { update ->
+                        apply(repository, update)
+                        store.linkStore.recordSync(System.currentTimeMillis())
+                    }
+                )
+            }
+        }.onFailure { Log.w(TAG, "Could not listen for the parent's phone", it) }.getOrNull()
     }
 
     /** Asks for more time. The answer is never a grant - a parent decides, on their own phone. */
@@ -73,7 +97,7 @@ class NearbySyncRunner(private val context: Context) {
     /** True only when the parent's phone actually took it, so a screen never claims a message got through. */
     private fun send(message: NearbyMessage): Boolean {
         val link = store.linkStore.link() ?: return false
-        val answer = runCatching { LanNearbyTransport(context, link).ask(message) }.getOrNull()
+        val answer = runCatching { LanNearbyTransport(context, link, LanNearbyTransport.Role.KID).ask(message) }.getOrNull()
         return answer is NearbyMessage.Answer
     }
 

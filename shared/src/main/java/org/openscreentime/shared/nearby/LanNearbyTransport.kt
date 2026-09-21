@@ -12,8 +12,14 @@ import java.util.concurrent.ArrayBlockingQueue
 import java.util.concurrent.TimeUnit
 
 /**
- * The two phones talking over the home Wi-Fi: the parent's phone advertises itself with Android's
- * own service discovery (mDNS), the kid's phone looks for it and opens a short-lived socket.
+ * The two phones talking over the home Wi-Fi, with Android's own service discovery (mDNS) and a
+ * short-lived socket.
+ *
+ * **Both phones listen, and either can start an exchange**, because "sync now" has to mean
+ * something on whichever phone a person happens to be holding. Each advertises under its own role
+ * so the two never answer themselves: a kid's phone sends what it has been used for and is answered
+ * with limits, and a parent's phone sends limits and is answered with usage. Same single round
+ * trip, started from either end.
  *
  * **The name it advertises is derived from the link key, not the key itself.** A phone can only be
  * found by the phone it was linked with, and a stranger sniffing mDNS learns that an app is running
@@ -35,11 +41,17 @@ import java.util.concurrent.TimeUnit
  */
 class LanNearbyTransport(
     context: Context,
-    private val link: NearbyLink
+    private val link: NearbyLink,
+    /** Which end of the link this phone is. Both listen, so each has to advertise its own name. */
+    private val role: Role
 ) : NearbyTransport {
 
+    /** A phone is one end or the other, and each looks for the opposite one. */
+    enum class Role(internal val suffix: String) { PARENT("p"), KID("k") }
+
     private val nsd = context.applicationContext.getSystemService(Context.NSD_SERVICE) as NsdManager
-    private val serviceName = instanceName(link.key)
+    private val serviceName = instanceName(link.key, role)
+    private val peerServiceName = instanceName(link.key, if (role == Role.PARENT) Role.KID else Role.PARENT)
 
     override fun host(onAsk: (NearbyMessage) -> NearbyMessage?): Closeable {
         val server = ServerSocket(0)
@@ -86,7 +98,7 @@ class LanNearbyTransport(
         val found = ArrayBlockingQueue<Pair<InetAddress, Int>>(1)
         val listener = object : NsdManager.DiscoveryListener {
             override fun onServiceFound(info: NsdServiceInfo) {
-                if (info.serviceName != serviceName) return
+                if (info.serviceName != peerServiceName) return
                 // resolveService and NsdServiceInfo.host are deprecated in favour of
                 // registerServiceInfoCallback, which is API 34. This app supports API 26, and the
                 // deprecated pair still works everywhere; worth revisiting when minSdk moves.
@@ -142,9 +154,9 @@ class LanNearbyTransport(
          * Both phones derive the same one, so the kid's phone can pick its own parent out of a
          * network with several families on it, and nobody else can tell whose is whose.
          */
-        fun instanceName(key: ByteArray): String {
+        fun instanceName(key: ByteArray, role: Role): String {
             val digest = MessageDigest.getInstance("SHA-256").digest(key)
-            return "ost-" + digest.take(6).joinToString("") { "%02x".format(it) }
+            return "ost-" + digest.take(6).joinToString("") { "%02x".format(it) } + "-" + role.suffix
         }
     }
 }

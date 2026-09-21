@@ -3,6 +3,7 @@ package org.openscreentime.parent.ui
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
+import android.content.Intent
 import android.os.Build
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -78,6 +79,9 @@ import kotlinx.coroutines.delay
 import org.openscreentime.parent.Backend
 import org.openscreentime.parent.data.NearbyStore
 import org.openscreentime.shared.repo.Profiles
+import org.openscreentime.parent.ParentApp
+import kotlinx.coroutines.withContext
+import kotlinx.coroutines.Dispatchers
 
 private const val STREAK_LOOKBACK_DAYS = 14
 
@@ -108,10 +112,16 @@ fun DashboardScreen(
     var showAddDialog by remember { mutableStateOf(false) }
     // What the linked kid's phone last managed to report (local builds; see NearbyLinkStore).
     val nearbyContext = LocalContext.current
+    val appContextForSync = nearbyContext.applicationContext
     val nearbyStore = remember { NearbyStore(nearbyContext).linkStore }
     var nearbyChildName by remember { mutableStateOf(nearbyStore.childName()) }
     var nearbyLastSyncedAtMs by remember { mutableLongStateOf(nearbyStore.lastSyncedAtMs) }
     var nearbyStats by remember { mutableStateOf(nearbyStore.lastStats()) }
+    var nearbyDisplayName by remember { mutableStateOf(nearbyStore.displayName()) }
+    var nearbyDeviceModel by remember { mutableStateOf(nearbyStore.deviceModel()) }
+    var nearbySyncing by remember { mutableStateOf(false) }
+    var nearbyLastTryFailed by remember { mutableStateOf(false) }
+    var renaming by remember { mutableStateOf<RenameTarget?>(null) }
     // A report arrives on a socket, not through a listener, so there is nothing to subscribe to:
     // re-read on resume, and again every few seconds while this screen is the one being looked at,
     // so a kid's phone syncing in the next room shows up without the parent leaving and coming back.
@@ -127,6 +137,8 @@ fun DashboardScreen(
             nearbyChildName = nearbyStore.childName()
             nearbyLastSyncedAtMs = nearbyStore.lastSyncedAtMs
             nearbyStats = nearbyStore.lastStats()
+            nearbyDisplayName = nearbyStore.displayName()
+            nearbyDeviceModel = nearbyStore.deviceModel()
         }
     }
     var newChildCode by remember { mutableStateOf<String?>(null) }
@@ -215,10 +227,30 @@ fun DashboardScreen(
             item {
                 if (Backend.IS_LOCAL) {
                     LocalOnlyKidCard(
-                        linkedChildName = nearbyChildName,
+                        linkedChildName = nearbyDisplayName,
+                        deviceModel = nearbyDeviceModel,
                         lastSyncedAtMs = nearbyLastSyncedAtMs,
                         lastStats = nearbyStats,
+                        syncing = nearbySyncing,
+                        lastTryFailed = nearbyLastTryFailed,
                         onLink = onOpenNearbyLink,
+                        onRename = { renaming = RenameTarget.KID_PHONE },
+                        onSyncNow = {
+                            nearbySyncing = true
+                            nearbyLastTryFailed = false
+                            scope.launch {
+                                val reached = withContext(Dispatchers.IO) {
+                                    (appContextForSync as? ParentApp)?.nearbyHost?.syncNow() ?: false
+                                }
+                                nearbyLastTryFailed = !reached
+                                nearbyChildName = nearbyStore.childName()
+                                nearbyDisplayName = nearbyStore.displayName()
+                                nearbyDeviceModel = nearbyStore.deviceModel()
+                                nearbyLastSyncedAtMs = nearbyStore.lastSyncedAtMs
+                                nearbyStats = nearbyStore.lastStats()
+                                nearbySyncing = false
+                            }
+                        },
                         modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp)
                     )
                 } else {
@@ -276,7 +308,19 @@ fun DashboardScreen(
                             .clickable(onClick = onOpenSelfTracking)
                     ) {
                         Column(Modifier.padding(16.dp)) {
-                            Text("My screen time", style = MaterialTheme.typography.titleMedium)
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Text(
+                                    selfProfile?.name?.takeIf { it.isNotBlank() && it != "Me" }
+                                        ?: "My screen time",
+                                    style = MaterialTheme.typography.titleMedium
+                                )
+                                if (selfProfile != null) {
+                                    TextButton(onClick = { renaming = RenameTarget.MY_PHONE }) { Text("Rename") }
+                                }
+                            }
                             Spacer(Modifier.height(4.dp))
                             Text(
                                 "Track and limit your own screen time on this device too.",
@@ -305,6 +349,36 @@ fun DashboardScreen(
                 )
             }
         }
+    }
+
+    renaming?.let { target ->
+        RenameDialog(
+            title = if (target == RenameTarget.MY_PHONE) "Name this phone" else "Name their phone",
+            explanation = if (target == RenameTarget.MY_PHONE) {
+                "What to call your own phone on this screen."
+            } else {
+                "What to call their phone on this screen. It only changes the name here, not on theirs."
+            },
+            initial = if (target == RenameTarget.MY_PHONE) {
+                selfProfile?.name.orEmpty().takeIf { it != "Me" }.orEmpty()
+            } else {
+                nearbyDisplayName.orEmpty()
+            },
+            onDismiss = { renaming = null },
+            onSave = { name ->
+                when (target) {
+                    RenameTarget.MY_PHONE -> scope.launch {
+                        val self = selfProfile
+                        if (self != null) repository.renameProfile(parentUid, self.id, name)
+                    }
+                    RenameTarget.KID_PHONE -> {
+                        nearbyStore.rename(name)
+                        nearbyDisplayName = nearbyStore.displayName()
+                    }
+                }
+                renaming = null
+            }
+        )
     }
 
     if (showAddDialog) {
@@ -360,20 +434,51 @@ fun DashboardScreen(
     }
 
     if (showFeedbackDialog) {
+        val feedbackContext = LocalContext.current
         FeedbackDialog(
+            // A local build has nowhere to send anything, so it says so and hands the text to
+            // whatever the person already uses. Silently swallowing it - which is what a no-op
+            // submit did - is worse than not offering feedback at all.
+            sendsItself = !Backend.IS_LOCAL,
             onDismiss = { showFeedbackDialog = false },
             onSubmit = { text, onError ->
-                scope.launch {
-                    try {
-                        repository.submitFeedback(
-                            parentUid = parentUid,
-                            text = text,
-                            appVersion = BuildConfig.VERSION_NAME,
-                            device = "${Build.MANUFACTURER} ${Build.MODEL}, Android ${Build.VERSION.RELEASE}"
+                val device = "${Build.MANUFACTURER} ${Build.MODEL}, Android ${Build.VERSION.RELEASE}"
+                if (Backend.IS_LOCAL) {
+                    val sent = runCatching {
+                        feedbackContext.startActivity(
+                            Intent.createChooser(
+                                Intent(Intent.ACTION_SEND).apply {
+                                    type = "text/plain"
+                                    putExtra(Intent.EXTRA_SUBJECT, "OpenScreenTime feedback")
+                                    putExtra(
+                                        Intent.EXTRA_TEXT,
+                                        buildString {
+                                            appendLine(text)
+                                            appendLine()
+                                            appendLine("---")
+                                            appendLine("OpenScreenTime Parent " + BuildConfig.VERSION_NAME)
+                                            append(device)
+                                        }
+                                    )
+                                },
+                                "Send feedback with"
+                            )
                         )
-                        showFeedbackDialog = false
-                    } catch (e: Exception) {
-                        onError()
+                    }.isSuccess
+                    if (sent) showFeedbackDialog = false else onError()
+                } else {
+                    scope.launch {
+                        try {
+                            repository.submitFeedback(
+                                parentUid = parentUid,
+                                text = text,
+                                appVersion = BuildConfig.VERSION_NAME,
+                                device = device
+                            )
+                            showFeedbackDialog = false
+                        } catch (e: Exception) {
+                            onError()
+                        }
                     }
                 }
             }
@@ -621,7 +726,12 @@ private fun AddChildDialog(onDismiss: () -> Unit, onCreate: (String) -> Unit) {
  * defeating the point of keeping it out of the public repo (#21).
  */
 @Composable
-private fun FeedbackDialog(onDismiss: () -> Unit, onSubmit: (text: String, onError: () -> Unit) -> Unit) {
+private fun FeedbackDialog(
+    /** False in a local build: there is no server to send to, so the person sends it themselves. */
+    sendsItself: Boolean,
+    onDismiss: () -> Unit,
+    onSubmit: (text: String, onError: () -> Unit) -> Unit
+) {
     var text by remember { mutableStateOf("") }
     var sending by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf(false) }
@@ -632,6 +742,15 @@ private fun FeedbackDialog(onDismiss: () -> Unit, onSubmit: (text: String, onErr
         text = {
             DialogTestTagRoot {
                 Column {
+                    if (!sendsItself) {
+                        Text(
+                            "This build doesn't send anything anywhere. Writing here opens your own " +
+                                "email or messaging app with the text ready, and you choose where it " +
+                                "goes - the project's issue tracker is a good place.",
+                            style = MaterialTheme.typography.bodySmall
+                        )
+                        Spacer(Modifier.height(12.dp))
+                    }
                     OutlinedTextField(
                         value = text,
                         onValueChange = { text = it },
@@ -641,7 +760,14 @@ private fun FeedbackDialog(onDismiss: () -> Unit, onSubmit: (text: String, onErr
                     )
                     if (error) {
                         Spacer(Modifier.height(8.dp))
-                        Text("Couldn't send - check your connection and try again.", color = MaterialTheme.colorScheme.error)
+                        Text(
+                            if (sendsItself) {
+                                "Couldn't send - check your connection and try again."
+                            } else {
+                                "Couldn't open an app to send it."
+                            },
+                            color = MaterialTheme.colorScheme.error
+                        )
                     }
                 }
             }
@@ -819,12 +945,20 @@ private fun PasscodePromptCard(onSetPasscode: () -> Unit, modifier: Modifier = M
  * actually live in a local build - on the child's own phone, behind the family passcode - and what
  * the other build is for, without making either sound like a mistake.
  */
+/** Which name a rename dialog is about. */
+private enum class RenameTarget { MY_PHONE, KID_PHONE }
+
 @Composable
 private fun LocalOnlyKidCard(
     linkedChildName: String?,
+    deviceModel: String?,
     lastSyncedAtMs: Long,
     lastStats: DailyStats?,
+    syncing: Boolean,
+    lastTryFailed: Boolean,
     onLink: () -> Unit,
+    onRename: () -> Unit,
+    onSyncNow: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     Card(
@@ -853,14 +987,28 @@ private fun LocalOnlyKidCard(
                     modifier = Modifier.fillMaxWidth().testTag("dashboard_link_kid_phone")
                 ) { Text("Link a kid's phone") }
             } else {
-                Text(
-                    linkedChildName,
-                    style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.colorScheme.onSecondaryContainer
-                )
-                Spacer(Modifier.height(4.dp))
-                // Always beside the numbers, never implied to be live: these two phones are apart
-                // most of the day, and yesterday evening's usage must not read as "right now".
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Column(Modifier.weight(1f)) {
+                        Text(
+                            linkedChildName,
+                            style = MaterialTheme.typography.titleMedium,
+                            color = MaterialTheme.colorScheme.onSecondaryContainer
+                        )
+                        if (deviceModel != null) {
+                            Text(
+                                deviceModel,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSecondaryContainer
+                            )
+                        }
+                    }
+                    TextButton(onClick = onRename) { Text("Rename") }
+                }
+                // Always next to the numbers: these two phones are apart most of the day, and last
+                // night's usage must never read as what is happening now.
                 Text(
                     lastSyncedDescription(lastSyncedAtMs),
                     style = MaterialTheme.typography.bodySmall,
@@ -874,13 +1022,71 @@ private fun LocalOnlyKidCard(
                     }
                 }
                 Spacer(Modifier.height(12.dp))
-                OutlinedButton(
-                    onClick = onLink,
-                    modifier = Modifier.fillMaxWidth()
-                ) { Text("Link settings") }
+                Button(
+                    enabled = !syncing,
+                    onClick = onSyncNow,
+                    modifier = Modifier.fillMaxWidth().testTag("dashboard_sync_now")
+                ) { Text(if (syncing) "Trying their phone..." else "Sync now") }
+                Spacer(Modifier.height(4.dp))
+                // Said every time, not only after a failure: a parent tapping this on the bus
+                // deserves to know before they wonder why nothing happened.
+                Text(
+                    if (lastTryFailed) {
+                        "Couldn't reach their phone. Both phones have to be on the same Wi-Fi and " +
+                            "awake - this won't work over mobile data, or on a guest network that " +
+                            "keeps phones apart."
+                    } else {
+                        "Works only while both phones are on the same Wi-Fi and awake."
+                    },
+                    style = MaterialTheme.typography.bodySmall,
+                    color = if (lastTryFailed) {
+                        MaterialTheme.colorScheme.error
+                    } else {
+                        MaterialTheme.colorScheme.onSecondaryContainer
+                    }
+                )
+                Spacer(Modifier.height(8.dp))
+                OutlinedButton(onClick = onLink, modifier = Modifier.fillMaxWidth()) { Text("Link settings") }
             }
         }
     }
+}
+
+/**
+ * Naming a phone. Deliberately a person's own label rather than anything sent anywhere: on a local
+ * build the other phone has its own name for itself, and a parent's home screen is theirs to make
+ * legible.
+ */
+@Composable
+private fun RenameDialog(
+    title: String,
+    explanation: String,
+    initial: String,
+    onDismiss: () -> Unit,
+    onSave: (String) -> Unit
+) {
+    var name by remember { mutableStateOf(initial) }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(title) },
+        text = {
+            Column {
+                Text(explanation, style = MaterialTheme.typography.bodySmall)
+                Spacer(Modifier.height(12.dp))
+                OutlinedTextField(
+                    value = name,
+                    onValueChange = { name = it.take(30) },
+                    singleLine = true,
+                    label = { Text("Name") },
+                    modifier = Modifier.fillMaxWidth().testTag("rename_field")
+                )
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = { onSave(name.trim()) }, enabled = name.isNotBlank()) { Text("Save") }
+        },
+        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } }
+    )
 }
 
 /** Puts a pairing code on the clipboard (Android 13+ shows its own "Copied" confirmation). */

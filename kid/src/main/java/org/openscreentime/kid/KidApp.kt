@@ -8,6 +8,7 @@ import android.os.Build
 import androidx.work.ExistingPeriodicWorkPolicy
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
+import org.openscreentime.kid.nearby.NearbySyncRunner
 import org.openscreentime.shared.util.CrashNote
 import org.openscreentime.kid.monitor.LiveChildState
 import org.openscreentime.kid.ui.FocusLauncherActivity
@@ -20,6 +21,9 @@ import java.util.concurrent.TimeUnit
 class KidApp : Application() {
     val repository: FamilyRepository by lazy { Backend.createRepository(this) }
 
+    /** Listens for the linked parent's phone, so "Sync now" works from their end too. */
+    private var nearbyListening: java.io.Closeable? = null
+
     override fun onCreate() {
         super.onCreate()
         CrashNote.install(this, "OpenScreenTime Kid", BuildConfig.VERSION_NAME)
@@ -30,6 +34,7 @@ class KidApp : Application() {
         createNotificationChannels()
         scheduleSync()
         startLimitsListener()
+        startNearbyHost()
     }
 
     private fun createNotificationChannels() {
@@ -75,6 +80,13 @@ class KidApp : Application() {
                 )
             }
         }
+    }
+
+    /** Safe to call again after linking; a second call replaces the first listener. */
+    fun startNearbyHost() {
+        if (!Backend.IS_LOCAL) return
+        nearbyListening?.let { runCatching { it.close() } }
+        nearbyListening = NearbySyncRunner(this).host(repository)
     }
 
     companion object {

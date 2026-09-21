@@ -41,6 +41,8 @@ class NearbyLinkStore(private val store: KeyValueStore) {
         remove(KEY_LAST_SYNCED)
         remove(KEY_LAST_STATS)
         remove(KEY_CHILD_NAME)
+        remove(KEY_CUSTOM_NAME)
+        remove(KEY_DEVICE_MODEL)
     }
 
     /** 0 when these two phones have never managed to reach each other. */
@@ -53,8 +55,23 @@ class NearbyLinkStore(private val store: KeyValueStore) {
     fun saveReport(report: NearbyMessage.UsageReport, atMs: Long) = store.edit {
         putString(KEY_LAST_STATS, json.encodeToString(report.stats))
         putString(KEY_CHILD_NAME, report.childName)
+        if (report.deviceModel.isNotBlank()) putString(KEY_DEVICE_MODEL, report.deviceModel)
         putLong(KEY_LAST_SYNCED, atMs)
     }
+
+    /**
+     * What to call this phone on screen: what a parent named it, or failing that what it calls
+     * itself. A parent naming it here changes nothing on the other phone - it is their own label
+     * for their own home screen, which is the whole point of being able to set it.
+     */
+    fun displayName(): String? = store.getString(KEY_CUSTOM_NAME, null) ?: childName()
+
+    fun rename(name: String) = store.edit {
+        if (name.isBlank()) remove(KEY_CUSTOM_NAME) else putString(KEY_CUSTOM_NAME, name.trim())
+    }
+
+    /** The model the other phone reported, e.g. "Pixel 7a" - shown under the name. */
+    fun deviceModel(): String? = store.getString(KEY_DEVICE_MODEL, null)?.takeIf { it.isNotBlank() }
 
     fun lastStats(): DailyStats? = store.getString(KEY_LAST_STATS, null)
         ?.let { runCatching { json.decodeFromString<DailyStats>(it) }.getOrNull() }
@@ -67,5 +84,7 @@ class NearbyLinkStore(private val store: KeyValueStore) {
         const val KEY_LAST_SYNCED = "nearby_last_synced"
         const val KEY_LAST_STATS = "nearby_last_stats"
         const val KEY_CHILD_NAME = "nearby_child_name"
+        const val KEY_CUSTOM_NAME = "nearby_custom_name"
+        const val KEY_DEVICE_MODEL = "nearby_device_model"
     }
 }

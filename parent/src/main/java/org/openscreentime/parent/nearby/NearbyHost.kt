@@ -48,7 +48,7 @@ class NearbyHost(private val context: Context) : Closeable {
         if (listening != null) return
         scope.launch {
             listening = runCatching {
-                LanNearbyTransport(context, link).host { message -> answer(message) }
+                LanNearbyTransport(context, link, LanNearbyTransport.Role.PARENT).host { message -> answer(message) }
             }.onFailure { Log.w(TAG, "Could not listen for a linked phone", it) }.getOrNull()
         }
     }
@@ -77,6 +77,25 @@ class NearbyHost(private val context: Context) : Closeable {
             onUsage = { },
             onRequest = { onRequest(it) }
         )
+    }
+
+    /**
+     * Starts an exchange from this end: send what this phone wants, and take back whatever the kid's
+     * phone has been used for. Blocking, so callers run it off the main thread. False when their
+     * phone could not be reached, which is the ordinary case while the two are apart.
+     */
+    fun syncNow(): Boolean {
+        val link = store.linkStore.link() ?: return false
+        val profile = currentProfile() ?: return false
+        val update = NearbySync.limitsFrom(profile, UUID.randomUUID().toString())
+        val answer = runCatching {
+            LanNearbyTransport(context, link, LanNearbyTransport.Role.PARENT).ask(update)
+        }.onFailure { Log.d(TAG, "Their phone is not reachable right now", it) }.getOrNull()
+
+        if (answer !is NearbyMessage.UsageReport) return false
+        if (!seen.claim(answer.id)) return true
+        store.linkStore.saveReport(answer, System.currentTimeMillis())
+        return true
     }
 
     override fun close() {

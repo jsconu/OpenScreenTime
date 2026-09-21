@@ -27,8 +27,19 @@ import org.openscreentime.shared.model.DailyStats
 object NearbySync {
 
     /** What the kid's phone sends when it gets a chance: today, plus any days the parent may have missed. */
-    fun report(id: String, childName: String, today: DailyStats, recentDays: List<DailyStats>): NearbyMessage =
-        NearbyMessage.UsageReport(id = id, childName = childName, stats = today, recentDays = recentDays)
+    fun report(
+        id: String,
+        childName: String,
+        today: DailyStats,
+        recentDays: List<DailyStats>,
+        deviceModel: String = ""
+    ): NearbyMessage = NearbyMessage.UsageReport(
+        id = id,
+        childName = childName,
+        deviceModel = deviceModel,
+        stats = today,
+        recentDays = recentDays
+    )
 
     /** What the parent's phone sends back: the limits this child's phone should be keeping to. */
     fun limitsFrom(profile: ChildProfile, id: String): NearbyMessage.LimitsUpdate = NearbyMessage.LimitsUpdate(
@@ -88,5 +99,23 @@ object NearbySync {
         }
         // A parent's phone has no use for these: they are what it sends, not what it receives.
         is NearbyMessage.Answer, is NearbyMessage.LimitsUpdate -> null
+    }
+
+    /**
+     * The kid's phone answering an exchange the parent started: apply what arrived, and hand back
+     * the same report it would have sent on its own. One round trip either way round.
+     */
+    fun answerOnKid(
+        message: NearbyMessage,
+        report: () -> NearbyMessage.UsageReport,
+        onLimits: (NearbyMessage.LimitsUpdate) -> Unit
+    ): NearbyMessage? = when (message) {
+        is NearbyMessage.LimitsUpdate -> {
+            onLimits(message)
+            report()
+        }
+        // An answer to something this phone asked is handled where it was asked, not here; the rest
+        // is what a kid's phone sends, never what it receives.
+        else -> null
     }
 }

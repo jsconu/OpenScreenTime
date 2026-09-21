@@ -58,6 +58,9 @@ class FirebaseFamilyRepository(
     override suspend fun regeneratePairingCode(parentUid: String, childId: String): String =
         children.regeneratePairingCode(parentUid, childId)
 
+    override suspend fun renameProfile(parentUid: String, childId: String, name: String) =
+        children.rename(parentUid, childId, name)
+
     override suspend fun setLocked(parentUid: String, childId: String, locked: Boolean) =
         children.setLocked(parentUid, childId, locked)
 

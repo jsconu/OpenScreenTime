@@ -182,7 +182,12 @@ class MainActivity : ComponentActivity() {
                 // Just linked: reach their phone now rather than in fifteen minutes' time, and keep
                 // trying for a few seconds so the parent sees it while still holding the phone.
                 LaunchedEffect(linkedParentName) {
-                    if (linkedParentName != null) syncNearbyNow(attempts = 5)
+                    if (linkedParentName != null) {
+                        // Listen under the new key straight away, so the parent's "Sync now" works
+                        // without restarting this app.
+                        (application as KidApp).startNearbyHost()
+                        syncNearbyNow(attempts = 5)
+                    }
                 }
 
                 // Opening this app is the best signal there is that the phone is awake and probably

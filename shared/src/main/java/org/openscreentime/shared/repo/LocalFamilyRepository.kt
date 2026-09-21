@@ -119,6 +119,9 @@ class LocalFamilyRepository(
 
     // --- Limits and state ---
 
+    override suspend fun renameProfile(parentUid: String, childId: String, name: String) =
+        edit { it.copy(name = name.trim().ifBlank { it.name }) }
+
     override suspend fun setLocked(parentUid: String, childId: String, locked: Boolean) =
         edit { it.copy(locked = locked) }
 

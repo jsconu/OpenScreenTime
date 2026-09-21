@@ -44,6 +44,9 @@ interface FamilyRepository {
     @RemoteOnly suspend fun claimPairingCode(code: String): Pair<String, ChildProfile>
     @RemoteOnly suspend fun deleteChild(parentUid: String, childId: String)
 
+    /** What this person is called on screen. A parent naming their own phone, or a child's. */
+    suspend fun renameProfile(parentUid: String, childId: String, name: String)
+
     /** The owner's own tracked profile, created on first use. Works in both builds. */
     suspend fun getOrCreateSelfProfile(parentUid: String, name: String): ChildProfile
 
