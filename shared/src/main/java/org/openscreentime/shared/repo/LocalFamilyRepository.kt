@@ -36,6 +36,10 @@ import java.util.Locale
 class LocalFamilyRepository(
     context: Context,
     private val todayStats: () -> DailyStats,
+    /** What to call this phone's person before they have named themselves. */
+    private val defaultName: String = "Me",
+    /** True in the parent app, where the one profile is the owner's own (see [ChildProfile.isSelf]). */
+    private val isSelfProfile: Boolean = true,
     private val now: () -> Long = System::currentTimeMillis
 ) : FamilyRepository {
 
@@ -58,30 +62,45 @@ class LocalFamilyRepository(
         for (listener in profileListeners.toList()) listener(profile)
     }
 
+    /**
+     * This phone's profile, or the one it starts life with. Never null: a local build has exactly
+     * one profile and every screen is entitled to it, which is what went wrong when this returned
+     * nothing before a person had opted into tracking - the screen sat on "Loading..." for good.
+     */
+    private fun currentOrDefault(): ChildProfile = storedProfile() ?: ChildProfile(
+        id = Profiles.SELF_CHILD_ID,
+        name = defaultName,
+        paired = true,
+        deviceUid = LOCAL_UID,
+        isSelf = isSelfProfile
+    )
+
     /** Applies [change] to the stored profile, creating it first if this is a fresh install. */
-    private fun edit(change: (ChildProfile) -> ChildProfile) {
-        val current = storedProfile()
-            ?: ChildProfile(id = Profiles.SELF_CHILD_ID, paired = true, deviceUid = LOCAL_UID)
-        save(change(current))
-    }
+    private fun edit(change: (ChildProfile) -> ChildProfile) = save(change(currentOrDefault()))
 
     override suspend fun getOrCreateSelfProfile(parentUid: String, name: String): ChildProfile {
         storedProfile()?.let { return it }
-        val fresh = ChildProfile(
-            id = Profiles.SELF_CHILD_ID,
-            name = name,
-            paired = true,
-            deviceUid = LOCAL_UID,
-            isSelf = true
-        )
+        val fresh = currentOrDefault().copy(name = name, isSelf = true)
         save(fresh)
         return fresh
     }
 
     override fun listenChild(parentUid: String, childId: String, onChange: (ChildProfile) -> Unit): Registration {
-        storedProfile()?.let(onChange)
+        onChange(currentOrDefault())
         profileListeners += onChange
         return Registration { profileListeners -= onChange }
+    }
+
+    /**
+     * The one profile this phone has. The parent app's own screen-time page reads its profile from
+     * here rather than from [listenChild], so this cannot be the empty no-op it looks like it could
+     * be - an empty list leaves that page loading forever.
+     */
+    override fun listenChildren(parentUid: String, onChange: (List<ChildProfile>) -> Unit): Registration {
+        val listener: (ChildProfile) -> Unit = { onChange(listOf(it)) }
+        listener(currentOrDefault())
+        profileListeners += listener
+        return Registration { profileListeners -= listener }
     }
 
     // --- Passcode: the only gate on changing limits when there is no second phone ---
@@ -255,11 +274,6 @@ class LocalFamilyRepository(
     override suspend fun verifyAccountPassword(password: String) = false
 
     override suspend fun getParentSelfProfile(parentUid: String): ChildProfile? = null
-
-    override fun listenChildren(parentUid: String, onChange: (List<ChildProfile>) -> Unit): Registration {
-        onChange(emptyList())
-        return Registration { }
-    }
 
     override suspend fun proposeLimits(
         parentUid: String,

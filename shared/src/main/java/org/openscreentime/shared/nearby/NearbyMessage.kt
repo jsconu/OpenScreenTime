@@ -6,10 +6,11 @@ import kotlinx.serialization.json.Json
 /**
  * What a kid's phone and a parent's phone say to each other over a nearby link (see [NearbyLink]).
  *
- * This is the whole vocabulary, and it is deliberately tiny: a local build has no server to
- * negotiate anything with, so the two phones only ever exchange a request and an answer to it.
- * Nothing here carries usage data - a parent who wants to see how a phone is being used walks over
- * and looks at it, or builds the cloud flavor.
+ * This is the whole vocabulary. It covers what a family actually needs between two phones: the
+ * kid's phone reports what it has been used for, the parent's phone sends back the limits it should
+ * keep to, and either side can raise a request - more time, or a suggested change - that the other
+ * answers. That is a sync, not just a message channel: after one exchange on the home Wi-Fi, the
+ * parent's phone knows today's usage and the kid's phone knows the current limits.
  *
  * Every message is wrapped in an authenticated envelope before it leaves the phone (see
  * [NearbyEnvelope]); nothing on this link is accepted without the key the two phones agreed when
@@ -45,6 +46,36 @@ sealed class NearbyMessage {
         val minutes: Int? = null,
         val dailyLimitMinutes: Int? = null,
         val appliedLimits: Map<String, Int> = emptyMap()
+    ) : NearbyMessage()
+
+    /**
+     * The kid's phone telling the parent's phone how the day has gone. Sent whenever the two are on
+     * the same network, so a parent sees usage without the child's phone having to reach a server -
+     * and sees nothing at all while they are apart, which is the honest cost of keeping it local.
+     */
+    @Serializable
+    data class UsageReport(
+        override val id: String,
+        val childName: String,
+        val stats: org.openscreentime.shared.model.DailyStats,
+        /** Earlier days the parent's phone may not have seen yet, oldest first. */
+        val recentDays: List<org.openscreentime.shared.model.DailyStats> = emptyList()
+    ) : NearbyMessage()
+
+    /**
+     * The parent's phone sending limits down to the kid's phone: the same fields a parent can
+     * change in the app, applied on arrival. This is what makes the parent's phone a place to
+     * manage from, rather than somewhere to read a report.
+     */
+    @Serializable
+    data class LimitsUpdate(
+        override val id: String,
+        val dailyLimitMinutes: Int? = null,
+        val appLimits: Map<String, Int>? = null,
+        val locked: Boolean? = null,
+        val bedtimeStartMinutes: Int? = null,
+        val bedtimeEndMinutes: Int? = null,
+        val temporaryUnlockUntilMs: Long? = null
     ) : NearbyMessage()
 
     fun encode(): ByteArray = json.encodeToString(serializer(), this).toByteArray(Charsets.UTF_8)

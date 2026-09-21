@@ -30,7 +30,9 @@ object Backend {
         context = app,
         todayStats = {
             buildDailyStats(UsageStore(app), LiveChildState.trackingChoices(), System.currentTimeMillis())
-        }
+        },
+        defaultName = "This phone",
+        isSelfProfile = false
     )
 
     /** Nothing to wire up: there is no backend service to point anywhere. */
