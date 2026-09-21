@@ -360,7 +360,10 @@ You'll need [Android Studio](https://developer.android.com/studio)
    them into the console's Rules tab, or install the
    [Firebase CLI](https://firebase.google.com/docs/cli) and run
    `firebase deploy --only firestore:rules` from a directory containing a
-   `firebase.json` pointing at that file.
+   `firebase.json` pointing at that file. **Re-publish them whenever
+   `firebase/firestore.rules` changes in this repo** - the apps and the rules
+   are one design, and a build that writes something the deployed rules don't
+   know about yet is refused (pairing is the first place you'd notice).
 6. Open the project root in Android Studio and let it sync. Run the `kid`
    configuration on one device/emulator and `parent` on another (or the
    same emulator with two profiles) to test pairing end-to-end.
