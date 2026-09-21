@@ -20,8 +20,13 @@ child's phone has to be Android for now.
 
 ## Part 1 - Get the two files onto the phone **[APK only]**
 
-You should have been given two files: `parent-release.apk` and `kid-release.apk`. An `.apk` file is an
-Android app.
+You should have two files: a parent app and a kid app, named something like `parent-debug.apk` and
+`kid-debug.apk`. An `.apk` file is an Android app.
+
+> **Don't have them yet?** There's no download link to send you — this project doesn't publish ready-made
+> APKs, because a build is tied to whoever's Firebase project it was built against, and that person can see
+> the data. You (or whoever set this up for your family) build them against your own project, free, in about
+> 45 minutes: [SELF_HOSTING.md](SELF_HOSTING.md). Come back here once you have the two files.
 
 1. On **each phone**, get the file it needs (the parent app on the parent's phone, the kid app on the kid's
    phone). Any of these works:

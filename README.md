@@ -341,6 +341,11 @@ an initial pass, not a full audit).
 
 ## Building
 
+> **Just want to run it for your own family?**
+> [**docs/SELF_HOSTING.md**](docs/SELF_HOSTING.md) is the same process written out step by
+> step for someone who isn't a developer — about 45 minutes, start to finish, no cost. The
+> summary below assumes you already know your way around Android Studio.
+
 You'll need [Android Studio](https://developer.android.com/studio)
 (Ladybug or newer) with a JDK 17 and Android SDK 35.
 
@@ -399,9 +404,15 @@ fork and even sell it. That's intentional. But because this is an app that can s
 use, it matters who you trust to run it, so here is how to tell the official project apart:
 
 - **The only official source is this repository:**
-  <https://github.com/jsconu/OpenScreenTime>. Official releases and any official store listing will be
-  linked from here. If you found the app somewhere that this page doesn't link to, it isn't an
-  official build.
+  <https://github.com/jsconu/OpenScreenTime>. Any official release or store listing will be linked
+  from here. If you found the app somewhere that this page doesn't link to, it isn't an official
+  build.
+- **This project doesn't publish ready-made APKs, on purpose.** Every build of these apps is
+  wired at build time to one Firebase project, and whoever owns that project can see the data in
+  it. Handing out a binary would make this project's maintainer the operator of your child's
+  usage data. Instead you build it against a Firebase project of your own — see
+  [docs/SELF_HOSTING.md](docs/SELF_HOSTING.md) — and nobody but you holds your family's data.
+  It costs nothing and takes about 45 minutes.
 - **This project has no ads, no in-app purchases, no analytics beyond crash reports, and no paid
   tier.** If an app using this code asks you to pay or shows ads, it's someone else's fork.
 - **Check where the data goes.** Every build talks to a Firebase project run by whoever published it.
