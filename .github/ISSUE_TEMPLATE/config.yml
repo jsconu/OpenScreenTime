@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Security vulnerability
+    url: https://github.com/jsconu/OpenScreenTime/security/advisories/new
+    about: Please report anything exploitable privately, not as a public issue. See SECURITY.md.
+  - name: Trouble installing or pairing
+    url: https://github.com/jsconu/OpenScreenTime/blob/main/docs/INSTALL_ANDROID.md
+    about: The step-by-step install guide covers permissions, Play Protect, pairing and the common failures.
