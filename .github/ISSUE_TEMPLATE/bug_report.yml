@@ -24,7 +24,9 @@ body:
     id: version
     attributes:
       label: App version
-      description: Shown at the bottom of the parent app's settings screen.
+      description: >
+        The app doesn't display this yet, so read it from Android Settings → Apps →
+        OpenScreenTime Parent/Kid, at the bottom of the App info page.
       placeholder: "e.g. 0.1.0 (12)"
     validations:
       required: true
