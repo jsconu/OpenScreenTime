@@ -3,8 +3,8 @@ rules_version = '2';
 // Data model:
 //   parents/{parentUid}                                  - one doc per parent account
 //   parents/{parentUid}/linkedDevices/{deviceUid}         - a kid device that claimed a pairing code for
-//                                                           this parent (#18, #39); created only in the
-//                                                           same transaction as that claim
+//                                                           this parent (#18, #39); writable only by the
+//                                                           device that already claimed that code
 //   parents/{parentUid}/children/{childId}                - a child profile + limits;
 //                                                           the parent's own self-tracked
 //                                                           profile (#8) always lives at
@@ -98,9 +98,11 @@ service cloud.firestore {
 
       // Which kid devices are linked to this parent (so they can read the parent's self-tracked stats if
       // the parent opts in - #18, visible by default, not a separate opt-in). One doc per device, keyed by
-      // its uid. A device can only create ITS OWN doc, and only in the same transaction that claims a
-      // live pairing code belonging to THIS parent (getAfter sees the post-transaction code doc), so
-      // nobody can link themselves to a family they haven't paired with. Only the parent can read or
+      // its uid. A device can only create ITS OWN doc, and only while naming a pairing code that it has
+      // itself claimed from THIS parent, so nobody can link themselves to a family they haven't paired
+      // with. (getAfter, not get, so this also holds when the write is part of a batch or transaction;
+      // the client writes it just after the claim, deliberately NOT inside it - a refusal here must
+      // never fail the pairing itself, which is what it did before.) Only the parent can read or
       // remove them. (The parent doc itself is readable only by the parent - the passcode hash/salt live
       // there - and get()/exists() calls in these rules bypass permissions without exposing contents.)
       match /linkedDevices/{deviceUid} {
@@ -119,7 +121,7 @@ service cloud.firestore {
         allow read, write: if request.auth != null && request.auth.uid == parentUid;
 
         // The paired kid device may read its own child doc (to pick up limit changes).
-        allow get: if request.auth != null && resource.data.deviceUid == request.auth.uid;
+        allow get: if request.auth != null && resource.data.get('deviceUid', '') == request.auth.uid;
 
         // Any device linked to this parent (see linkedDeviceUids above) may also read
         // the parent's own self-tracked profile - see #18. isSelf profiles always live
@@ -133,8 +135,14 @@ service cloud.firestore {
         // may change, and only as part of the same transaction that claims this child's own
         // live pairing code (getAfter sees the post-transaction code doc). So a stranger
         // can't claim an unpaired child without its unexpired code.
+        //
+        // get('deviceUid', null), not resource.data.deviceUid: reading a field that ISN'T
+        // THERE is an evaluation error, which denies the claim outright. A never-paired
+        // child written without the key at all (the iOS parent app used to drop nil fields)
+        // would otherwise be impossible to pair, with no way to tell that apart from a
+        // genuinely refused claim.
         allow update: if request.auth != null
-          && resource.data.deviceUid == null
+          && resource.data.get('deviceUid', null) == null
           && request.resource.data.deviceUid == request.auth.uid
           && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['deviceUid', 'paired'])
           && getAfter(/databases/$(database)/documents/pairingCodes/$(resource.data.pairingCode)).data.claimedByUid == request.auth.uid
