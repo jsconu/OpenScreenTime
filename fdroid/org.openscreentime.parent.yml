@@ -1,0 +1,51 @@
+Categories:
+  - Time
+  - System
+License: MIT
+AuthorName: jsconu
+SourceCode: https://github.com/jsconu/OpenScreenTime
+IssueTracker: https://github.com/jsconu/OpenScreenTime/issues
+Changelog: https://github.com/jsconu/OpenScreenTime/releases
+
+AutoName: OpenScreenTime Parent
+
+RepoType: git
+Repo: https://github.com/jsconu/OpenScreenTime.git
+
+Builds:
+  - versionName: 0.2.0-local
+    versionCode: 2
+    commit: v0.2.0-beta
+    subdir: parent
+    gradle:
+      - local
+    # This repository also contains a "cloud" flavour, which pairs two phones through a Firebase
+    # project that the person building it runs themselves. None of it is in the flavour built here:
+    # the :cloud module is a dependency of the cloud flavour only, so a local build resolves no
+    # Firebase or Play Services artefacts at all. This is checkable in the output - the APK contains
+    # zero references to com/google/firebase - and the scanignore entries below cover the files that
+    # merely declare those coordinates for the other flavour.
+    scanignore:
+      - cloud/build.gradle.kts
+      - gradle/libs.versions.toml
+    prebuild:
+      # The repository does not check in a gradle-wrapper.jar binary (see its README), so there is
+      # nothing to delete here; F-Droid's own gradle is used.
+      - echo "no bundled binaries"
+
+MaintainerNotes: |-
+  Two apps are built from this one repository: org.openscreentime.parent (this one) and
+  org.openscreentime.kid. They are separate installs on separate phones and share the :shared and
+  :shared-ui modules.
+
+  Flavours: "local" (built here) keeps everything on the phone and contains no cloud code; "cloud"
+  is for people who compile it themselves against their own Firebase project and is never
+  distributed. Always build the local flavour.
+
+  The optional website filter forwards DNS lookups to Cloudflare's 1.1.1.1 resolver while it is
+  switched on; it is off by default and the app is fully usable without it.
+
+AutoUpdateMode: Version
+UpdateCheckMode: Tags ^v[0-9.]+-beta$
+CurrentVersion: 0.2.0-local
+CurrentVersionCode: 2

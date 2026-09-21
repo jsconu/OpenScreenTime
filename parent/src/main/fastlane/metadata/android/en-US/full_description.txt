@@ -1,0 +1,28 @@
+OpenScreenTime is a free, open-source screen time tool for families, built as the opposite of the apps it competes with: no account, no subscription, no adverts, no engagement loops, and nothing sent anywhere.
+
+This is the <b>parent</b> app. It tracks and limits the phone it is installed on, and - if you link a child's phone - shows you how that phone is being used and sets its limits.
+
+<b>What it does on this phone</b>
+
+* Counts screen time, unlocks and per-app time
+* A daily limit, per-app limits, a bedtime window and an immediate lock
+* "Time that doesn't count": apps left out of the daily total, like an audiobook or a school app
+* A calm notification list, keeping everything but calls, texts, alarms and sign-in codes out of the shade
+* A weekly report and an under-goal streak
+* All of it behind a family passcode
+
+<b>What it does with a child's phone</b>
+
+Install OpenScreenTime Kid on their phone and link the two by scanning a QR code. While both phones are on the same Wi-Fi and awake, their phone reports its usage to yours and picks up whatever limits you set. Either phone can start a sync.
+
+<b>What it deliberately does not do</b>
+
+There is no server. Nothing about your family reaches this project or anyone else, because there is nowhere for it to go - this build contains no cloud code at all, which you can verify yourself in the APK.
+
+The cost of that honesty: while the two phones are apart - at school, at a friend's, on mobile data - nothing syncs. What you see is whatever arrived last, always shown with when it arrived, and a limit you change now reaches their phone when you are both home again.
+
+If you want remote control from anywhere, the source includes a "cloud" build you can compile against a Firebase project of your own, so that the data is still held by nobody but you. See docs/SELF_HOSTING.md.
+
+<b>One thing to know</b>
+
+Enforcement relies on Android's accessibility service. A child with physical access can turn it off or uninstall the app. This is a tool for a family that has agreed to use it, not a lock.

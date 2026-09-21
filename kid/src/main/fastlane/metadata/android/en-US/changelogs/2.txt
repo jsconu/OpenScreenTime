@@ -1,0 +1,8 @@
+First published build.
+
+Both apps keep everything on the phone they are installed on: no account, no server, and no cloud
+code in the build at all. Two phones can be linked by scanning a QR code, and then sync directly
+over your own Wi-Fi with nothing in between.
+
+Beta: no independent security audit, and limited coverage across phone manufacturers. Reports about
+specific phones are very welcome.

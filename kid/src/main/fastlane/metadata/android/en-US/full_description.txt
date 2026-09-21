@@ -1,0 +1,27 @@
+OpenScreenTime is a free, open-source screen time tool for families, built as the opposite of the apps it competes with: no account, no subscription, no adverts, no engagement loops, and nothing sent anywhere.
+
+This is the <b>kid</b> app. It goes on a child's phone, counts how the phone is used, and keeps to the limits a parent has set.
+
+<b>What it does</b>
+
+* Counts screen time, unlocks and per-app time on this phone
+* Keeps to a daily limit, per-app limits, a bedtime window and a parent's lock
+* A calm status screen: today at a glance, with no counters designed to be watched
+* A block screen that explains why, and suggests something else to do - never a countdown to stare at
+* Parent controls on this phone, behind the family passcode, so limits can be changed in person
+
+<b>Linking a parent's phone (optional)</b>
+
+Scan the code shown by OpenScreenTime Parent. After that, while both phones are on the same Wi-Fi and awake, this phone reports its usage and picks up new limits, and a child can ask for more time from the block screen.
+
+<b>Without a link, it still works</b>
+
+Everything above happens on this phone whether or not it is linked to anything. The limits live here, the counting happens here, and the enforcement never needed a network.
+
+<b>Where the data goes</b>
+
+Nowhere. There is no account and no server. The only thing that ever leaves this phone is what it sends directly to its linked parent's phone, over your own Wi-Fi, encrypted, with no server in between.
+
+<b>One thing to know</b>
+
+Enforcement relies on Android's accessibility service, which the install guide explains how to grant. A child with physical access can turn it off or uninstall the app. This is a tool for a family that has agreed to use it, not a lock.
