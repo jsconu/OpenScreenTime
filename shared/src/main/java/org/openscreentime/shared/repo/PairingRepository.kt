@@ -1,5 +1,6 @@
 package org.openscreentime.shared.repo
 
+import com.google.firebase.FirebaseApp
 import com.google.firebase.Timestamp
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
@@ -45,7 +46,11 @@ internal class PairingRepository(
             // Expired, used, or nonexistent codes aren't readable at all (see firestore.rules),
             // so they surface as a permission error rather than one of the messages above.
             if (e.code == FirebaseFirestoreException.Code.PERMISSION_DENIED) {
-                throw IllegalStateException("That code isn't active. Ask the parent for a new one.")
+                // The project id is shown so a mismatch between the two apps (or with the console) is easy to spot.
+                val project = runCatching { FirebaseApp.getInstance().options.projectId }.getOrNull() ?: "unknown"
+                throw IllegalStateException(
+                    "That code isn't active. Ask the parent for a new one. (Firebase refused it: project $project, PERMISSION_DENIED.)"
+                )
             }
             throw e
         }

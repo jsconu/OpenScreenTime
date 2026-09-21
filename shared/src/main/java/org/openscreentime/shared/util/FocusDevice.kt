@@ -70,8 +70,16 @@ class FocusMode(private val context: Context, private val launcher: ComponentNam
     /** What the home screen lists: the core apps first, then the allowed ones, A to Z. */
     fun homeApps(config: FocusConfig = this.config): List<FocusApp> {
         val labels = launchableLabels(context)
-        return focusHomePackages(labels.keys, resolveCoreAppPackages(context), config)
+        val listed = focusHomePackages(labels.keys, resolveCoreAppPackages(context), config)
             .mapNotNull { pkg -> labels[pkg]?.let { FocusApp(pkg, it) } }
+        // This app is always on its own home screen, even if the phone's app list couldn't be read.
+        return if (listed.any { it.packageName == context.packageName }) listed else listed + FocusApp(context.packageName, ownLabel())
+    }
+
+    private fun ownLabel(): String = try {
+        context.packageManager.getApplicationLabel(context.applicationInfo).toString()
+    } catch (e: Exception) {
+        "OpenScreenTime"
     }
 
     /** Every launchable app, A to Z - shown only while an "all apps" window is open. */

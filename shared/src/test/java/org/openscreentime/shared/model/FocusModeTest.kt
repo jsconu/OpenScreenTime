@@ -63,4 +63,11 @@ class FocusModeTest {
         assertEquals(FocusProfile.STANDARD, FocusProfile.fromWireValue("nonsense"))
         assertEquals(FocusProfile.TRAVEL, FocusProfile.fromWireValue("travel"))
     }
+
+    @Test
+    fun `either OpenScreenTime app is never shut out, even one that is not this phone's own`() {
+        assertTrue(isFocusAllowed("org.openscreentime.kid", on, essential, null, 0))
+        assertTrue(isFocusAllowed("org.openscreentime.parent", on, essential, null, 0))
+        assertFalse(isFocusAllowed("org.openscreentime2.other", on, essential, null, 0))
+    }
 }

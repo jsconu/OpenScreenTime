@@ -58,6 +58,9 @@ val TRAVEL_DEFAULT_PACKAGES: Set<String> = setOf(
     "com.booking", "com.google.android.calendar", "com.samsung.android.calendar", "com.google.android.apps.docs"
 )
 
+/** Both OpenScreenTime apps' package names start with this; dumb phone always lets them through. */
+const val OPENSCREENTIME_PACKAGE_PREFIX = "org.openscreentime."
+
 /**
  * True if [packageName] may be in front right now. Everything is allowed when Focus mode is off, during an
  * "all apps" window ([openUntilMs] in the future), or when nothing is in front. [essential] is what the
@@ -72,6 +75,8 @@ fun isFocusAllowed(
     nowMs: Long
 ): Boolean {
     if (!config.enabled || packageName == null) return true
+    // OpenScreenTime itself (either app, even if both are on one phone) is never shut out: it is the way to change this.
+    if (packageName.startsWith(OPENSCREENTIME_PACKAGE_PREFIX)) return true
     if (openUntilMs != null && openUntilMs > nowMs) return true
     if (packageName in essential || packageName in FOCUS_SYSTEM_PACKAGES || packageName in AUTHENTICATOR_PACKAGES) return true
     if (packageName in config.allowed) return true
