@@ -48,10 +48,15 @@ unzip -p parent-local-release.apk 'classes*.dex' | grep -ac 'com/google/firebase
 0
 ```
 
-Build recipes with `gradle: [local]` and `scanignore` limited to those two files are ready here, and
-I am happy to restructure the repository instead if you would rather not carry scanignore entries:
+The recipe here uses `gradle: [local]` with `scanignore` limited to exactly those two files. If you
+would rather not carry the exception, I can move the cloud flavour onto a branch of its own so the
+main branch declares no proprietary coordinates at all - say the word and I will do that rather
+than argue for the scanignore:
 
 https://github.com/jsconu/OpenScreenTime/tree/main/fdroid
+
+This is one of two merge requests; `org.openscreentime.kid` is submitted separately, on its own
+branch, as your CONTRIBUTING asks.
 
 ### Things I would rather declare up front
 

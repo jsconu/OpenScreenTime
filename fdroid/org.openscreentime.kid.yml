@@ -1,13 +1,11 @@
 Categories:
-  - Time
-  - System
+  - Time Tracker
+  - App Manager
 License: MIT
 AuthorName: jsconu
 SourceCode: https://github.com/jsconu/OpenScreenTime
 IssueTracker: https://github.com/jsconu/OpenScreenTime/issues
 Changelog: https://github.com/jsconu/OpenScreenTime/releases
-
-Name: OpenScreenTime Kid
 
 RepoType: git
 Repo: https://github.com/jsconu/OpenScreenTime.git
@@ -23,27 +21,32 @@ Builds:
     # project that the person building it runs themselves. None of it is in the flavour built here:
     # the :cloud module is a dependency of the cloud flavour only, so a local build resolves no
     # Firebase or Play Services artefacts at all. This is checkable in the output - the APK contains
-    # zero references to com/google/firebase - and the scanignore entries below cover the files that
-    # merely declare those coordinates for the other flavour.
+    # zero references to com/google/firebase - and the two files below merely declare those
+    # coordinates for the other flavour.
     scanignore:
       - cloud/build.gradle.kts
       - gradle/libs.versions.toml
 
-# No gradle-wrapper.jar is checked into this repository, so there is nothing to strip before
-# building; F-Droid's own gradle is used.
 MaintainerNotes: |-
   Two apps are built from this one repository: org.openscreentime.parent and
-  org.openscreentime.kid (this one). They are separate installs on separate phones and share the :shared and
-  :shared-ui modules.
+  org.openscreentime.kid (this one). They install on separate phones and share the :shared and :shared-ui
+  modules.
 
   Flavours: "local" (built here) keeps everything on the phone and contains no cloud code; "cloud"
-  is for people who compile it themselves against their own Firebase project and is never
-  distributed. Always build the local flavour.
+  is for people who compile it themselves against their own Firebase project, and is never
+  distributed as a binary by the author. Always build the local flavour.
+
+  AutoUpdateMode is None because the local flavour appends "-local" to versionName, so a tag cannot
+  be derived from it. That suffix is being dropped after this release, at which point this can
+  become "Version v%v".
 
   The optional website filter forwards DNS lookups to Cloudflare's 1.1.1.1 resolver while it is
-  switched on; it is off by default and the app is fully usable without it.
+  switched on. It is off by default and the app is fully usable without it.
 
-AutoUpdateMode: Version
-UpdateCheckMode: Tags ^v[0-9.]+-beta$
+  No gradle-wrapper.jar is checked into the repository, so there is nothing to strip before
+  building.
+
+AutoUpdateMode: None
+UpdateCheckMode: Tags
 CurrentVersion: 0.2.0-local
 CurrentVersionCode: 2

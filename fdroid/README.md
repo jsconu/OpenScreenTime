@@ -1,17 +1,17 @@
 # Getting OpenScreenTime into F-Droid
 
-Everything needed to submit these apps to [F-Droid](https://f-droid.org), and an honest account of
-what will be asked about.
+Everything needed to submit these apps, checked against
+[fdroiddata's CONTRIBUTING.md](https://gitlab.com/fdroid/fdroiddata/-/blob/master/CONTRIBUTING.md)
+and the [inclusion policy](https://f-droid.org/docs/Inclusion_Policy/).
 
-Two apps means **two of everything**: `org.openscreentime.parent` and `org.openscreentime.kid` are
-separate packages, separate metadata files and separate submissions.
+**Two apps means two of everything** — two metadata files, **two branches**, two merge requests.
+fdroiddata's guidelines are explicit: *"Keep a separate branch for every app you want to submit."*
 
 ## What's here
 
 - `org.openscreentime.parent.yml`, `org.openscreentime.kid.yml` — build recipes, ready to copy into
-  the `metadata/` directory of a [fdroiddata](https://gitlab.com/fdroid/fdroiddata) fork
-- `rfp-parent.md`, `rfp-kid.md` — the text to paste if you file a request on the
-  [RFP tracker](https://gitlab.com/fdroid/rfp/-/issues) instead
+  `metadata/` in a fdroiddata fork
+- `rfp-parent.md`, `rfp-kid.md` — text for the merge request description, or for an RFP issue
 
 Descriptions, screenshots and changelogs are **not** here. They live where F-Droid reads them
 automatically, in each app's own source tree:
@@ -19,63 +19,79 @@ automatically, in each app's own source tree:
     parent/src/main/fastlane/metadata/android/en-US/
     kid/src/main/fastlane/metadata/android/en-US/
 
-Edit them there and F-Droid picks the changes up on the next build.
-
 ## Which way to submit
 
-F-Droid has two front doors, and as the app's author you are pointed at the second:
+1. **Merge request to fdroiddata** — fork
+   [fdroiddata](https://gitlab.com/fdroid/fdroiddata), add the file, open the merge request. This is
+   the documented path and the faster one, because a reviewer gets something they can build.
+2. **RFP** — an issue at <https://gitlab.com/fdroid/rfp/-/issues>. Their CONTRIBUTING suggests this
+   for *first-time* contributors. It works, but it is a request queue rather than a review queue.
 
-1. **RFP (Request For Packaging)** — the tracker at <https://gitlab.com/fdroid/rfp/-/issues>. It is
-   meant for *users asking for an app they did not write*. A developer may file one, and it will be
-   handled, but it sits in a long queue.
-2. **A merge request to fdroiddata** — fork
-   [fdroiddata](https://gitlab.com/fdroid/fdroiddata), add the two files from this directory under
-   `metadata/`, and open a merge request. This is what F-Droid asks developers to do, and it is
-   considerably faster because the reviewer has something concrete to run.
+Either needs a GitLab account.
 
-Both need a GitLab account, which has to be created by a person.
+## Doing it on the GitLab website, per their steps
+
+For **each** app, separately:
+
+1. Fork <https://gitlab.com/fdroid/fdroiddata> (once; it is a large repository and takes a minute).
+2. In your fork, create a new branch named after the application id — `org.openscreentime.parent`
+   for the first one. **Do not commit to `master`**; it is protected, and a merge request cannot be
+   opened from it.
+3. Go to the `metadata` directory, use the **+** button, choose **New file**.
+4. Name it `<application id>.yml` — exactly `org.openscreentime.parent.yml`.
+5. Paste the recipe from this directory. Copy from GitHub's **Raw** view: YAML is unforgiving about
+   indentation and the rendered view can introduce stray characters.
+6. Commit to your new branch.
+7. **Go to CI/CD in your fork and wait for the pipeline to pass.** fdroiddata lints every metadata
+   file, and this is where a mistake shows up. Fix and re-commit until it is green.
+8. Open the merge request against `fdroid/fdroiddata`, and fill in their template.
+
+Then repeat from step 2 for `org.openscreentime.kid`, on its own branch.
 
 ## Does it qualify?
-
-Checked against F-Droid's [inclusion policy](https://f-droid.org/docs/Inclusion_Policy/):
 
 | Requirement | Status |
 | --- | --- |
 | Free software licence | **Yes** — MIT, `LICENSE` at the repository root |
-| Full source available | **Yes** — this repository, tagged `v0.2.0-beta` |
+| Full source available | **Yes** — tagged `v0.2.0-beta` |
 | Builds from source with free tools | **Yes** — Gradle, AGP, Kotlin, AndroidX, Compose |
 | No proprietary libraries in the build | **Yes for the local flavour** — see below |
 | No tracking, ads or analytics | **Yes** — none in either flavour |
 | Works without a proprietary network service | **Yes** — the local build talks to no server at all |
 | Version tagged in git | **Yes** — `v0.2.0-beta`, `versionCode 2` |
 | No bundled binaries | **Yes** — no `gradle-wrapper.jar` is checked in |
+| Valid category | **Yes** — `Time Tracker`, from `config/categories.yml` |
 
 ### The one thing a reviewer will ask about
 
-The repository declares Firebase and Play Services coordinates in `gradle/libs.versions.toml` and
-`cloud/build.gradle.kts`, for the **cloud** flavour — the one people compile themselves to pair two
-phones through their own Firebase project. F-Droid's scanner reads gradle files rather than build
-output, so it will see those coordinates and stop.
+`gradle/libs.versions.toml` and `cloud/build.gradle.kts` declare Firebase and Play Services
+coordinates, for the **cloud** flavour — the one people compile themselves to pair two phones
+through their own Firebase project. F-Droid's scanner reads gradle files rather than build output,
+so it will see those coordinates and stop.
 
-They are genuinely not in the built artefact. The `:cloud` module is a dependency of the cloud
-flavour only, so building `local` resolves none of them, and the result can be checked:
+They are genuinely not in the built artefact:
 
     unzip -p parent-local-release.apk 'classes*.dex' | grep -ac 'com/google/firebase'
 
-prints `0`. The recipes here carry `scanignore` entries for exactly those two files, and nothing
-else, with a comment explaining why.
+prints `0`. The recipes carry `scanignore` for exactly those two files, and nothing else, with a
+comment explaining why. If a reviewer would rather not carry the exception, the alternative is to
+move the cloud flavour to a branch of its own — worth offering rather than waiting to be asked.
 
-### Things worth declaring rather than being caught on
+### Declared rather than discovered
 
-- **Accessibility service.** Both apps use one to know which app is in the foreground. That is how
-  they count time and show the block screen. They never read screen contents.
-- **Cloudflare DNS.** The optional website filter answers the phone's DNS queries and forwards
-  anything it does not block to `1.1.1.1`. It is off unless a parent turns it on, and the apps work
-  fully without it.
-- **Device admin (kid app).** Used only for optional uninstall protection, which a parent turns on
-  deliberately.
-- **Beta.** Feature-complete and used daily on real phones, but with no independent security audit
-  and limited coverage across manufacturers. Say so; F-Droid would rather know.
+- **Accessibility service**, to know which app is in the foreground. Never reads screen contents.
+- **Cloudflare DNS**, when the optional website filter is on, and only then.
+- **Device admin** (kid app), for optional uninstall protection a parent turns on deliberately.
+- **Beta** — no independent security audit, limited coverage across manufacturers.
+
+### Why AutoUpdateMode is None
+
+The local flavour used to append `-local` to versionName, so no git tag could be derived from it.
+That suffix has been removed for future releases; once a tag matches its versionName exactly, these
+files can move to:
+
+    AutoUpdateMode: Version v%v
+    UpdateCheckMode: Tags
 
 ## After it is accepted
 
@@ -83,7 +99,6 @@ else, with a comment explaining why.
 page cannot upgrade in place to the F-Droid build — Android refuses an update signed by a different
 key. They would have to uninstall first, which loses the app's data.
 
-Worth putting in the README and the release notes before the F-Droid build goes live, so nobody
-finds out the hard way. Reproducible builds would let F-Droid ship our own signature instead, and
-are worth looking at later:
-<https://f-droid.org/docs/Reproducible_Builds/>.
+Put that in the README and the release notes before an F-Droid build goes live, so nobody finds out
+the hard way. [Reproducible builds](https://f-droid.org/docs/Reproducible_Builds/) would let F-Droid
+ship our own signature instead, and are worth looking at later.

@@ -48,7 +48,8 @@ android {
     productFlavors {
         create("local") {
             dimension = "backend"
-            versionNameSuffix = "-local"
+            // No suffix on purpose: this is the flavour that gets released, and F-Droid derives the
+            // git tag to build from versionName. "0.2.0-local" would have no tag to match.
         }
         create("cloud") {
             dimension = "backend"
