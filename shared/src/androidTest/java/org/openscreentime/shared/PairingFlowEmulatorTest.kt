@@ -95,6 +95,22 @@ class PairingFlowEmulatorTest {
     }
 
     @Test(timeout = TEST_TIMEOUT_MS)
+    fun parentCanGetANewCodeForAnUnpairedChild_andTheKidClaimsIt() = runBlocking {
+        val parentRepo = FamilyRepository()
+        val parentUid = parentRepo.signUpParent(uniqueEmail(), "testpass123")
+        val child = parentRepo.createChild(parentUid, "NewCodeChild")
+        val newCode = parentRepo.regeneratePairingCode(parentUid, child.id)
+        assertTrue("A new code should be six digits", newCode.length == 6)
+        parentRepo.signOut()
+
+        val kidRepo = FamilyRepository()
+        val (claimedParentUid, claimedChild) = kidRepo.claimPairingCode(newCode)
+        assertEquals(parentUid, claimedParentUid)
+        assertEquals(child.id, claimedChild.id)
+        assertEquals("The child should now point at the new code", newCode, claimedChild.pairingCode)
+    }
+
+    @Test(timeout = TEST_TIMEOUT_MS)
     fun pairingCodeCannotBeClaimedTwice() = runBlocking {
         val parentRepo = FamilyRepository()
         val parentUid = parentRepo.signUpParent(uniqueEmail(), "testpass123")

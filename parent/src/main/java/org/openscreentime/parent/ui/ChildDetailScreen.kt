@@ -125,6 +125,12 @@ fun ChildDetailScreen(
         }
     }
 
+    // If this person's profile disappears (removed here or from another device), leave rather than show a blank page.
+    var hadChild by remember { mutableStateOf(false) }
+    LaunchedEffect(child) {
+        if (child != null) hadChild = true else if (hadChild) onBack()
+    }
+
     val currentChild = child ?: return
 
     // Every app on the device, not only ones already used today. On the parent's own "Me" profile this
@@ -275,6 +281,7 @@ fun ChildDetailScreen(
         repository = repository,
         parentUid = parentUid,
         childId = childId,
+        scope = scope,
         onOpenReportAnyway = {
             reportTracker.recordOpen()
             onOpenReport()

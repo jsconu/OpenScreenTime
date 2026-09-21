@@ -404,7 +404,19 @@ private fun ChildSummaryCard(
                 Spacer(Modifier.height(4.dp))
                 val cardContext = LocalContext.current
                 Text("Waiting for device pairing (code: ${child.pairingCode})", style = MaterialTheme.typography.bodySmall)
-                TextButton(onClick = { copyPairingCode(cardContext, child.pairingCode) }) { Text("Copy code") }
+                Text("A code works for 30 minutes.", style = MaterialTheme.typography.bodySmall)
+                Row {
+                    TextButton(onClick = { copyPairingCode(cardContext, child.pairingCode) }) { Text("Copy code") }
+                    TextButton(
+                        onClick = {
+                            scope.launch {
+                                runCatching { repository.regeneratePairingCode(parentUid, child.id) }
+                                    .onSuccess { copyPairingCode(cardContext, it) }
+                            }
+                        },
+                        modifier = Modifier.testTag("dashboard_new_pairing_code")
+                    ) { Text("New code") }
+                }
             } else {
                 if (child.proposedDailyLimitMinutes != null || child.proposedAppLimits != null) {
                     Spacer(Modifier.height(4.dp))

@@ -38,6 +38,25 @@ internal class ChildrenRepository(
         return child
     }
 
+    /**
+     * A fresh pairing code for a child that isn't paired yet. A code only works for 30 minutes, so a parent whose
+     * code ran out needs another without deleting and re-adding the child. The new code doc is written first, then
+     * the child is pointed at it.
+     */
+    suspend fun regeneratePairingCode(parentUid: String, childId: String): String {
+        val code = generatePairingCode()
+        db.collection(FirestorePaths.PAIRING_CODES).document(code).set(
+            mapOf(
+                "parentUid" to parentUid,
+                "childId" to childId,
+                "used" to false,
+                "createdAt" to FieldValue.serverTimestamp()
+            )
+        ).await()
+        db.document(FirestorePaths.childDoc(parentUid, childId)).update("pairingCode", code).await()
+        return code
+    }
+
     suspend fun setLocked(parentUid: String, childId: String, locked: Boolean) {
         db.document(FirestorePaths.childDoc(parentUid, childId))
             .update("locked", locked).await()

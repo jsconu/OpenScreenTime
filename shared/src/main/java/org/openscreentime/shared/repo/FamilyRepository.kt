@@ -54,6 +54,10 @@ class FamilyRepository(
 
     suspend fun createChild(parentUid: String, name: String): ChildProfile = children.createChild(parentUid, name)
 
+    /** A fresh pairing code (good for 30 minutes) for a child that isn't paired yet. */
+    suspend fun regeneratePairingCode(parentUid: String, childId: String): String =
+        children.regeneratePairingCode(parentUid, childId)
+
     suspend fun setLocked(parentUid: String, childId: String, locked: Boolean) =
         children.setLocked(parentUid, childId, locked)
 

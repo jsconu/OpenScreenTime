@@ -4,7 +4,7 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.rememberCoroutineScope
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import org.openscreentime.shared.model.AppList
 import org.openscreentime.shared.model.AppUsage
@@ -41,10 +41,14 @@ internal fun ChildDetailDialogs(
     repository: FamilyRepository,
     parentUid: String,
     childId: String,
+    /**
+     * Must outlive this host: deleting a child removes the page's data, which takes this host off the screen before
+     * the delete's "now go back" step runs. So the screen's scope is passed in rather than made here.
+     */
+    scope: CoroutineScope,
     onOpenReportAnyway: () -> Unit,
     onChildRemoved: () -> Unit
 ) {
-    val scope = rememberCoroutineScope()
     when (dialog) {
         null -> Unit
         DetailDialog.DailyLimit -> MinutesInputDialog(
