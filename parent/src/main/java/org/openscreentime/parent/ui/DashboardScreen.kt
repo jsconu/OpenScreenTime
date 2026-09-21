@@ -74,6 +74,7 @@ import org.openscreentime.shared.model.todayDateString
 import org.openscreentime.shared.repo.FamilyRepository
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.lifecycle.compose.LifecycleResumeEffect
+import kotlinx.coroutines.delay
 import org.openscreentime.parent.Backend
 import org.openscreentime.parent.data.NearbyStore
 import org.openscreentime.shared.repo.Profiles
@@ -111,12 +112,22 @@ fun DashboardScreen(
     var nearbyChildName by remember { mutableStateOf(nearbyStore.childName()) }
     var nearbyLastSyncedAtMs by remember { mutableLongStateOf(nearbyStore.lastSyncedAtMs) }
     var nearbyStats by remember { mutableStateOf(nearbyStore.lastStats()) }
-    // A report arrives on a socket, not through a listener, so re-read it when this screen resumes.
+    // A report arrives on a socket, not through a listener, so there is nothing to subscribe to:
+    // re-read on resume, and again every few seconds while this screen is the one being looked at,
+    // so a kid's phone syncing in the next room shows up without the parent leaving and coming back.
     LifecycleResumeEffect(Unit) {
         nearbyChildName = nearbyStore.childName()
         nearbyLastSyncedAtMs = nearbyStore.lastSyncedAtMs
         nearbyStats = nearbyStore.lastStats()
         onPauseOrDispose { }
+    }
+    LaunchedEffect(Unit) {
+        while (true) {
+            delay(3_000)
+            nearbyChildName = nearbyStore.childName()
+            nearbyLastSyncedAtMs = nearbyStore.lastSyncedAtMs
+            nearbyStats = nearbyStore.lastStats()
+        }
     }
     var newChildCode by remember { mutableStateOf<String?>(null) }
     var showFeedbackDialog by remember { mutableStateOf(false) }

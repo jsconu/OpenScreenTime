@@ -75,7 +75,15 @@ sealed class NearbyMessage {
         val locked: Boolean? = null,
         val bedtimeStartMinutes: Int? = null,
         val bedtimeEndMinutes: Int? = null,
-        val temporaryUnlockUntilMs: Long? = null
+        val temporaryUnlockUntilMs: Long? = null,
+        /**
+         * The family passcode's verifier, so Parent controls on the kid's phone can check a code a
+         * parent types there. It is a salted hash, never the passcode - the same thing the cloud
+         * build copies onto every child profile, and it is only readable by a phone that already
+         * holds the link key.
+         */
+        val parentPasscodeHash: String? = null,
+        val parentPasscodeSalt: String? = null
     ) : NearbyMessage()
 
     fun encode(): ByteArray = json.encodeToString(serializer(), this).toByteArray(Charsets.UTF_8)

@@ -94,6 +94,13 @@ class NearbySyncRunner(private val context: Context) {
             update.appLimits?.forEach { (packageName, minutes) ->
                 repository.setAppLimit(uid, childId, packageName, minutes)
             }
+            // Without this, Parent controls on this phone has nothing to check a code against and
+            // stays shut for good - see ParentModeUnlockScreen.
+            val hash = update.parentPasscodeHash
+            val salt = update.parentPasscodeSalt
+            if (hash != null && salt != null) {
+                repository.setParentPasscode(uid, hash, salt)
+            }
             update.temporaryUnlockUntilMs?.let { until ->
                 val minutes = ((until - System.currentTimeMillis()) / 60_000L).toInt()
                 if (minutes > 0) repository.grantExtraTime(uid, childId, minutes)

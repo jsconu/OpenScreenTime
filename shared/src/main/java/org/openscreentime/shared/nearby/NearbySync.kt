@@ -38,7 +38,9 @@ object NearbySync {
         locked = profile.locked,
         bedtimeStartMinutes = profile.bedtimeStartMinutes,
         bedtimeEndMinutes = profile.bedtimeEndMinutes,
-        temporaryUnlockUntilMs = profile.temporaryUnlockUntilMs
+        temporaryUnlockUntilMs = profile.temporaryUnlockUntilMs,
+        parentPasscodeHash = profile.parentPasscodeHash,
+        parentPasscodeSalt = profile.parentPasscodeSalt
     )
 
     /**
@@ -54,7 +56,9 @@ object NearbySync {
         locked = update.locked ?: profile.locked,
         bedtimeStartMinutes = if (update.bedtimeStartMinutes != null) update.bedtimeStartMinutes else profile.bedtimeStartMinutes,
         bedtimeEndMinutes = if (update.bedtimeEndMinutes != null) update.bedtimeEndMinutes else profile.bedtimeEndMinutes,
-        temporaryUnlockUntilMs = update.temporaryUnlockUntilMs ?: profile.temporaryUnlockUntilMs
+        temporaryUnlockUntilMs = update.temporaryUnlockUntilMs ?: profile.temporaryUnlockUntilMs,
+        parentPasscodeHash = update.parentPasscodeHash ?: profile.parentPasscodeHash,
+        parentPasscodeSalt = update.parentPasscodeSalt ?: profile.parentPasscodeSalt
     )
 
     /**

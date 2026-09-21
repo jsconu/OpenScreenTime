@@ -50,12 +50,25 @@ class NearbyHost(private val context: Context) : Closeable {
     private fun answer(message: NearbyMessage): NearbyMessage? {
         // A message this phone has already acted on is a replay, whoever sent it.
         if (!seen.claim(message.id)) return null
-        val profile = currentProfile() ?: return null
+
+        // Whatever the kid's phone managed to tell us is kept before anything else is attempted.
+        // Answering needs this phone's own profile, and if that read fails for any reason the
+        // parent should still see the usage that arrived rather than nothing at all.
+        if (message is NearbyMessage.UsageReport) {
+            store.linkStore.saveReport(message, System.currentTimeMillis())
+        }
+
+        val profile = currentProfile()
+        if (profile == null) {
+            Log.w(TAG, "Kept a report but could not read this phone's own limits to answer with")
+            return null
+        }
         return NearbySync.answer(
             message = message,
             profile = profile,
             newId = { UUID.randomUUID().toString() },
-            onUsage = { store.linkStore.saveReport(it, System.currentTimeMillis()) },
+            // Already kept above; keeping it twice would only move the timestamp.
+            onUsage = { },
             onRequest = { onRequest(it) }
         )
     }
