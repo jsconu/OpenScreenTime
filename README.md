@@ -348,10 +348,10 @@ an initial pass, not a full audit).
 
 ## Building
 
-> **Just want to run it for your own family?**
-> [**docs/SELF_HOSTING.md**](docs/SELF_HOSTING.md) is the same process written out step by
-> step for someone who isn't a developer — about 45 minutes, start to finish, no cost. The
-> summary below assumes you already know your way around Android Studio.
+> **Want a parent's phone and a child's phone linked?** That is the **cloud** build, and
+> [**docs/SELF_HOSTING.md**](docs/SELF_HOSTING.md) is the whole process written out step by step
+> for someone who isn't a developer — about 45 minutes, start to finish, no cost. The summary
+> below assumes you already know your way around Android Studio.
 
 You'll need [Android Studio](https://developer.android.com/studio)
 (Ladybug or newer) with a JDK 17 and Android SDK 35.
@@ -421,12 +421,14 @@ use, it matters who you trust to run it, so here is how to tell the official pro
   <https://github.com/jsconu/OpenScreenTime>. Any official release or store listing will be linked
   from here. If you found the app somewhere that this page doesn't link to, it isn't an official
   build.
-- **This project doesn't publish ready-made APKs, on purpose.** Every build of these apps is
-  wired at build time to one Firebase project, and whoever owns that project can see the data in
-  it. Handing out a binary would make this project's maintainer the operator of your child's
-  usage data. Instead you build it against a Firebase project of your own — see
-  [docs/SELF_HOSTING.md](docs/SELF_HOSTING.md) — and nobody but you holds your family's data.
-  It costs nothing and takes about 45 minutes.
+- **Released APKs are always local builds, and only local builds.** A local build contains no
+  cloud code at all, so it has nowhere to send anything and nobody - including this project - can
+  see what it records. A cloud build is permanently wired at build time to one Firebase project,
+  and whoever owns that project can read the data of every family using that build, so publishing
+  one would quietly make this project's maintainer the operator of your child's usage data. That
+  is why cloud builds are never handed out: you build one yourself, against a Firebase project of
+  your own ([docs/SELF_HOSTING.md](docs/SELF_HOSTING.md)), and nobody but you holds the data. See
+  [docs/LOCAL_AND_CLOUD.md](docs/LOCAL_AND_CLOUD.md) for what each build can do.
 - **This project has no ads, no in-app purchases, no analytics beyond crash reports, and no paid
   tier.** If an app using this code asks you to pay or shows ads, it's someone else's fork.
 - **Check where the data goes.** Every build talks to a Firebase project run by whoever published it.

@@ -1,8 +1,15 @@
-# Run OpenScreenTime on your own Firebase project
+# Run the cloud build on your own Firebase project
 
-This is the supported way to use OpenScreenTime: you create a free Firebase project, build the
-two apps against it, and your family's data lives in an account only you control. Nobody else —
-including this project's maintainer — can see it.
+This is for linking **two** phones — a parent's and a child's — so limits can be seen and changed
+remotely, a phone can be locked from elsewhere, and a child can ask for more time from school. You
+create a free Firebase project, build the two apps against it, and your family's data lives in an
+account only you control. Nobody else — including this project's maintainer — can see it.
+
+> **You may not need any of this.** If you want limits on one phone, set in person, download the
+> **local** build from [the latest release](https://github.com/jsconu/OpenScreenTime/releases/latest)
+> and stop reading: no Firebase project, no account, nothing to set up, and nothing leaves the
+> phone. [LOCAL_AND_CLOUD.md](LOCAL_AND_CLOUD.md) sets out exactly what each build can and cannot
+> do. Come back here when you want the remote half.
 
 It takes about **45 minutes** the first time. You don't need to be a developer, but you do need
 to be comfortable following exact instructions and waiting for a build. If you get stuck, open
@@ -33,13 +40,13 @@ anything.
 
    Leave the nickname and SHA-1 fields blank; neither is needed.
 
-3. After the second app, download **`google-services.json`**. One file covers both apps. Put a
-   copy in two places in the source you downloaded:
+3. After the second app, download **`google-services.json`**. One file covers both apps, and it
+   goes in one place in the source you downloaded:
 
-   - `parent/google-services.json`
-   - `kid/google-services.json`
+   - `cloud/google-services.json`
 
-   Same file, both locations. It's already in `.gitignore`, so it won't be committed if you fork.
+   That's the `cloud` module - the only part of the project that talks to Firebase at all. It's
+   already in `.gitignore`, so it won't be committed if you fork.
 
 4. In the left sidebar, open **Build → Authentication → Get started**, and enable two sign-in
    providers:
@@ -69,18 +76,22 @@ anything.
 2. If it complains about a missing SDK or JDK, accept the prompts to install them. This project
    needs **Android SDK 35** and **JDK 17**.
 
-3. Choose **Build → Build Bundle(s) / APK(s) → Build APK(s)**. When it finishes, the notification
+3. In the **Build Variants** panel (bottom left), set both modules to a **cloud** variant -
+   `cloudDebug`. This is the step that decides whether the build talks to your Firebase project at
+   all; a `local` variant ignores it completely.
+
+4. Choose **Build → Build Bundle(s) / APK(s) → Build APK(s)**. When it finishes, the notification
    has a **locate** link; the files are at:
 
-   - `parent/build/outputs/apk/debug/parent-debug.apk`
-   - `kid/build/outputs/apk/debug/kid-debug.apk`
+   - `parent/build/outputs/apk/cloud/debug/parent-cloud-debug.apk`
+   - `kid/build/outputs/apk/cloud/debug/kid-cloud-debug.apk`
 
    These are debug builds, which is fine for your own family — they're signed with Android
    Studio's automatic key and install like any other app. (If you'd rather make proper signed
    release builds, for example to put them on a private Play Store track,
    [docs/PUBLISHING.md](PUBLISHING.md) covers that.)
 
-4. Copy each APK to the right phone: **parent** on the adult's phone, **kid** on the child's.
+5. Copy each APK to the right phone: **parent** on the adult's phone, **kid** on the child's.
    Email them to yourself, use a USB cable, or any file transfer you like.
 
 ---
@@ -121,7 +132,8 @@ instead of a download link.
 | "That code isn't active" on a brand-new code | The rules in your Firebase project are older than the apps. Re-publish `firebase/firestore.rules` (Part 1, step 6). |
 | Sign-up fails in the parent app | Email/Password isn't enabled under Authentication (Part 1, step 4). |
 | The kid app can't pair at all, no error about the code | Anonymous sign-in isn't enabled (Part 1, step 4). |
-| The build fails complaining about `google-services.json` | The file isn't in both `parent/` and `kid/`, or the package names in Firebase don't match exactly (Part 1, steps 2–3). |
+| The build fails complaining about `google-services.json` | The file isn't at `cloud/google-services.json`, or the package names in Firebase don't match exactly (Part 1, steps 2-3). |
+| A cloud build acts like a local one - no sign-in, no pairing | The Build Variants panel is still set to a `local` variant (Part 2, step 3). |
 | Tracking stops after the screen is off a while | A phone-maker battery setting is killing the accessibility service. See the battery section of [INSTALL_ANDROID.md](INSTALL_ANDROID.md), and tell us which phone in an issue — that list is built from reports. |
 
 Still stuck? Open an issue with the step number and the exact error text. Please don't include a
