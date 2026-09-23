@@ -78,6 +78,7 @@ import androidx.compose.runtime.mutableLongStateOf
 import androidx.lifecycle.compose.LifecycleResumeEffect
 import kotlinx.coroutines.delay
 import org.openscreentime.parent.Backend
+import org.openscreentime.parent.data.HouseholdPrefs
 import org.openscreentime.parent.data.NearbyStore
 import org.openscreentime.shared.repo.Profiles
 import org.openscreentime.parent.ParentApp
@@ -123,6 +124,10 @@ fun DashboardScreen(
     var nearbySyncing by remember { mutableStateOf(false) }
     var nearbyLastTryFailed by remember { mutableStateOf(false) }
     var renaming by remember { mutableStateOf<RenameTarget?>(null) }
+    // Someone using this only for their own phone can say so, and stop being asked about a child's.
+    val household = remember { HouseholdPrefs(nearbyContext) }
+    var ownPhoneOnly by remember { mutableStateOf(household.ownPhoneOnly) }
+    var passcodePromptDismissed by remember { mutableStateOf(household.passcodePromptDismissed) }
     // A report arrives on a socket, not through a listener, so there is nothing to subscribe to:
     // re-read on resume, and again every few seconds while this screen is the one being looked at,
     // so a kid's phone syncing in the next room shows up without the parent leaving and coming back.
@@ -197,6 +202,18 @@ fun DashboardScreen(
                         modifier = Modifier.semantics { contentDescription = "More options" }
                     ) { Text("⋮") }
                     DropdownMenu(expanded = showMenu, onDismissRequest = { showMenu = false }) {
+                        // Choosing "just my phone" must never be a way to lose the option.
+                        if (Backend.IS_LOCAL && ownPhoneOnly) {
+                            DropdownMenuItem(
+                                text = { Text("Link a kid's phone") },
+                                onClick = {
+                                    showMenu = false
+                                    household.ownPhoneOnly = false
+                                    ownPhoneOnly = false
+                                    onOpenNearbyLink()
+                                }
+                            )
+                        }
                         DropdownMenuItem(
                             text = { Text("Style") },
                             onClick = { showMenu = false; onOpenAppearance() }
@@ -243,7 +260,9 @@ fun DashboardScreen(
             // exactly that, so say where a kid's limits are set instead - see LocalOnlyKidCard.
             item {
                 if (Backend.IS_LOCAL) {
-                    LocalOnlyKidCard(
+                    // A linked phone always shows: hiding a real child's usage would be worse than
+                    // the nudge this is meant to quiet.
+                    if (!ownPhoneOnly || nearbyDisplayName != null) LocalOnlyKidCard(
                         linkedChildName = nearbyDisplayName,
                         deviceModel = nearbyDeviceModel,
                         lastSyncedAtMs = nearbyLastSyncedAtMs,
@@ -251,6 +270,10 @@ fun DashboardScreen(
                         syncing = nearbySyncing,
                         lastTryFailed = nearbyLastTryFailed,
                         onLink = onOpenNearbyLink,
+                        onJustMyPhone = {
+                            household.ownPhoneOnly = true
+                            ownPhoneOnly = true
+                        },
                         onRename = { renaming = RenameTarget.KID_PHONE },
                         onSyncNow = {
                             nearbySyncing = true
@@ -280,10 +303,15 @@ fun DashboardScreen(
                     ) { Text("Add kid") }
                 }
             }
-            if (!hasPasscode) {
+            if (!hasPasscode && !passcodePromptDismissed) {
                 item {
                     PasscodePromptCard(
                         onSetPasscode = onOpenSettings,
+                        aboutAKidsPhone = !(Backend.IS_LOCAL && ownPhoneOnly),
+                        onNotNow = {
+                            household.passcodePromptDismissed = true
+                            passcodePromptDismissed = true
+                        },
                         modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp)
                     )
                 }
@@ -356,7 +384,10 @@ fun DashboardScreen(
                 TipOfTheDayCard(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp))
             }
             item {
-                StatusGuideCard(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp))
+                StatusGuideCard(
+                    mentionKids = !(Backend.IS_LOCAL && ownPhoneOnly),
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp)
+                )
             }
             item {
                 NotificationDigestCard(
@@ -775,15 +806,21 @@ private fun FeedbackDialog(
  * up / open hand / stop mean - from the same shared composable, so both apps say the same thing.
  */
 @Composable
-private fun StatusGuideCard(modifier: Modifier = Modifier) {
+private fun StatusGuideCard(mentionKids: Boolean, modifier: Modifier = Modifier) {
     Card(modifier = modifier) {
         StatusIconGuide(
             goodIcon = R.drawable.ic_status_good,
             cautionIcon = R.drawable.ic_status_caution,
             stopIcon = R.drawable.ic_status_stop,
-            footnote = "Your kids' phones show these same icons instead of exact numbers, so screen time " +
-                "stays something to notice, not something to keep checking - the details are here, " +
-                "for you. On this phone the icons appear once you turn on My screen time.",
+            footnote = if (mentionKids) {
+                "Your kids' phones show these same icons instead of exact numbers, so screen time " +
+                    "stays something to notice, not something to keep checking - the details are here, " +
+                    "for you. On this phone the icons appear once you turn on My screen time."
+            } else {
+                "These icons show how your day is going without an exact number, so screen time stays " +
+                    "something to notice rather than something to keep checking. They appear once you " +
+                    "turn on My screen time."
+            },
             modifier = Modifier.padding(16.dp)
         )
     }
@@ -891,7 +928,12 @@ private fun NotificationDigestCard(
  * "Lock now" from the lock screen - so most of the rest of the app works better once it exists.
  */
 @Composable
-private fun PasscodePromptCard(onSetPasscode: () -> Unit, modifier: Modifier = Modifier) {
+private fun PasscodePromptCard(
+    onSetPasscode: () -> Unit,
+    aboutAKidsPhone: Boolean,
+    onNotNow: () -> Unit,
+    modifier: Modifier = Modifier
+) {
     Card(
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.tertiaryContainer),
         modifier = modifier.testTag("dashboard_passcode_prompt")
@@ -904,13 +946,20 @@ private fun PasscodePromptCard(onSetPasscode: () -> Unit, modifier: Modifier = M
             )
             Spacer(Modifier.height(4.dp))
             Text(
-                "It protects this app, and it's how you unlock a locked phone or change limits on " +
-                    "your kid's phone without your own in hand. It only takes a moment.",
+                if (aboutAKidsPhone) {
+                    "It protects this app, and it's how you unlock a locked phone or change limits on " +
+                        "your kid's phone without your own in hand. It only takes a moment."
+                } else {
+                    "It protects this app's settings, and it's how you get back into an app when a limit " +
+                        "or bedtime you set yourself has kicked in. It only takes a moment."
+                },
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onTertiaryContainer
             )
             Spacer(Modifier.height(12.dp))
             Button(onClick = onSetPasscode, modifier = Modifier.fillMaxWidth()) { Text("Set passcode") }
+            // Not a nag that follows someone around: put aside, it stays in the menu under Passcode.
+            TextButton(onClick = onNotNow, modifier = Modifier.fillMaxWidth()) { Text("Not now") }
         }
     }
 }
@@ -935,6 +984,7 @@ private fun LocalOnlyKidCard(
     syncing: Boolean,
     lastTryFailed: Boolean,
     onLink: () -> Unit,
+    onJustMyPhone: () -> Unit,
     onRename: () -> Unit,
     onSyncNow: () -> Unit,
     modifier: Modifier = Modifier
@@ -964,6 +1014,10 @@ private fun LocalOnlyKidCard(
                     onClick = onLink,
                     modifier = Modifier.fillMaxWidth().testTag("dashboard_link_kid_phone")
                 ) { Text("Link a kid's phone") }
+                TextButton(
+                    onClick = onJustMyPhone,
+                    modifier = Modifier.fillMaxWidth().testTag("dashboard_just_my_phone")
+                ) { Text("I'm only using this for my own phone") }
             } else {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
