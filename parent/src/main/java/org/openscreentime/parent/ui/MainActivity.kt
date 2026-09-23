@@ -81,7 +81,20 @@ class MainActivity : FragmentActivity() {
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         setIntent(intent)
-        if (intent.getBooleanExtra(EXTRA_OPEN_DIGEST, false)) openDigest.value = true
+        consumeOpenDigest(intent)
+    }
+
+    /**
+     * Reads the "open the calm list" request once, then removes it from the intent. Left in place,
+     * the extra survived every activity recreation - a theme change, the app lock, Android
+     * reclaiming the activity - and each one pushed another copy of the screen, so leaving it took
+     * as many presses of Back as there had been recreations.
+     */
+    private fun consumeOpenDigest(intent: Intent) {
+        if (intent.getBooleanExtra(EXTRA_OPEN_DIGEST, false)) {
+            intent.removeExtra(EXTRA_OPEN_DIGEST)
+            openDigest.value = true
+        }
     }
 
     private fun requestWebsiteFilter() {
@@ -94,7 +107,8 @@ class MainActivity : FragmentActivity() {
         val repository = (application as ParentApp).repository
         val appearancePrefs = AppearancePrefs(this)
         val selfProfileStore = SelfProfileStore(this)
-        if (intent.getBooleanExtra(EXTRA_OPEN_DIGEST, false)) openDigest.value = true
+        // A recreated activity gets its original intent back; only a fresh launch should act on it.
+        if (savedInstanceState == null) consumeOpenDigest(intent)
 
         // If the parent already allowed the website filter, keep it running while they track themselves.
         if (selfProfileStore.isTracking && VpnService.prepare(this) == null) startWebsiteFilter()
@@ -190,7 +204,7 @@ class MainActivity : FragmentActivity() {
                         LaunchedEffect(openDigest.value) {
                             if (openDigest.value) {
                                 openDigest.value = false
-                                navController.navigate("digest")
+                                navController.navigate("digest") { launchSingleTop = true }
                             }
                         }
                         NavHost(navController = navController, startDestination = "dashboard") {
@@ -207,7 +221,7 @@ class MainActivity : FragmentActivity() {
                                     },
                                     onOpenNearbyLink = { navController.navigate("nearby") },
                                     onOpenHelp = { navController.navigate("help") },
-                                    onOpenDigest = { navController.navigate("digest") },
+                                    onOpenDigest = { navController.navigate("digest") { launchSingleTop = true } },
                                     onRequestNotificationListener = {
                                         startActivity(Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS))
                                     },

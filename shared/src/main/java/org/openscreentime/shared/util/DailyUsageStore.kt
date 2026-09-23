@@ -7,5 +7,12 @@ import android.content.Context
  * "self_usage" on the parent's own, so what is saved stays exactly where it was. The rules are all in [DayLedger].
  * The friction-pause record is kept by both but only used where a pause screen exists.
  */
-open class DailyUsageStore(context: Context, prefsName: String) :
-    DayLedger(SharedPrefsStore(context.getSharedPreferences(prefsName, Context.MODE_PRIVATE)))
+open class DailyUsageStore(context: Context, prefsName: String) : DayLedger(
+    store = SharedPrefsStore(context.getSharedPreferences(prefsName, Context.MODE_PRIVATE)),
+    isScreenOn = screenOnCheck(context)
+)
+
+private fun screenOnCheck(context: Context): () -> Boolean {
+    val power = context.applicationContext.getSystemService(Context.POWER_SERVICE) as? android.os.PowerManager
+    return { power?.isInteractive ?: true }
+}
