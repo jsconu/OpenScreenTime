@@ -3,8 +3,13 @@ package org.openscreentime.shared.util
 import android.accessibilityservice.AccessibilityService
 import android.app.Notification
 import android.app.NotificationManager
+import android.content.BroadcastReceiver
+import android.content.Context
 import android.content.Intent
+import android.content.IntentFilter
 import android.content.pm.PackageManager
+import android.os.PowerManager
+import android.view.inputmethod.InputMethodManager
 import android.os.Handler
 import android.os.Looper
 import android.view.accessibility.AccessibilityEvent
@@ -19,6 +24,9 @@ import org.openscreentime.shared.model.hasUnlockWindowExpired
 import org.openscreentime.shared.model.isFirstAppAfterUnlock
 import org.openscreentime.shared.model.nowMinutesOfDay
 import org.openscreentime.shared.model.relockDue
+import org.openscreentime.shared.model.SYSTEM_UI_PACKAGE
+import org.openscreentime.shared.model.WindowKind
+import org.openscreentime.shared.model.classifyWindow
 
 /**
  * The foreground guard both apps run through Android's accessibility events: it attributes time to the app in
@@ -66,9 +74,14 @@ abstract class BaseAppLimitAccessibilityService : AccessibilityService() {
     private var currentPackage: String? = null
     private var currentPackageStartMs: Long = 0L
 
+    private val power by lazy { getSystemService(Context.POWER_SERVICE) as PowerManager }
+
     private val tick = object : Runnable {
         override fun run() {
-            flushCurrent(restart = true)
+            // The tick keeps running while the phone is locked. Crediting the app that happened to
+            // be in front when the screen went off, every thirty seconds all night, is what turned a
+            // browser into a fourteen-hour app. If the screen is off, nobody is using anything.
+            if (!power.isInteractive) stopCrediting() else flushCurrent(restart = true)
             checkRelock()
             checkLimits(currentPackage)
             updateStatusNotification()
@@ -76,33 +89,90 @@ abstract class BaseAppLimitAccessibilityService : AccessibilityService() {
         }
     }
 
+    /**
+     * Screen off and unlock, heard here as well as by the screen-monitor service. That service is
+     * the one that counts unlocks; this one only needs to know when to stop and start crediting
+     * apps, and hearing it directly means one of the two being killed no longer leaves a session
+     * running all night. Both calls below are safe to receive twice.
+     */
+    private val screenReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context, intent: Intent) {
+            when (intent.action) {
+                Intent.ACTION_SCREEN_OFF -> {
+                    stopCrediting()
+                    usageStore.endSessionAndFlush()
+                }
+                Intent.ACTION_USER_PRESENT -> resumeCrediting()
+            }
+        }
+    }
+
     override fun onServiceConnected() {
         usageStore = openUsageStore()
         onConnected()
+        registerReceiver(screenReceiver, IntentFilter().apply {
+            addAction(Intent.ACTION_SCREEN_OFF)
+            addAction(Intent.ACTION_USER_PRESENT)
+        })
         handler.postDelayed(tick, TICK_INTERVAL_MS)
     }
 
     override fun onDestroy() {
         super.onDestroy()
         handler.removeCallbacks(tick)
+        runCatching { unregisterReceiver(screenReceiver) }
+    }
+
+    /** Folds in the app in front up to now, then credits nobody until something new comes forward. */
+    private fun stopCrediting() {
+        flushCurrent(restart = false)
+        currentPackage = null
+    }
+
+    /**
+     * Just unlocked. Unlocking straight back into the app that was open does not always produce a
+     * window event, so ask which window is in front rather than waiting for one that may not come.
+     */
+    private fun resumeCrediting() {
+        val pkg = runCatching { rootInActiveWindow?.packageName?.toString() }.getOrNull() ?: return
+        if (kindOf(pkg) != WindowKind.APP) return
+        currentPackage = pkg
+        currentPackageStartMs = System.currentTimeMillis()
+        cacheAppLabel(pkg)
     }
 
     override fun onAccessibilityEvent(event: AccessibilityEvent?) {
         if (event?.eventType != AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) return
         val pkg = event.packageName?.toString() ?: return
+        val kind = kindOf(pkg)
+
+        // The keyboard, the notification shade, a volume slider: drawn over the app being used, and
+        // not a change of app. Crediting them took time off whatever was underneath - typing a search
+        // made the browser stop counting until the keyboard went away.
+        if (kind == WindowKind.OVERLAY) return
+
         settings.foregroundPackage = pkg
         // "Dumb phone" (see #42): an app that isn't allowed goes straight back to the home screen.
         if (focusEnforcer.enforce(pkg)) return
         recordFirstAppIfPending(pkg)
-        if (pkg == packageName || pkg == currentPackage) return
+        if (kind == WindowKind.SELF || pkg == currentPackage) return
 
         flushCurrent(restart = false)
+        if (kind == WindowKind.HOME) {
+            // On the home screen nobody is in an app. Still screen time, not anyone's app time.
+            currentPackage = null
+            updateStatusNotification()
+            return
+        }
         currentPackage = pkg
         currentPackageStartMs = System.currentTimeMillis()
         cacheAppLabel(pkg)
         checkLimits(pkg)
         updateStatusNotification()
     }
+
+    private fun kindOf(pkg: String): WindowKind =
+        classifyWindow(pkg, packageName, homePackages, overlayPackages)
 
     /**
      * See #35 - if a parent has unlock tracking on, the unlock receiver left a pending unlock
@@ -124,12 +194,28 @@ abstract class BaseAppLimitAccessibilityService : AccessibilityService() {
     }
 
     /** The home launcher(s) and system UI: arriving there right after an unlock isn't opening an app. */
-    private val ignoredFirstAppPackages: Set<String> by lazy {
+    private val ignoredFirstAppPackages: Set<String> by lazy { homePackages + SYSTEM_UI_PACKAGE }
+
+    /** Every installed home screen, not only the current default: people switch launchers. */
+    private val homePackages: Set<String> by lazy {
         val home = Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_HOME)
         packageManager.queryIntentActivities(home, PackageManager.MATCH_DEFAULT_ONLY)
             .map { it.activityInfo.packageName }
-            .toSet() + "com.android.systemui"
+            .toSet()
     }
+
+    /**
+     * What draws over apps rather than replacing them. Keyboards are read from the system each
+     * time rather than once, since a person can install or switch keyboards while this is running.
+     */
+    private val overlayPackages: Set<String>
+        get() {
+            val keyboards = runCatching {
+                (getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager)
+                    .enabledInputMethodList.map { it.packageName }
+            }.getOrDefault(emptyList())
+            return keyboards.toSet() + SYSTEM_UI_PACKAGE
+        }
 
     /** Adds elapsed time for the current package. If [restart], keeps tracking it from now. */
     private fun flushCurrent(restart: Boolean) {

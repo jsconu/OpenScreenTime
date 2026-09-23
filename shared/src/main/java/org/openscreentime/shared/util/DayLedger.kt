@@ -20,7 +20,13 @@ import org.openscreentime.shared.model.todayDateString
 open class DayLedger(
     private val store: KeyValueStore,
     private val nowMs: () -> Long = System::currentTimeMillis,
-    private val todayString: () -> String = ::todayDateString
+    private val todayString: () -> String = ::todayDateString,
+    /**
+     * Whether the screen is on right now. A session can only be "in progress" while it is: if the
+     * screen-off broadcast was missed - the service that hears it was killed, which some phones do
+     * routinely - the session would otherwise stay open and count every hour the phone sat locked.
+     */
+    private val isScreenOn: () -> Boolean = { true }
 ) : UsageReader {
     private val json = Json { ignoreUnknownKeys = true }
 
@@ -40,9 +46,21 @@ open class DayLedger(
                 putBoolean("warnedDaily", false)
                 putStringSet("warnedApps", emptySet())
                 putStringSet("pausedApps", emptySet())
+                // A session still open at midnight belongs to both days. Leaving its start where it
+                // was put the whole of it on the new day - so a phone left unlocked overnight, or one
+                // whose screen-off went unheard, woke up with hours already on today's clock.
+                if (store.getLong("sessionStartMs", -1) >= 0) putLong("sessionStartMs", startOfTodayMs())
             }
         }
     }
+
+    private fun startOfTodayMs(): Long = java.util.Calendar.getInstance().apply {
+        timeInMillis = nowMs()
+        set(java.util.Calendar.HOUR_OF_DAY, 0)
+        set(java.util.Calendar.MINUTE, 0)
+        set(java.util.Calendar.SECOND, 0)
+        set(java.util.Calendar.MILLISECOND, 0)
+    }.timeInMillis
 
     fun addScreenTime(ms: Long) {
         if (ms <= 0) return
@@ -96,7 +114,9 @@ open class DayLedger(
             rolloverIfNeeded()
             val ended = store.getLong("totalScreenTimeMs", 0)
             val start = sessionStartMs
-            val inProgress = if (start == null) 0L else nowMs() - start
+            // Only while the screen is actually on: an open session with the screen off is one whose
+            // end was never heard, and counting it is how a day reached fourteen hours.
+            val inProgress = if (start == null || !isScreenOn()) 0L else (nowMs() - start).coerceAtLeast(0)
             return countedScreenTimeMs(ended + inProgress, store.getLong("excludedMs", 0))
         }
 
