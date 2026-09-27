@@ -1,9 +1,11 @@
 # OpenScreenTime
 
 > **Beta.** The Android apps are ready to use, but young: no security audit and limited
-> device/OEM coverage. The iOS parent app is built but not yet in the App Store, and an iOS kid app
-> and smartwatch tracking are open opportunities for the community. Details in the
-> [status table](#current-status) below.
+> device/OEM coverage. The iOS parent app is an early foundation — it builds and passes CI, but
+> hasn't been run against a real device and a live Firebase project yet, so treat it as a starting
+> point rather than something to rely on. An iOS kid app, smartwatch tracking, and finishing the
+> built-but-switched-off "dumb phone" mode are all open opportunities for the community. Details
+> in the [status table](#current-status) below.
 
 OpenScreenTime is a free, open-source, no-nonsense screen time platform for families. The project is designed to work across Android and iOS, starting with a functional Android implementation for parents and kids.
 
@@ -16,7 +18,7 @@ your own backend, send patches back.
 | --- | --- | --- | --- |
 | **Parent** | Android | ✅ **Ready** | Pairing, limits, bedtime, locking, weekly report, optional tracking, time that doesn't count, help bot. Build it from source; not on Google Play yet. |
 | **Kid** | Android | ✅ **Ready** | Calm status icon, block screen, friction pause, enforcement, parent controls. Build it from source; not on Google Play yet. |
-| **Parent** | iOS | 🛠 **Built, not yet in the App Store** | Manages Android kids, limits, bedtime and tracking toggles. Build it yourself with Xcode. No weekly report yet. |
+| **Parent** | iOS | 🧱 **Foundation - needs more work** | Manages Android kids: limits, bedtime, tracking toggles. Builds and passes CI, but hasn't been tried on a real device against a live Firebase project, and is missing the weekly report and a few settings screens. Build it yourself with Xcode. |
 | **Kid** | iOS | 🌱 **Future project - community welcome** | Needs Apple's Family Controls entitlement, which this project doesn't have. See [issue #7](https://github.com/jsconu/OpenScreenTime/issues/7). |
 
 **Local or cloud.** Both apps build two ways, and it is the first thing to decide. A **local** build
@@ -38,6 +40,12 @@ A child's phone must be Android for now. Smartwatch tracking is another open com
 Most screen-time tools are built around subscriptions, engagement, and increasingly complex feature sets. OpenScreenTime takes a different approach: give parents a small set of useful controls, make the software transparent, and get out of the way.
 
 The goal isn't to maximize time spent in an app. It's to help families use technology intentionally.
+
+It's also built for modeling, not just monitoring. When a parent opts their own phone into the same
+tracking as a kid's, that isn't private to the parent — it shows up automatically, right on the
+kid's own status screen, as the same calm indicator plus the parent's actual screen time and unlock
+count for the day. Screen time stops being a rule that only applies to kids; the whole family is
+visibly playing by it. See "[What a kid sees and can do](#what-a-kid-sees-and-can-do)" below.
 
 OpenScreenTime is MIT licensed so families and developers can inspect it, modify it, self-host it, and contribute improvements.
 
@@ -68,8 +76,10 @@ own phone, real screenshots to replace it are a very welcome contribution.
 | <img src="design/screenshots/kid-03-settings-kid.png" width="220" alt="Kid settings page"> | <img src="design/screenshots/parent-08-bedtime-starts.png" width="220" alt="Two-step bedtime editor with AM/PM"> | <img src="design/screenshots/parent-03-forgot-passcode.png" width="220" alt="Forgot passcode recovery"> |
 
 All 30 screens are in [`design/screenshots/`](design/screenshots/), rendered from
-the gallery above. The gallery was last updated before dumb phone mode, "Time that doesn't count" and the
-hide-notifications controls; screens for those (or real screenshots of any screen) are a welcome contribution.
+the gallery above. The gallery was last updated before "Time that doesn't count" and the
+hide-notifications controls shipped; screens for those (or real screenshots of any screen) are a welcome
+contribution. It doesn't include dumb-phone mode, since that isn't switched on in the app (see
+[What's missing](#whats-missing-and-could-use-a-contributor)).
 
 ## How it works
 
@@ -80,10 +90,11 @@ hide-notifications controls; screens for those (or real screenshots of any scree
   paired child, edits limits, and can opt into tracking the parent's *own*
   screen time the same way.
 - **`shared`** — the data models, Firestore access code, and enforcement
-  logic both apps use: the foreground guard, the day's usage ledger, dumb phone
-  mode, and the rule for what a phone may upload.
-- **`shared-ui`** — the Compose screens and pieces both apps share (dialogs,
-  the dumb-phone home screen, the app picker).
+  logic both apps use: the foreground guard, the day's usage ledger, and the rule for what a phone
+  may upload. It also holds "dumb phone" mode, built but switched off for now — see
+  [What's missing](#whats-missing-and-could-use-a-contributor).
+- **`shared-ui`** — the Compose screens and pieces both apps share (dialogs, the app picker, and the
+  dumb-phone home screen mentioned above).
 - New to the code? [`CONTEXT.md`](CONTEXT.md) explains the domain terms and
   [`CONTRIBUTING.md`](CONTRIBUTING.md) has a short code map.
 - **`ios`** — an iOS build of the parent app (Swift/SwiftUI), for a parent on
@@ -118,14 +129,13 @@ parent app  <---sync--->  Firebase (Firestore + Auth)  <---sync--->  kid app
   day. Their time still shows in the app list and their own limit still
   applies; pair it with "always allowed" to keep one usable after the daily
   limit is reached.
-- Turn on **Dumb phone** for a child, or for your own phone: calls, texts,
-  contacts, two-step sign-in apps and a few apps you choose stay on a plain
-  home screen and everything else is sent back to it. A child needs the family
-  passcode to open more ("Parent unlock"); an adult gets an **All apps** button
-  (after a short pause, for 10 minutes) and a **Travel** profile that also lets
-  through tickets, maps, mail, the camera and similar. On your own phone,
-  **Hide other notifications** collects everything but calls, texts, alarms and
+- On your own phone, **Hide other notifications** collects everything but calls, texts, alarms and
   sign-in codes into the calm list.
+- *(Built, not switched on yet — see [What's missing](#whats-missing-and-could-use-a-contributor).)*
+  A **"dumb phone" home screen** mode: for a child or for your own phone, calls, texts, contacts,
+  two-step sign-in apps and a few apps you choose would stay on a plain home screen with everything
+  else sent back to it. The code (`FocusMode`, a **Travel** profile, an **All apps** button) is all
+  there, but it isn't finished well enough to ship, so nothing in either app offers it right now.
 - Mark specific **phone numbers as always-allowed during bedtime** — every
   other call is screened and blocked (Android's call-screening/redirection
   roles, Android 10+), and texts from anyone else are muted rather than
@@ -168,13 +178,19 @@ parent app  <---sync--->  Firebase (Firestore + Auth)  <---sync--->  kid app
   base, not an AI model: nothing you type leaves the phone, and it says so
   plainly when it has no answer.
 - Opt the **parent's own device** into the exact same tracking/limits a kid
-  gets — reusing the same dashboard card, same stats, same lock button.
+  gets — reusing the same dashboard card, same stats, same lock button. Once you do, your own calm
+  status, screen time and unlock count for the day show up automatically on your kid's status
+  screen too — no extra toggle, and no way to opt out of being seen while opting your kid in.
 
 ### What a kid sees and can do
 
 - A **calm status icon** (comfortably under / approaching / at-or-over
   today's goal) instead of a running number — explained right there in the
   app, along with *why* only this signal is shown.
+- If a parent has opted their own phone into tracking, a **"Parent's screen time today"** card
+  right on the kid's home screen: the parent's own calm status, total screen time and unlock count
+  for the day, automatically, with no extra step for the parent to show it. Screen time is a
+  household rule, not just a kid's rule, and a kid can see that it is.
 - A **non-punitive streak** that only ever counts up; there's no "you missed
   a day" state anywhere.
 - A **friction pause** (a few quiet seconds, once per app per day) crossing
@@ -185,9 +201,6 @@ parent app  <---sync--->  Firebase (Firestore + Auth)  <---sync--->  kid app
   approve.
 - **Suggest a change** to their own limit, no passcode needed — sent to a
   parent for approval, not applied directly.
-- If a parent turned on **Dumb phone**, a plain home screen (calls, texts and
-  chosen apps) when the phone's home app is set to OpenScreenTime, with a
-  "Parent unlock" button that asks for the family passcode.
 - An optional, **local-only notification digest** (plain text, grouped by
   app) — nothing here is ever synced to a parent.
 - The same **help bot** behind a "?" on their home screen, for how the app
@@ -237,8 +250,8 @@ hard block - Android doesn't let a plain (non-Device-Owner) device admin
 actually veto uninstalling, only warn - so a kid who taps through the
 warning can still remove it.
 
-The same screen also offers "Time that doesn't count" and "Dumb phone" for
-that child, the same as on the parent's own phone.
+The same screen also offers "Time that doesn't count" for that child, the same as on the parent's
+own phone.
 
 The same screen also has "Bedtime calls": during the bedtime window, only
 phone numbers a parent has explicitly allowed (Android's call-screening and
@@ -303,11 +316,16 @@ additional platform target — real community-contributor territory:
 Two more areas are ordinary, approachable feature work rather than a new platform, and are a good way to get
 involved:
 
-- **More sophisticated dumb-phone features.** Dumb phone mode (a parent-chosen Focus mode that keeps calls, texts,
-  sign-in-code apps and a short list of allowed apps on a plain home screen) works today, and there is a lot of room
-  to make it smarter. This is a good place to get involved: it is Android and Kotlin, it builds on well-tested
-  pieces (`FocusMode`, the shared launcher screen, the foreground guard), and the design goal is clear: calm, plain,
-  and never a hook. Ideas, roughly from small to large:
+- **Finish (or rebuild) dumb-phone mode.** A parent-chosen Focus mode that keeps calls, texts,
+  sign-in-code apps and a short list of allowed apps on a plain home screen is built into the code -
+  `FocusMode`, the shared launcher screen, the foreground guard - but it doesn't work well enough to
+  put in front of a real family, so it's switched off (`Features.DUMB_PHONE = false`; see
+  [issue #46](https://github.com/jsconu/OpenScreenTime/issues/46)). Nothing in either app offers it,
+  the launcher activity stays disabled, and an incoming `focusMode` flag is ignored rather than
+  enforced. This is a good place to get involved: the design goal is clear (calm, plain, never a
+  hook), and there's real, tested code to start from rather than a blank page. Getting it working
+  end to end on a real phone and flipping the flag on comes first; making it smarter comes after.
+  Ideas, roughly from small to large:
   - **Show what's blocked.** In the "All apps" list, grey out and label apps that are blocked right now (limit
     reached, bedtime, lock, or not allowed by dumb phone) and say why when tapped, instead of opening them. (Android
     doesn't let one app grey out icons on someone else's launcher, so this only applies to our own home screen.)
@@ -505,9 +523,11 @@ is the operator of the Firebase project it talks to, and responsible for the dat
   powerful too (they can screen calls and dismiss notifications) - both are
   opt-in, separate from the core tracking checklist, and only take effect
   during the configured bedtime window.
-- All three apps report crashes to Firebase Crashlytics (same Firebase
-  project as everything else): stack traces plus device model/OS/app
-  version, never any family data. CI/emulator builds never report.
+- The Android apps don't use Firebase Crashlytics any more: a crash is caught on the device and kept
+  there as a plain note (stack trace, app version, the time) that a person can read and copy to send
+  along if they're helping test. Nothing is uploaded automatically, on either the local or cloud
+  build. The iOS parent app hasn't been brought in line with this yet and still wires up Crashlytics
+  (see `ios/README.md`) — one of the things its foundation still needs.
 
 ## Contributing
 

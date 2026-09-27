@@ -4,7 +4,7 @@
 | --- | --- |
 | Android parent | Ready |
 | Android kid | Ready |
-| **iOS parent (this app)** | **Built, not yet in the App Store** - build it yourself with Xcode for now |
+| **iOS parent (this app)** | **Foundation, needs more work** - builds and passes CI, but hasn't been run on a real device against a live Firebase project; build it yourself with Xcode |
 | iOS kid | Future project - community welcome (see #7) |
 
 **Beta note - no iOS kid app yet.** This is the *parent* app only. There is no
@@ -44,10 +44,12 @@ tracked as a follow-up rather than bundled into #26's parity pass. Bedtime call/
 blocking (#34) and uninstall protection (#31) are Android-kid-device-only features with no
 iOS equivalent to port, since there's no iOS kid app for them to run on.
 
-**Not yet in the iOS parent app** (added to the Android apps after the parity pass above): **Dumb phone** mode for a
-child, **Time that doesn't count** (apps left out of the daily limit), and the **New code** button for an unpaired
-child whose pairing code ran out. A parent on iPhone can't set these yet; they can be set from an Android parent phone
-or the kid phone's Parent controls. Porting them is an approachable contribution.
+**Not yet in the iOS parent app** (added to the Android apps after the parity pass above): **Time that doesn't
+count** (apps left out of the daily limit) and the **New code** button for an unpaired child whose pairing code
+ran out. A parent on iPhone can't set these yet; they can be set from an Android parent phone or the kid phone's
+Parent controls. Porting them is an approachable contribution. (A "dumb phone" home screen mode also exists in the
+Android apps' code, but it's switched off there too and isn't offered by either app yet — see the root README's
+[What's missing](../README.md#whats-missing-and-could-use-a-contributor) - so there's nothing to port for it yet.)
 
 This was written and CI-verified (see `.github/workflows/ios-ci.yml`, which actually
 builds and tests it on a macOS runner) without a local Mac/Xcode available - there is no
@@ -100,7 +102,11 @@ That's a one-time, roughly 10-minute step:
 5. Get a `GoogleService-Info.plist` for this app from the Firebase console (the same
    Firebase project the Android apps use - see `firebase.json` at the repo root) and drag
    it into the Xcode project, making sure it's added to the app target.
-6. For crash reporting (Crashlytics, see #21): add the "Upload Crashlytics Symbols" Run
+6. For crash reporting (Crashlytics, see #21): note that the Android apps have since moved off
+   Crashlytics entirely, to an on-device crash note nobody has to upload (see `shared/util/CrashNote.kt`
+   and the root README's Security notes) - this iOS app hasn't been brought in line with that yet, and
+   still uses Crashlytics as originally built; doing so is part of the work this foundation still needs.
+   For now, add the "Upload Crashlytics Symbols" Run
    Script build phase described in
    [Firebase's Crashlytics setup docs](https://firebase.google.com/docs/crashlytics/get-started?platform=ios)
    to the app target - this actually uploads dSYMs so a crash's stack trace is

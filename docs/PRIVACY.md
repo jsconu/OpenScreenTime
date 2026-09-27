@@ -1,9 +1,9 @@
 # OpenScreenTime Privacy Policy
 
-*Last updated: September 19, 2026.*
+*Last updated: September 27, 2026.*
 
 OpenScreenTime is a free, open-source screen-time app for families: a **parent app** and a **kid
-app** (Android), plus a parent app for iPhone that is built but not yet released. It is meant to support a conversation about healthy
+app** (Android), plus an early-foundation parent app for iPhone that is not yet released. It is meant to support a conversation about healthy
 screen time, not to watch someone in secret. This policy explains what it collects, where that goes,
 and how to have it deleted.
 
@@ -24,8 +24,8 @@ this build connects to. Contact: trumpetmadnesshq@gmail.com.
 - Only if a parent turns the matching option on: which app was opened first after each unlock, and
   how many notifications each app sent (counts only).
 - Settings a parent chooses: the child's display name, daily and per-app limits, bedtime window,
-  blocked website domains, always-allowed apps, apps left out of the daily limit, the "Dumb phone" choice and its
-  allowed apps, and phone numbers allowed to call during bedtime.
+  blocked website domains, always-allowed apps, apps left out of the daily limit, and phone numbers
+  allowed to call during bedtime.
 - The day's screen time is the counted figure: time in apps a parent left out of the daily limit is not added to it
   (that time still appears in the per-app usage).
 - An anonymous device identifier created by Firebase Authentication, used to pair the phone with a
@@ -36,19 +36,15 @@ this build connects to. Contact: trumpetmadnesshq@gmail.com.
 - The same per-app time and unlock information for the parent's own phone, only if the parent turns
   on tracking their own device - and, if the parent also turns on **Track websites** for themselves, the
   same site-name counts (this uses the optional website filter on the parent's own phone). The parent's own list of installed apps is only read on the phone
-  to build the limits screen; it is not uploaded.
+  to build the limits screen; it is not uploaded. Once a parent turns this on, a paired child's phone
+  automatically shows a calm status card with the parent's own screen time and unlock count for the
+  day - there is no separate switch to hide this from the child once self-tracking is on.
 - An optional "calm notification list" of today's notifications on the parent's phone. It is kept
   only on that phone and never uploaded (the child's phone has the same optional list). If the parent also
   turns on "Hide other notifications", other apps' notifications are removed from the notification shade after
   they're added to that local list; calls, texts, alarms and sign-in codes are left alone.
-- The choice to use "Dumb phone" (on or off, the Travel profile, and the list of apps a parent allows) is saved
-  with the person's profile so the parent can change it from any of their devices. It contains app names, not activity.
 - A family passcode, stored only as a salted hash.
 - Feedback a parent chooses to send (the text, app version and device model).
-
-**On any device, for stability**
-- Crash reports (stack traces, device model, Android version, app version) sent to Firebase
-  the operator's own Firebase project.
 
 ## What the apps do **not** collect
 
