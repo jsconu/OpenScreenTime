@@ -41,6 +41,16 @@ Most screen-time tools are built around subscriptions, engagement, and increasin
 
 The goal isn't to maximize time spent in an app. It's to help families use technology intentionally.
 
+The clearest example is the status icon itself: instead of a running number to refresh, a kid's home
+screen (and the top-left of the status bar) shows one of three calm signals — a thumbs up, an open
+hand, or a stop sign — for comfortably under, approaching, or at-or-over today's goal. That's a
+deliberate choice, not a simplified version of the real feature: a live number invites the same
+compulsive re-checking this app exists to avoid, while a calm signal answers "am I okay today?" in
+one glance and gives nothing else to keep checking. The exact numbers still exist, just one
+deliberate tap away in the parent app, never on the kid's own screen — see
+"[What a kid sees and can do](#what-a-kid-sees-and-can-do)" below, and the "Calm by design" notes in
+[the screens gallery](design/screens.html).
+
 It's also built for modeling, not just monitoring. When a parent opts their own phone into the same
 tracking as a kid's, that isn't private to the parent — it shows up automatically, right on the
 kid's own status screen, as the same calm indicator plus the parent's actual screen time and unlock
@@ -76,10 +86,10 @@ own phone, real screenshots to replace it are a very welcome contribution.
 | <img src="design/screenshots/kid-03-settings-kid.png" width="220" alt="Kid settings page"> | <img src="design/screenshots/parent-08-bedtime-starts.png" width="220" alt="Two-step bedtime editor with AM/PM"> | <img src="design/screenshots/parent-03-forgot-passcode.png" width="220" alt="Forgot passcode recovery"> |
 
 All 30 screens are in [`design/screenshots/`](design/screenshots/), rendered from
-the gallery above. The gallery was last updated before "Time that doesn't count" and the
-hide-notifications controls shipped; screens for those (or real screenshots of any screen) are a welcome
-contribution. It doesn't include dumb-phone mode, since that isn't switched on in the app (see
-[What's missing](#whats-missing-and-could-use-a-contributor)).
+the gallery above, and current as of "Time that doesn't count" and the hide-notifications controls.
+It doesn't include dumb-phone mode, since that isn't switched on in the app (see
+[What's missing](#whats-missing-and-could-use-a-contributor)). Real screenshots of any screen, taken
+on an actual phone, are still a welcome contribution over this from-source mockup.
 
 ## How it works
 
@@ -184,9 +194,10 @@ parent app  <---sync--->  Firebase (Firestore + Auth)  <---sync--->  kid app
 
 ### What a kid sees and can do
 
-- A **calm status icon** (comfortably under / approaching / at-or-over
-  today's goal) instead of a running number — explained right there in the
-  app, along with *why* only this signal is shown.
+- A **calm status icon** — thumbs up, open hand, or stop sign for comfortably under, approaching, or
+  at-or-over today's goal — instead of a running number, so a glance says where things stand without
+  inviting the compulsive re-checking an exact, live count would. Explained right there in the app,
+  along with *why* only this signal is shown, never the numbers behind it.
 - If a parent has opted their own phone into tracking, a **"Parent's screen time today"** card
   right on the kid's home screen: the parent's own calm status, total screen time and unlock count
   for the day, automatically, with no extra step for the parent to show it. Screen time is a

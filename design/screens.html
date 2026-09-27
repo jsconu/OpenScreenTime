@@ -608,6 +608,9 @@
             <div class="m-btn-outline full">Change daily limit</div>
             <p class="subtext tight">Bedtime: 9:00 PM tonight to 7:00 AM tomorrow morning (10 hours)</p>
             <div class="m-btn-outline full">Change bedtime</div>
+            <div class="label-eyebrow" style="margin-top:8px;">Time that doesn't count</div>
+            <p class="subtext micro" style="margin:0 0 6px;">Apps whose time isn't added to the daily limit &mdash; an audiobook, reading, maps or school app.</p>
+            <div class="m-btn-outline full" style="padding:7px 16px;">Choose apps</div>
             <div class="label-eyebrow">Bedtime calls</div>
             <p class="subtext micro" style="margin:0 0 4px;">During bedtime, calls from or to any number not listed below are blocked. Texts can't be blocked, only quieted.</p>
             <div class="m-list-item"><div class="head">+1 555 123 4567</div><div class="trailing">Remove</div></div>
@@ -628,8 +631,8 @@
         </div></div>
         <div class="caption">
           <p class="screen-name">Parent controls</p>
-          <p class="screen-desc">Reached only after the passcode unlock (five wrong attempts lock it for 15 minutes). Includes bedtime, a pending "more time" request (#23), uninstall protection (#31), bedtime calls with an allowed-numbers list - now with a "Choose from contacts" picker that needs no contacts permission (#34) - the optional tracking switches (#35), and an "always allow" checkbox and minute limit for every app on the phone, most used first or A to Z. It never accepts a fingerprint or phone screen lock: a child's own would open it.</p>
-          <div class="tag-row"><span class="tag">ParentControlsScreen.kt</span><span class="tag">bedtime_pick_contact</span><span class="tag">sort_usage</span><span class="tag">sort_name</span></div>
+          <p class="screen-desc">Reached only after the passcode unlock (five wrong attempts lock it for 15 minutes). Includes bedtime, a pending "more time" request (#23), "Time that doesn't count" (apps left out of the daily limit, same as on the parent's own phone), uninstall protection (#31), bedtime calls with an allowed-numbers list - now with a "Choose from contacts" picker that needs no contacts permission (#34) - the optional tracking switches (#35), and an "always allow" checkbox and minute limit for every app on the phone, most used first or A to Z. It never accepts a fingerprint or phone screen lock: a child's own would open it.</p>
+          <div class="tag-row"><span class="tag">ParentControlsScreen.kt</span><span class="tag">excluded_pick_apps</span><span class="tag">bedtime_pick_contact</span><span class="tag">sort_usage</span><span class="tag">sort_name</span></div>
         </div>
       </div>
 
@@ -875,15 +878,19 @@
               <div class="sub">&#128721; Stop: You've reached your overall screen time limit</div>
             </div>
             <div class="card-tint">
-              <div style="display:flex;justify-content:space-between;align-items:center;"><div class="head" style="font-size:11px;font-weight:600;">Calm notification list</div><span class="m-switch"></span></div>
+              <div style="display:flex;justify-content:space-between;align-items:center;"><div class="head" style="font-size:11px;font-weight:600;">Calm notification list</div><span class="m-switch on"></span></div>
               <p class="subtext micro" style="margin:2px 0 0;">A plain, read-only list of today's notifications on this phone. It stays on this phone.</p>
+            </div>
+            <div class="card-tint">
+              <div style="display:flex;justify-content:space-between;align-items:center;"><div class="head" style="font-size:11px;font-weight:600;">Hide other notifications</div><span class="m-switch"></span></div>
+              <p class="subtext micro" style="margin:2px 0 0;">Calls, texts, alarms and sign-in codes still come through. Everything else is taken out of the shade and collected in the list above instead.</p>
             </div>
           </div>
         </div></div>
         <div class="caption">
           <p class="screen-name">Dashboard</p>
-          <p class="screen-desc">An "Add kid" button opens the list, always first so nothing that loads later can move it (it replaced the floating + button). A card asks for the family passcode until one is set. Kids come first, then the parent's own "My screen time" tile - now with "Customize Screen Time goals", a shortcut alongside "Lock now" - then the off-screen idea, the same status-icon explanation the kid app shows (#30), and the parent's own opt-in calm notification list. Tapping the "My screen time" tile goes straight to View my screen time; permissions are their own screen.</p>
-          <div class="tag-row"><span class="tag">dashboard_add_child</span><span class="tag">dashboard_passcode_prompt</span><span class="tag">dashboard_self_customize_goals</span><span class="tag">status_icon_legend</span><span class="tag calm">09 walk the walk</span></div>
+          <p class="screen-desc">An "Add kid" button opens the list, always first so nothing that loads later can move it (it replaced the floating + button). A card asks for the family passcode until one is set. Kids come first, then the parent's own "My screen time" tile - now with "Customize Screen Time goals", a shortcut alongside "Lock now" - then the off-screen idea, the same status-icon explanation the kid app shows (#30), and the parent's own opt-in calm notification list with its "Hide other notifications" switch, reachable from a summary notification or a Quick Settings tile once it's on. Tapping the "My screen time" tile goes straight to View my screen time; permissions are their own screen.</p>
+          <div class="tag-row"><span class="tag">dashboard_add_child</span><span class="tag">dashboard_passcode_prompt</span><span class="tag">dashboard_self_customize_goals</span><span class="tag">dashboard_hide_others</span><span class="tag">status_icon_legend</span><span class="tag calm">09 walk the walk</span></div>
         </div>
       </div>
 
@@ -952,6 +959,11 @@
             <p class="subtext tight">Bedtime: 9:00 PM tonight to 7:00 AM tomorrow morning (10 hours)</p>
             <div class="m-btn-outline full">Change bedtime</div>
             <div class="m-btn-outline full" style="margin-bottom:10px;">View weekly report</div>
+            <div class="card-tint">
+              <div class="label-eyebrow" style="margin:0 0 2px;">Time that doesn't count</div>
+              <p class="subtext micro" style="margin:0 0 6px;">Apps whose time isn't added to the daily limit &mdash; an audiobook, reading, maps or school app. They still show below, and a limit on one still applies.</p>
+              <div class="m-btn-outline full" style="margin:0;padding:5px 12px;">Choose apps</div>
+            </div>
             <div class="label-eyebrow">App usage today</div>
             <div style="display:flex;gap:6px;margin-bottom:4px;"><span class="chip" style="background:var(--app-primary);color:var(--app-on-primary);">Most used</span><span class="chip">A to Z</span></div>
             <div class="m-list-item"><div><div class="head">Instagram</div><div class="sub over">45m of 30m limit</div></div><div class="trailing"><span class="m-checkbox"></span>Limit</div></div>
@@ -961,8 +973,8 @@
         </div></div>
         <div class="caption">
           <p class="screen-name">Child detail</p>
-          <p class="screen-desc">Includes a pending "more time" grant/decline card (#23), a bedtime summary that spells out the night, and a single "View weekly report" button &mdash; the detailed numbers stay one tap away rather than shown inline, deliberately (#29). The app list shows every app on the kid's phone (published by that phone, refreshed when it changes), not only ones used today - most used first, with an A-to-Z switch - and an "always allow" checkbox and limit for each (#28).</p>
-          <div class="tag-row"><span class="tag">ChildDetailScreen.kt</span><span class="tag">sort_usage</span><span class="tag">sort_name</span><span class="tag calm">06 detail stays with parent</span></div>
+          <p class="screen-desc">Includes a pending "more time" grant/decline card (#23), a bedtime summary that spells out the night, and a single "View weekly report" button &mdash; the detailed numbers stay one tap away rather than shown inline, deliberately (#29). "Time that doesn't count" excludes chosen apps from the daily limit without exempting them from their own per-app limit. The app list shows every app on the kid's phone (published by that phone, refreshed when it changes), not only ones used today - most used first, with an A-to-Z switch - and an "always allow" checkbox and limit for each (#28).</p>
+          <div class="tag-row"><span class="tag">ChildDetailScreen.kt</span><span class="tag">excluded_pick_apps</span><span class="tag">sort_usage</span><span class="tag">sort_name</span><span class="tag calm">06 detail stays with parent</span></div>
         </div>
       </div>
 
