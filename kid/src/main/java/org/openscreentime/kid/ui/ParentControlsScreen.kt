@@ -52,6 +52,7 @@ import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.launch
 import org.openscreentime.kid.data.UsageStore
 import org.openscreentime.kid.monitor.UninstallProtectionAdminReceiver
@@ -138,6 +139,7 @@ fun ParentControlsScreen(
     var editingApp by remember { mutableStateOf<String?>(null) }
     var showLockConfirm by remember { mutableStateOf(false) }
     var newBlockedDomain by remember { mutableStateOf("") }
+    var websiteError by remember { mutableStateOf<String?>(null) }
     var newAllowedContact by remember { mutableStateOf("") }
     // The system contact picker hands back just the one number chosen, with temporary read access
     // to that row - so no READ_CONTACTS permission is needed (or asked for).
@@ -389,7 +391,7 @@ fun ParentControlsScreen(
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         OutlinedTextField(
                             value = newBlockedDomain,
-                            onValueChange = { newBlockedDomain = it },
+                            onValueChange = { newBlockedDomain = it; websiteError = null },
                             label = { Text("e.g. tiktok.com") },
                             singleLine = true,
                             modifier = Modifier.weight(1f)
@@ -400,11 +402,30 @@ fun ParentControlsScreen(
                             onClick = {
                                 val updated = addBlockedDomain(child.blockedDomains, newBlockedDomain)
                                 if (updated != child.blockedDomains) {
-                                    scope.launch { repository.addBlockedDomain(parentUid, childId, updated.last()) }
+                                    scope.launch {
+                                        try {
+                                            repository.addBlockedDomain(parentUid, childId, updated.last())
+                                            newBlockedDomain = ""
+                                            websiteError = null
+                                        } catch (e: CancellationException) {
+                                            throw e
+                                        } catch (e: Exception) {
+                                            websiteError = "Could not block this website. Please try again."
+                                        }
+                                    }
+                                } else {
+                                    newBlockedDomain = ""
                                 }
-                                newBlockedDomain = ""
                             }
                         ) { Text("Block") }
+                    }
+                    if (websiteError != null) {
+                        Spacer(Modifier.height(8.dp))
+                        Text(
+                            websiteError!!,
+                            color = MaterialTheme.colorScheme.error,
+                            style = MaterialTheme.typography.bodySmall
+                        )
                     }
                 }
             }
@@ -417,13 +438,20 @@ fun ParentControlsScreen(
                     )
                 }
             }
-            items(child.blockedDomains.sorted(), key = { it }) { domain ->
+            items(child.blockedDomains.distinct().sorted(), key = { it }) { domain ->
                 ListItem(
                     headlineContent = { Text(domain) },
                     trailingContent = {
                         TextButton(onClick = {
                             scope.launch {
-                                repository.removeBlockedDomain(parentUid, childId, domain)
+                                try {
+                                    repository.removeBlockedDomain(parentUid, childId, domain)
+                                    websiteError = null
+                                } catch (e: CancellationException) {
+                                    throw e
+                                } catch (e: Exception) {
+                                    websiteError = "Could not remove this website. Please try again."
+                                }
                             }
                         }) { Text("Remove") }
                     }
