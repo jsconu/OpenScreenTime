@@ -5,6 +5,7 @@ import android.net.Uri
 import android.net.VpnService
 import android.os.Build
 import android.os.Bundle
+import android.widget.Toast
 import android.provider.Settings
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
@@ -106,7 +107,13 @@ class MainActivity : ComponentActivity() {
         }
 
     private fun startWebsiteFilterService() {
-        ContextCompat.startForegroundService(this, Intent(this, DnsSinkholeVpnService::class.java))
+        try {
+            ContextCompat.startForegroundService(this, Intent(this, DnsSinkholeVpnService::class.java))
+        } catch (e: RuntimeException) {
+            // Android can reject foreground-service startup, especially after VPN consent changes.
+            // Keep the rest of the app usable and make it clear filtering is not active.
+            Toast.makeText(this, "Website filter could not start. Check VPN permission and try again.", Toast.LENGTH_LONG).show()
+        }
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {

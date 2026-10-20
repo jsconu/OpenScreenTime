@@ -5,6 +5,7 @@ import android.net.VpnService
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.widget.Toast
 import android.provider.Settings
 import androidx.fragment.app.FragmentActivity
 import androidx.activity.compose.setContent
@@ -64,7 +65,13 @@ class MainActivity : FragmentActivity() {
         }
 
     private fun startWebsiteFilter() {
-        ContextCompat.startForegroundService(this, Intent(this, DnsSinkholeVpnService::class.java))
+        try {
+            ContextCompat.startForegroundService(this, Intent(this, DnsSinkholeVpnService::class.java))
+        } catch (e: RuntimeException) {
+            // Android can reject foreground-service startup, especially after VPN consent changes.
+            // Keep the rest of the app usable and make it clear filtering is not active.
+            Toast.makeText(this, "Website filter could not start. Check VPN permission and try again.", Toast.LENGTH_LONG).show()
+        }
     }
 
     // Set as the phone's home screen, for "Dumb phone" (see #42).

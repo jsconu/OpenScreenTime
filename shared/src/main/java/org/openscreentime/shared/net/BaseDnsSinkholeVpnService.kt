@@ -4,6 +4,7 @@ import android.app.Notification
 import android.content.Intent
 import android.net.VpnService
 import android.os.ParcelFileDescriptor
+import android.util.Log
 import org.openscreentime.shared.model.WEBSITE_COUNT_WINDOW_MS
 import org.openscreentime.shared.model.isDomainBlocked
 import org.openscreentime.shared.model.websiteToCount
@@ -61,11 +62,19 @@ abstract class BaseDnsSinkholeVpnService : VpnService() {
     private var lastSaveMs = 0L
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        if (running.compareAndSet(false, true)) {
+        if (!running.compareAndSet(false, true)) return START_STICKY
+        return try {
             startForeground(notificationId, buildNotification())
             thread(name = "dns-sinkhole") { runLoop() }
+            START_STICKY
+        } catch (e: Exception) {
+            // A VPN permission may be revoked, or Android may refuse foreground-service startup.
+            // The website filter should stop, not take the whole parent/kid app down with it.
+            Log.e(TAG, "Unable to start website filter", e)
+            running.set(false)
+            stopSelfResult(startId)
+            START_NOT_STICKY
         }
-        return START_STICKY
     }
 
     override fun onDestroy() {
@@ -82,31 +91,43 @@ abstract class BaseDnsSinkholeVpnService : VpnService() {
     }
 
     private fun runLoop() {
-        val tun = establishTunnel()
-        if (tun == null) {
-            running.set(false)
-            return
-        }
-        tunInterface = tun
-        val input = FileInputStream(tun.fileDescriptor)
-        val output = FileOutputStream(tun.fileDescriptor)
-        val buffer = ByteArray(MAX_PACKET_SIZE)
+        var tun: ParcelFileDescriptor? = null
+        var input: FileInputStream? = null
+        var output: FileOutputStream? = null
+        try {
+            // establish() can throw if VPN permission was revoked or another VPN took over.
+            tun = establishTunnel() ?: return
+            tunInterface = tun
+            input = FileInputStream(tun.fileDescriptor)
+            output = FileOutputStream(tun.fileDescriptor)
+            val buffer = ByteArray(MAX_PACKET_SIZE)
 
-        while (running.get()) {
-            val length = try {
-                input.read(buffer)
-            } catch (e: Exception) {
-                break
+            while (running.get()) {
+                val length = try {
+                    input.read(buffer)
+                } catch (e: Exception) {
+                    break // Expected when the VPN fd closes during service shutdown.
+                }
+                if (length <= 0) continue
+                try {
+                    handlePacket(buffer.copyOf(length), output)
+                } catch (e: Exception) {
+                    // A malformed/unexpected DNS packet must not kill the entire Android process.
+                    Log.w(TAG, "Unable to process a DNS packet", e)
+                }
+                savePending(force = false)
             }
-            if (length <= 0) continue
-            handlePacket(buffer.copyOf(length), output)
-            savePending(force = false)
+        } catch (e: Exception) {
+            Log.e(TAG, "Website filter stopped unexpectedly", e)
+        } finally {
+            running.set(false)
+            savePending(force = true)
+            runCatching { input?.close() }
+            runCatching { output?.close() }
+            runCatching { tun?.close() }
+            tunInterface = null
+            stopSelf()
         }
-
-        savePending(force = true)
-        runCatching { input.close() }
-        runCatching { output.close() }
-        runCatching { tun.close() }
     }
 
     private fun establishTunnel(): ParcelFileDescriptor? = Builder()
@@ -187,6 +208,7 @@ abstract class BaseDnsSinkholeVpnService : VpnService() {
     }
 
     private companion object {
+        const val TAG = "OpenScreenTimeVpn"
         const val MAX_PACKET_SIZE = 32_767
         const val DNS_PORT = 53
         const val UPSTREAM_TIMEOUT_MS = 5_000

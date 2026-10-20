@@ -45,6 +45,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.launch
 import org.openscreentime.parent.data.ReportOpenTracker
 import org.openscreentime.shared.model.AppUsage
@@ -112,6 +113,7 @@ fun ChildDetailScreen(
     // The one dialog open over this page, if any.
     var dialog by remember { mutableStateOf<DetailDialog?>(null) }
     var newBlockedDomain by remember { mutableStateOf("") }
+    var websiteError by remember { mutableStateOf<String?>(null) }
     var kidInstalledApps by remember { mutableStateOf<List<InstalledApp>>(emptyList()) }
     var appSort by rememberSaveable { mutableStateOf(AppSort.USAGE) }
 
@@ -250,16 +252,37 @@ fun ChildDetailScreen(
             websiteBlockingSection(
                 blockedDomains = currentChild.blockedDomains,
                 newDomainText = newBlockedDomain,
-                onNewDomainTextChange = { newBlockedDomain = it },
+                error = websiteError,
+                onNewDomainTextChange = { newBlockedDomain = it; websiteError = null },
                 onAddDomain = {
                     val updated = addBlockedDomain(currentChild.blockedDomains, newBlockedDomain)
                     if (updated != currentChild.blockedDomains) {
-                        scope.launch { repository.addBlockedDomain(parentUid, childId, updated.last()) }
+                        scope.launch {
+                            try {
+                                repository.addBlockedDomain(parentUid, childId, updated.last())
+                                newBlockedDomain = ""
+                                websiteError = null
+                            } catch (e: CancellationException) {
+                                throw e
+                            } catch (e: Exception) {
+                                websiteError = "Could not block this website. Please try again."
+                            }
+                        }
+                    } else {
+                        newBlockedDomain = ""
                     }
-                    newBlockedDomain = ""
                 },
                 onRemoveDomain = { domain ->
-                    scope.launch { repository.removeBlockedDomain(parentUid, childId, domain) }
+                    scope.launch {
+                        try {
+                            repository.removeBlockedDomain(parentUid, childId, domain)
+                            websiteError = null
+                        } catch (e: CancellationException) {
+                            throw e
+                        } catch (e: Exception) {
+                            websiteError = "Could not remove this website. Please try again."
+                        }
+                    }
                 }
             )
             if (currentChild.trackWebsites) {
@@ -453,6 +476,7 @@ private fun LazyListScope.weeklyReportSection(onOpenReport: () -> Unit) {
 private fun LazyListScope.websiteBlockingSection(
     blockedDomains: List<String>,
     newDomainText: String,
+    error: String?,
     onNewDomainTextChange: (String) -> Unit,
     onAddDomain: () -> Unit,
     onRemoveDomain: (String) -> Unit
@@ -477,6 +501,10 @@ private fun LazyListScope.websiteBlockingSection(
                 Spacer(Modifier.width(8.dp))
                 Button(onClick = onAddDomain, enabled = newDomainText.isNotBlank()) { Text("Block") }
             }
+            if (error != null) {
+                Spacer(Modifier.height(8.dp))
+                Text(error, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
+            }
         }
     }
     if (blockedDomains.isEmpty()) {
@@ -488,7 +516,7 @@ private fun LazyListScope.websiteBlockingSection(
             )
         }
     }
-    items(blockedDomains.sorted(), key = { it }) { domain ->
+    items(blockedDomains.distinct().sorted(), key = { it }) { domain ->
         ListItem(
             headlineContent = { Text(domain) },
             trailingContent = {
