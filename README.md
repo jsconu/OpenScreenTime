@@ -1,16 +1,23 @@
 # OpenScreenTime
 
-> **Beta.** The Android apps are ready to use, but young: no security audit and limited
-> device/OEM coverage. The iOS parent app is an early foundation — it builds and passes CI, but
-> hasn't been run against a real device and a live Firebase project yet, so treat it as a starting
-> point rather than something to rely on. An iOS kid app, smartwatch tracking, and finishing the
-> built-but-switched-off "dumb phone" mode are all open opportunities for the community. Details
-> in the [status table](#current-status) below.
+**Free, open-source screen-time tools for families — calm by design.**
 
-OpenScreenTime is a free, open-source, no-nonsense screen time platform for families. The project is designed to work across Android and iOS, starting with a functional Android implementation for parents and kids.
+Android apps for parents and kids combine daily limits, bedtime, deliberate pauses, and simple status indicators. Parents can model the same habits by sharing their own usage. No ads, account fees, or paid tier. MIT licensed.
 
-No account fees, no ads, no dark patterns. MIT licensed — fork it, self-host
-your own backend, send patches back.
+**Status:** Android beta with limited device coverage and no independent security audit. The iOS parent app is an early foundation; there is no iOS kid app. See the [platform status](#current-status) before choosing a setup.
+
+| Kid: calm status | Parent: dashboard |
+| :---: | :---: |
+| <img src="design/screenshots/kid-02-status.png" width="220" alt="UI reproduction of the child's calm status screen"> | <img src="design/screenshots/parent-04-dashboard.png" width="220" alt="UI reproduction of the parent dashboard"> |
+
+*These are UI reproductions from the app source, not photographs of a running device. [See the full gallery](#screens).*
+
+## Start here
+
+- **Use on one phone:** read [Local and cloud builds](docs/LOCAL_AND_CLOUD.md) and the [Android installation guide](docs/INSTALL_ANDROID.md).
+- **Link parent and child phones:** follow the [self-hosting guide](docs/SELF_HOSTING.md) to build against your own Firebase project.
+- **Explore the design:** see [screens](#screens) and [what a kid sees and can do](#what-a-kid-sees-and-can-do).
+- **Contribute:** read [CONTRIBUTING.md](CONTRIBUTING.md) and [open opportunities](#whats-missing-and-could-use-a-contributor).
 
 ## Current status
 
