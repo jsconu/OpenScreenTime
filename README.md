@@ -12,6 +12,8 @@ Android apps for parents and kids combine daily limits, bedtime, deliberate paus
 
 *These are UI reproductions from the app source, not photographs of a running device. [See the full gallery](#screens).*
 
+**Built with AI:** AI coding agents contributed to this project's implementation, as the commit history shows. [How I work with AI coding agents](https://github.com/jsconu/Ondatrace-Overview/blob/master/AI_COLLABORATION.md).
+
 ## Start here
 
 - **Use on one phone:** read [Local and cloud builds](docs/LOCAL_AND_CLOUD.md) and the [Android installation guide](docs/INSTALL_ANDROID.md).
@@ -23,8 +25,8 @@ Android apps for parents and kids combine daily limits, bedtime, deliberate paus
 
 | App | Platform | Status | Notes |
 | --- | --- | --- | --- |
-| **Parent** | Android | ✅ **Ready** | Pairing, limits, bedtime, locking, weekly report, optional tracking, time that doesn't count, help bot. Build it from source; not on Google Play yet. |
-| **Kid** | Android | ✅ **Ready** | Calm status icon, block screen, friction pause, enforcement, parent controls. Build it from source; not on Google Play yet. |
+| **Parent** | Android | ✅ **Ready** | Pairing, limits, bedtime, locking, weekly report, optional tracking, time that doesn't count, help bot. Local APK on the [releases page](https://github.com/jsconu/OpenScreenTime/releases/latest); cloud builds come from source. Not on Google Play yet. |
+| **Kid** | Android | ✅ **Ready** | Calm status icon, block screen, friction pause, enforcement, parent controls. Local APK on the [releases page](https://github.com/jsconu/OpenScreenTime/releases/latest); cloud builds come from source. Not on Google Play yet. |
 | **Parent** | iOS | 🧱 **Foundation - needs more work** | Manages Android kids: limits, bedtime, tracking toggles. Builds and passes CI, but hasn't been tried on a real device against a live Firebase project, and is missing the weekly report and a few settings screens. Build it yourself with Xcode. |
 | **Kid** | iOS | 🌱 **Future project - community welcome** | Needs Apple's Family Controls entitlement, which this project doesn't have. See [issue #7](https://github.com/jsconu/OpenScreenTime/issues/7). |
 
